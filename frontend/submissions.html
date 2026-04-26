@@ -802,17 +802,17 @@ async function loadData() {
         const classId = new URLSearchParams(window.location.search).get('class_id');
 
         const fetches = [
-            fetch(`http://127.0.0.1:5000/api/submissions/${activityId}/all`, {
+            fetch(`/api/submissions/${activityId}/all`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             }),
-            fetch(`http://127.0.0.1:5000/api/activities/${activityId}/parsed`, {
+            fetch(`/api/activities/${activityId}/parsed`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             })
         ];
 
         // Load groups if class_id provided
         if (classId) {
-            fetches.push(fetch(`http://127.0.0.1:5000/api/classes/${classId}/groups`, {
+            fetches.push(fetch(`/api/classes/${classId}/groups`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             }));
         }
@@ -827,7 +827,7 @@ async function loadData() {
         if (classId && allGroups.length > 0) {
             try {
                 const draftRes = await fetch(
-                    `http://127.0.0.1:5000/api/submissions/${activityId}/all-group-drafts?class_id=${classId}`,
+                    `/api/submissions/${activityId}/all-group-drafts?class_id=${classId}`,
                     { headers: { 'Authorization': `Bearer ${token}` } }
                 );
                 if (draftRes.ok) allGroupDrafts = await safeJson(draftRes) || {};
@@ -1130,7 +1130,7 @@ async function submitGroupGrade(groupId) {
 
     try {
         const res = await fetch(
-            `http://127.0.0.1:5000/api/classes/${classId}/groups/${groupId}/grade`, {
+            `/api/classes/${classId}/groups/${groupId}/grade`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ activity_id: parseInt(activityId), grade, feedback })
@@ -1368,7 +1368,7 @@ function buildSubmissionDetail(sub) {
     if (sub.uploaded_file) {
         html += `<div class="sb-detail-section">
             <div class="sb-detail-title"><i class="ph-bold ph-paperclip"></i> Uploaded File</div>
-            <a href="http://127.0.0.1:5000/api/submissions/file/${sub.uploaded_file}"
+            <a href="/api/submissions/file/${sub.uploaded_file}"
                target="_blank" class="sb-file-link">
                 <i class="ph-bold ph-file-arrow-down"></i> View Uploaded File
             </a>
@@ -1423,7 +1423,7 @@ async function submitGrade(submissionId) {
         showToast('Please enter a valid grade (0-100)!', 'warning'); return;
     }
     try {
-        const response = await fetch(`http://127.0.0.1:5000/api/submissions/${submissionId}/grade`, {
+        const response = await fetch(`/api/submissions/${submissionId}/grade`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ grade, feedback })
@@ -1456,7 +1456,7 @@ loadData();
 
     setInterval(async () => {
         try {
-            const res = await fetch(`http://127.0.0.1:5000/api/submissions/${activityId}/all`,
+            const res = await fetch(`/api/submissions/${activityId}/all`,
                 { headers: { 'Authorization': `Bearer ${token}` } });
             if (!res.ok) return;
             const fresh = await res.json();

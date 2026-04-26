@@ -963,7 +963,7 @@ function skeletonCards(n) {
 async function loadClasses() {
     document.getElementById('classesList').innerHTML = skeletonCards(4);
     try {
-        const data = await fetch('http://127.0.0.1:5000/api/classes/my-classes', {
+        const data = await fetch('/api/classes/my-classes', {
             headers: { 'Authorization': `Bearer ${token}` }
         }).then(r => r.json());
         renderClasses(data);
@@ -1077,7 +1077,7 @@ async function saveEditClass() {
         if (_ecTheme === 6 && _ecCustomFile) {
             btn.innerHTML = '<i class="ph-bold ph-spinner"></i> Uploading...';
             const fd = new FormData(); fd.append('file', _ecCustomFile);
-            const up = await fetch('http://127.0.0.1:5000/api/classes/upload-banner', {
+            const up = await fetch('/api/classes/upload-banner', {
                 method:'POST', headers:{'Authorization':`Bearer ${token}`}, body:fd
             });
             const upd = await up.json();
@@ -1088,7 +1088,7 @@ async function saveEditClass() {
         } else if (_ecTheme !== 6) {
             bannerImageUrl = '';
         }
-        const r = await fetch(`http://127.0.0.1:5000/api/classes/${_editClassId}`, {
+        const r = await fetch(`/api/classes/${_editClassId}`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ class_name, subject, section, theme: _ecTheme, banner_image: bannerImageUrl })
@@ -1106,7 +1106,7 @@ async function saveEditClass() {
 // Duplicate
 async function doDuplicate(id) {
     try {
-        const r = await fetch(`http://127.0.0.1:5000/api/classes/${id}/duplicate`, {
+        const r = await fetch(`/api/classes/${id}/duplicate`, {
             method: 'POST', headers: { 'Authorization': `Bearer ${token}` }
         });
         const d = await r.json();
@@ -1118,7 +1118,7 @@ async function doDuplicate(id) {
 // Archive
 async function doArchive(id) {
     try {
-        const r = await fetch(`http://127.0.0.1:5000/api/classes/${id}/archive`, {
+        const r = await fetch(`/api/classes/${id}/archive`, {
             method: 'POST', headers: { 'Authorization': `Bearer ${token}` }
         });
         const d = await r.json();
@@ -1141,7 +1141,7 @@ function closeCM() { document.getElementById('cmOverlay').classList.remove('open
 async function doDeleteClass(id) {
     closeCM();
     try {
-        const r = await fetch(`http://127.0.0.1:5000/api/classes/${id}`, {
+        const r = await fetch(`/api/classes/${id}`, {
             method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` }
         });
         let d = {};
@@ -1216,7 +1216,7 @@ async function createClass() {
             btn.querySelector('.button_text').innerHTML = '<i class="ph-bold ph-spinner"></i> Uploading...';
             const fd = new FormData();
             fd.append('file', _customBannerFile);
-            const upRes  = await fetch('http://127.0.0.1:5000/api/classes/upload-banner', {
+            const upRes  = await fetch('/api/classes/upload-banner', {
                 method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: fd
             });
             const upData = await upRes.json();
@@ -1229,7 +1229,7 @@ async function createClass() {
             btn.querySelector('.button_text').innerHTML = '<i class="ph-bold ph-spinner"></i> Creating...';
         }
 
-        const res  = await fetch('http://127.0.0.1:5000/api/classes/create', {
+        const res  = await fetch('/api/classes/create', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ class_name, subject, section, theme: selectedTheme, banner_image: bannerImageUrl })

@@ -2292,7 +2292,7 @@
 
     async function loadClassDetail() {
         try {
-            const response = await fetch(`http://127.0.0.1:5000/api/classes/${classId}`, {
+            const response = await fetch(`/api/classes/${classId}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();
@@ -2403,7 +2403,7 @@
                 btn.innerHTML = '<i class="ph-bold ph-spinner"></i> Uploading...';
                 const fd = new FormData();
                 fd.append('file', _ecCustomFile);
-                const upRes  = await fetch('http://127.0.0.1:5000/api/classes/upload-banner', {
+                const upRes  = await fetch('/api/classes/upload-banner', {
                     method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: fd
                 });
                 const upData = await upRes.json();
@@ -2416,7 +2416,7 @@
                 bannerImageUrl = '';
             }
 
-            const res  = await fetch(`http://127.0.0.1:5000/api/classes/${classId}`, {
+            const res  = await fetch(`/api/classes/${classId}`, {
                 method: 'PUT',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({ class_name, subject, section, theme: _ecTheme, banner_image: bannerImageUrl })
@@ -2446,7 +2446,7 @@
             // If classInfo already loaded, use it; otherwise fetch fresh
             let info = window.classInfo;
             if (!info || !info.professor_name) {
-                const res = await fetch(`http://127.0.0.1:5000/api/classes/${classId}`, {
+                const res = await fetch(`/api/classes/${classId}`, {
                     headers: { 'Authorization': `Bearer ${token}` }
                 });
                 info = await res.json();
@@ -2484,7 +2484,7 @@
 
     async function loadStudents() {
         try {
-            const response = await fetch(`http://127.0.0.1:5000/api/classes/${classId}/students`, {
+            const response = await fetch(`/api/classes/${classId}/students`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await response.json();
@@ -2677,7 +2677,7 @@
         formData.append('file', _composeSelectedFile);
         formData.append('title', title);
         try {
-            const res = await fetch(`http://127.0.0.1:5000/api/activities/${classId}/upload`, {
+            const res = await fetch(`/api/activities/${classId}/upload`, {
                 method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: formData
             });
             const data = await res.json();
@@ -2703,7 +2703,7 @@
 
     async function loadActivityList() {
         try {
-            const res = await fetch(`http://127.0.0.1:5000/api/activities/${classId}`,
+            const res = await fetch(`/api/activities/${classId}`,
                 { headers: { 'Authorization': `Bearer ${token}` } });
             if (res.ok) _allActivities = await res.json();
         } catch {}
@@ -2763,7 +2763,7 @@
         const btn = document.getElementById('streamPostBtn');
         btn.disabled = true;
         try {
-            const res = await fetch(`http://127.0.0.1:5000/api/stream/${classId}/stream`, {
+            const res = await fetch(`/api/stream/${classId}/stream`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({ message: message || null, activity_id: _selectedActivityId || null, post_type: postType })
@@ -2790,7 +2790,7 @@
         // Student: batch fetch statuses
         if (role === 'student') {
             try {
-                const sRes = await fetch(`http://127.0.0.1:5000/api/submissions/my-statuses?class_id=${classId}`,
+                const sRes = await fetch(`/api/submissions/my-statuses?class_id=${classId}`,
                     { headers: { 'Authorization': `Bearer ${token}` } });
                 if (sRes.ok) _statusMap = await sRes.json();
             } catch {}
@@ -2799,8 +2799,8 @@
         try {
             // Fetch stream posts AND all activities in parallel
             const [streamRes, actRes] = await Promise.all([
-                fetch(`http://127.0.0.1:5000/api/stream/${classId}/stream`, { headers: { 'Authorization': `Bearer ${token}` } }),
-                fetch(`http://127.0.0.1:5000/api/activities/${classId}`,    { headers: { 'Authorization': `Bearer ${token}` } })
+                fetch(`/api/stream/${classId}/stream`, { headers: { 'Authorization': `Bearer ${token}` } }),
+                fetch(`/api/activities/${classId}`,    { headers: { 'Authorization': `Bearer ${token}` } })
             ]);
 
             const streamPosts  = streamRes.ok  ? await streamRes.json() : [];
@@ -2968,7 +2968,7 @@
         const message = (input?.value || '').trim();
         if (!message) return;
         try {
-            const res = await fetch(`http://127.0.0.1:5000/api/stream/${classId}/stream/${postId}/comments`, {
+            const res = await fetch(`/api/stream/${classId}/stream/${postId}/comments`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({ message })
@@ -3013,7 +3013,7 @@
 
     async function deleteComment(postId, commentId) {
         try {
-            const res = await fetch(`http://127.0.0.1:5000/api/stream/${classId}/stream/${postId}/comments/${commentId}`, {
+            const res = await fetch(`/api/stream/${classId}/stream/${postId}/comments/${commentId}`, {
                 method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` }
             });
             if (res.ok) {
@@ -3063,11 +3063,11 @@
             let res;
             if (String(postId).startsWith('legacy-')) {
                 const activityId = String(postId).replace('legacy-', '');
-                res = await fetch(`http://127.0.0.1:5000/api/activities/${activityId}/delete`, {
+                res = await fetch(`/api/activities/${activityId}/delete`, {
                     method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` }
                 });
             } else {
-                res = await fetch(`http://127.0.0.1:5000/api/stream/${classId}/stream/${postId}`, {
+                res = await fetch(`/api/stream/${classId}/stream/${postId}`, {
                     method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` }
                 });
             }
@@ -3119,7 +3119,7 @@
 
     async function sendDueDate(dueDate) {
         try {
-            const response = await fetch(`http://127.0.0.1:5000/api/activities/${currentDueDateActivityId}/set-due-date`, {
+            const response = await fetch(`/api/activities/${currentDueDateActivityId}/set-due-date`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
                 body: JSON.stringify({ due_date: dueDate })
@@ -3141,7 +3141,7 @@
 
     async function fetchGroups() {
         try {
-            const res = await fetch(`http://127.0.0.1:5000/api/classes/${classId}/groups`, {
+            const res = await fetch(`/api/classes/${classId}/groups`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             window.allGroups = await res.json() || [];
@@ -3150,7 +3150,7 @@
 
     async function loadGroups() {
         try {
-            const res = await fetch(`http://127.0.0.1:5000/api/classes/${classId}/groups`, {
+            const res = await fetch(`/api/classes/${classId}/groups`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
@@ -3365,8 +3365,8 @@
         if (!memberIds.includes(leaderId)) memberIds.push(leaderId);
 
         const url = id
-            ? `http://127.0.0.1:5000/api/classes/${classId}/groups/${id}`
-            : `http://127.0.0.1:5000/api/classes/${classId}/groups`;
+            ? `/api/classes/${classId}/groups/${id}`
+            : `/api/classes/${classId}/groups`;
         const method = id ? 'PUT' : 'POST';
 
         try {
@@ -3399,7 +3399,7 @@
     async function deleteGroup(groupId) {
         if (!confirm('Delete this group? This cannot be undone.')) return;
         try {
-            const res = await fetch(`http://127.0.0.1:5000/api/classes/${classId}/groups/${groupId}`, {
+            const res = await fetch(`/api/classes/${classId}/groups/${groupId}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -3417,7 +3417,7 @@
     async function loadSessions() {
         if (role !== 'professor') return;
         try {
-            const res = await fetch(`http://127.0.0.1:5000/api/classes/${classId}/sessions`, {
+            const res = await fetch(`/api/classes/${classId}/sessions`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await res.json();
@@ -3532,7 +3532,7 @@
     async function deleteSession(sessionId) {
         if (!confirm('Delete this session? This cannot be undone.')) return;
         try {
-            const res = await fetch(`http://127.0.0.1:5000/api/classes/${classId}/sessions/${sessionId}`, {
+            const res = await fetch(`/api/classes/${classId}/sessions/${sessionId}`, {
                 method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` }
             });
             if (res.ok) { showToast('Session deleted!', 'info'); loadSessions(); }
@@ -3636,8 +3636,8 @@
         }));
 
         const url = sessionId
-            ? `http://127.0.0.1:5000/api/classes/${classId}/sessions/${sessionId}`
-            : `http://127.0.0.1:5000/api/classes/${classId}/sessions`;
+            ? `/api/classes/${classId}/sessions/${sessionId}`
+            : `/api/classes/${classId}/sessions`;
         const method = sessionId ? 'PUT' : 'POST';
 
         try {
@@ -3685,7 +3685,7 @@
         document.getElementById('inviteSendBtn').disabled = true;
         _invitePreviewStudentId = null;
         try {
-            const r = await fetch(`http://127.0.0.1:5000/api/classes/${classId}/invite/lookup?student_number=${encodeURIComponent(sn)}`, {
+            const r = await fetch(`/api/classes/${classId}/invite/lookup?student_number=${encodeURIComponent(sn)}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const d = await r.json();
@@ -3719,7 +3719,7 @@
         btn.disabled = true;
         btn.innerHTML = '<i class="ph-bold ph-spinner"></i> Sending...';
         try {
-            const r = await fetch(`http://127.0.0.1:5000/api/classes/${classId}/invite`, {
+            const r = await fetch(`/api/classes/${classId}/invite`, {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify({ student_id: _invitePreviewStudentId })
@@ -3745,7 +3745,7 @@
         if (role !== 'professor') return;
         const container = document.getElementById('pendingInvitesList');
         try {
-            const r = await fetch(`http://127.0.0.1:5000/api/classes/${classId}/invites`, {
+            const r = await fetch(`/api/classes/${classId}/invites`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const data = await r.json();
@@ -3780,7 +3780,7 @@
 
     async function cancelInvite(inviteId) {
         try {
-            const r = await fetch(`http://127.0.0.1:5000/api/classes/${classId}/invites/${inviteId}`, {
+            const r = await fetch(`/api/classes/${classId}/invites/${inviteId}`, {
                 method: 'DELETE',
                 headers: { 'Authorization': `Bearer ${token}` }
             });
@@ -3816,7 +3816,7 @@
             </div>
             <div class="an-skeleton" style="height:200px;border-radius:14px;margin-bottom:16px;"></div>`;
         try {
-            const r = await fetch(`http://127.0.0.1:5000/api/classes/${classId}/analytics`, {
+            const r = await fetch(`/api/classes/${classId}/analytics`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             });
             const d = await r.json();
@@ -4228,7 +4228,7 @@
     }, 50);
 
     // ─── REAL-TIME via Socket.IO ───────────────────────────────────
-    const _streamSocket = io('http://127.0.0.1:5000');
+    const _streamSocket = io('');
     let _streamReloading = false;
 
     // Student accepted invite → refresh students list + pending invites
@@ -4257,7 +4257,7 @@
         const _pillCfgKeys = { draft: 'progress', submitted: 'submitted', graded: 'graded' };
         setInterval(async () => {
             try {
-                const res = await fetch(`http://127.0.0.1:5000/api/submissions/my-statuses?class_id=${classId}`,
+                const res = await fetch(`/api/submissions/my-statuses?class_id=${classId}`,
                     { headers: { 'Authorization': `Bearer ${token}` } });
                 if (!res.ok) return;
                 const fresh = await res.json();
@@ -4402,7 +4402,7 @@
         formData.append('title', finalTitle);
 
         try {
-            const res = await fetch('http://127.0.0.1:5000/api/activities/' + classId + '/upload', {
+            const res = await fetch('/api/activities/' + classId + '/upload', {
                 method: 'POST', headers: { 'Authorization': 'Bearer ' + token }, body: formData
             });
             const data = await res.json();

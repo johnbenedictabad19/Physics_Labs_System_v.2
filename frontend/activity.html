@@ -1889,8 +1889,8 @@ async function loadActivity() {
     try {
         // Always fetch: parsed activity + edited content
         const [parsedRes, editedRes] = await Promise.all([
-            fetch(`http://127.0.0.1:5000/api/activities/${activityId}/parsed`, { headers: { 'Authorization': `Bearer ${token}` } }),
-            fetch(`http://127.0.0.1:5000/api/activities/${activityId}/edited`, { headers: { 'Authorization': `Bearer ${token}` } })
+            fetch(`/api/activities/${activityId}/parsed`, { headers: { 'Authorization': `Bearer ${token}` } }),
+            fetch(`/api/activities/${activityId}/edited`, { headers: { 'Authorization': `Bearer ${token}` } })
         ]);
 
         if (!parsedRes.ok) {
@@ -1917,7 +1917,7 @@ async function loadActivity() {
 
             // 1. My submission
             try {
-                const subRes = await fetch(`http://127.0.0.1:5000/api/submissions/${activityId}/my-submission`,
+                const subRes = await fetch(`/api/submissions/${activityId}/my-submission`,
                     { headers: { 'Authorization': `Bearer ${token}` } });
                 if (subRes.ok) {
                     const sub = await safeJson(subRes);
@@ -1934,7 +1934,7 @@ async function loadActivity() {
                 if (cid) {
                     try {
                         // /my-group returns exactly THIS student's group with all members + is_leader
-                        const mgRes = await fetch(`http://127.0.0.1:5000/api/classes/${cid}/my-group`,
+                        const mgRes = await fetch(`/api/classes/${cid}/my-group`,
                             { headers: { 'Authorization': `Bearer ${token}` } });
                         if (mgRes.ok) {
                             const mg = await safeJson(mgRes);
@@ -1948,7 +1948,7 @@ async function loadActivity() {
                     // If my-group failed, try /groups as fallback (returns student's group(s) filtered)
                     if (!myGroup) {
                         try {
-                            const grpRes = await fetch(`http://127.0.0.1:5000/api/classes/${cid}/groups`,
+                            const grpRes = await fetch(`/api/classes/${cid}/groups`,
                                 { headers: { 'Authorization': `Bearer ${token}` } });
                             if (grpRes.ok) {
                                 const grps = await safeJson(grpRes);
@@ -1965,7 +1965,7 @@ async function loadActivity() {
                 if (myGroup) {
                     try {
                         const draftRes = await fetch(
-                            `http://127.0.0.1:5000/api/submissions/${activityId}/group-draft?group_id=${myGroup.id}`,
+                            `/api/submissions/${activityId}/group-draft?group_id=${myGroup.id}`,
                             { headers: { 'Authorization': `Bearer ${token}` } });
                         if (draftRes.ok) {
                             const draft = await safeJson(draftRes);
@@ -1981,7 +1981,7 @@ async function loadActivity() {
 
         // Student: always set up real-time grade listener regardless of group/submission status
         if (role === 'student') {
-            const gradeSock = window._phSocket || io('http://127.0.0.1:5000');
+            const gradeSock = window._phSocket || io('');
             window._phSocket = gradeSock;
             gradeSock.on('submission_graded', _onSubmissionGraded);
         }
@@ -3127,8 +3127,8 @@ async function loadProfGroups() {
     }
     try {
         const [grpRes, subRes] = await Promise.all([
-            fetch(`http://127.0.0.1:5000/api/classes/${cid}/groups`, { headers: { 'Authorization': `Bearer ${token}` } }),
-            fetch(`http://127.0.0.1:5000/api/submissions/${activityId}/all`,   { headers: { 'Authorization': `Bearer ${token}` } })
+            fetch(`/api/classes/${cid}/groups`, { headers: { 'Authorization': `Bearer ${token}` } }),
+            fetch(`/api/submissions/${activityId}/all`,   { headers: { 'Authorization': `Bearer ${token}` } })
         ]);
         profGroups      = grpRes.ok ? (await grpRes.json() || []) : [];
         profSubmissions = subRes.ok ? (await subRes.json() || []) : [];
@@ -3391,7 +3391,7 @@ async function saveDraft() {
 
     showSaveIndicator('saving', 'Saving…');
     try {
-        const res = await fetch(`http://127.0.0.1:5000/api/submissions/${activityId}/draft`, {
+        const res = await fetch(`/api/submissions/${activityId}/draft`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ ...data, group_id: myGroup?.id || null })
@@ -3766,7 +3766,7 @@ async function saveSectionEdit(uid, sType) {
     if (!editor) return;
     const html = editor.root.innerHTML;
     try {
-        const res = await fetch(`http://127.0.0.1:5000/api/activities/${activityId}/save-edit`, {
+        const res = await fetch(`/api/activities/${activityId}/save-edit`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ section_type: sType, content_html: html })
@@ -4202,7 +4202,7 @@ async function submitActivity() {
         form.append('student_info',      JSON.stringify(data.student_info));
         if (fileInput?.files[0]) form.append('file', fileInput.files[0]);
 
-        const res = await fetch(`http://127.0.0.1:5000/api/submissions/${activityId}/submit`, {
+        const res = await fetch(`/api/submissions/${activityId}/submit`, {
             method: 'POST', headers: { 'Authorization': `Bearer ${token}` }, body: form
         });
         const ct = res.headers.get('content-type') || '';
@@ -4254,7 +4254,7 @@ async function submitActivity() {
 async function unsubmitActivity() {
     _selfUnsubmitting = true;
     try {
-        const res = await fetch(`http://127.0.0.1:5000/api/submissions/${activityId}/unsubmit`, {
+        const res = await fetch(`/api/submissions/${activityId}/unsubmit`, {
             method: 'POST', headers: { 'Authorization': `Bearer ${token}` }
         });
         const result = await safeJson(res);
@@ -4387,7 +4387,7 @@ function initCollab() {
     _collabRoom = { activity_id: activityId, group_id: myGroup.id };
     // Reuse the socket created by script.js notification bell (if already created),
     // so we only have one WebSocket connection per page.
-    collabSocket = window._phSocket || io('http://127.0.0.1:5000', { transports: ['websocket', 'polling'] });
+    collabSocket = window._phSocket || io('', { transports: ['websocket', 'polling'] });
     window._phSocket = collabSocket;
 
     // Emit join immediately if socket already connected (reused from notification bell)
@@ -4629,7 +4629,7 @@ loadActivity();
 
     setInterval(async () => {
         try {
-            const res = await fetch(`http://127.0.0.1:5000/api/submissions/${activityId}/my-submission`,
+            const res = await fetch(`/api/submissions/${activityId}/my-submission`,
                 { headers: { 'Authorization': `Bearer ${token}` } });
             if (!res.ok) return;
             const sub = await res.json();

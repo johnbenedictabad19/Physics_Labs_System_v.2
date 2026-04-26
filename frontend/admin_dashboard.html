@@ -509,7 +509,7 @@ if (_adminAvEl) {
     if (pic) { const img = _adminAvEl.querySelector('img'); if (img) { img.src = pic; img.style.display = 'block'; if (ini) ini.style.display = 'none'; } }
 }
 
-const BASE = 'http://127.0.0.1:5000/api';
+const BASE = '/api';
 const HEADERS = () => ({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` });
 
 let allUsers   = [];

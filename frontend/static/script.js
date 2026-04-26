@@ -1,4 +1,5 @@
-const API_URL = 'http://127.0.0.1:5000/api/auth';
+const BASE_URL = window.location.origin;
+const API_URL = `${BASE_URL}/api/auth`;
 
 // ===== MODAL CLOSE ANIMATION =====
 function closeModal(overlayEl) {
@@ -31,7 +32,7 @@ function observeFade(root) {
 (function () {
     if (typeof io === 'undefined') return;
     try {
-        const _dev = io('http://127.0.0.1:5000', { transports: ['websocket'] });
+        const _dev = io(`${BASE_URL}`, { transports: ['websocket'] });
         _dev.on('dev_reload', () => window.location.reload());
     } catch (e) {}
 })();
@@ -257,7 +258,7 @@ async function _loadNotifications(skipBadge = false) {
     const token = localStorage.getItem('token');
     if (!token) return;
     try {
-        const data = await fetch('http://127.0.0.1:5000/api/notifications/', {
+        const data = await fetch(`${BASE_URL}/api/notifications/`, {
             headers: { 'Authorization': `Bearer ${token}` }
         }).then(r => r.json());
         const list = document.getElementById('ndList');
@@ -274,7 +275,7 @@ async function _loadNotifications(skipBadge = false) {
 
 async function openNotif(id, link) {
     const token = localStorage.getItem('token');
-    try { await fetch(`http://127.0.0.1:5000/api/notifications/${id}/read`, { method:'POST', headers:{'Authorization':`Bearer ${token}`} }); } catch {}
+    try { await fetch(`${BASE_URL}/api/notifications/${id}/read`, { method:'POST', headers:{'Authorization':`Bearer ${token}`} }); } catch {}
     document.getElementById('notifDropdown')?.classList.remove('nd-open');
     if (_notifUnread > 0) _updateNotifBadge(_notifUnread - 1);
     const el = document.querySelector(`.nd-item[onclick*="openNotif(${id},"]`);
@@ -289,7 +290,7 @@ async function openNotif(id, link) {
 
 async function markAllNotifRead() {
     const token = localStorage.getItem('token');
-    try { await fetch('http://127.0.0.1:5000/api/notifications/read-all', { method:'POST', headers:{'Authorization':`Bearer ${token}`} }); } catch {}
+    try { await fetch(`${BASE_URL}/api/notifications/read-all`, { method:'POST', headers:{'Authorization':`Bearer ${token}`} }); } catch {}
     _updateNotifBadge(0);
     document.querySelectorAll('.nd-unread').forEach(el => {
         el.classList.remove('nd-unread');
@@ -306,7 +307,7 @@ async function toggleNotifDropdown() {
         const token = localStorage.getItem('token');
         if (token) {
             try {
-                await fetch('http://127.0.0.1:5000/api/notifications/read-all', {
+                await fetch(`${BASE_URL}/api/notifications/read-all`, {
                     method: 'POST', headers: { 'Authorization': `Bearer ${token}` }
                 });
             } catch {}
@@ -374,7 +375,7 @@ async function respondInviteToast(inviteId, action, btn) {
     const toast = btn.closest('.notif-toast');
     btn.disabled = true;
     try {
-        const r = await fetch(`http://127.0.0.1:5000/api/classes/invites/${inviteId}/respond`, {
+        const r = await fetch(`${BASE_URL}/api/classes/invites/${inviteId}/respond`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ action })
@@ -396,7 +397,7 @@ async function openInviteResponseModal(inviteId) {
     // Fetch invite details
     let inv;
     try {
-        const r = await fetch(`http://127.0.0.1:5000/api/classes/invites/pending`, {
+        const r = await fetch(`${BASE_URL}/api/classes/invites/pending`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         const list = await r.json();
@@ -455,7 +456,7 @@ async function _handleInviteResponse(inviteId, action, modal) {
     const btn = document.getElementById(action === 'accept' ? 'inviteAcceptBtn' : 'inviteDeclineBtn');
     if (btn) btn.disabled = true;
     try {
-        const r = await fetch(`http://127.0.0.1:5000/api/classes/invites/${inviteId}/respond`, {
+        const r = await fetch(`${BASE_URL}/api/classes/invites/${inviteId}/respond`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
             body: JSON.stringify({ action })
@@ -485,7 +486,7 @@ function _getMyUserId() {
 function _setupNotifSocket() {
     const myId = _getMyUserId();
     if (!myId) return;
-    const sock = window._phSocket || io('http://127.0.0.1:5000');
+    const sock = window._phSocket || io(`${BASE_URL}`);
     window._phSocket = sock;
     sock.on('new_notification', n => {
         if (parseInt(n.user_id) !== myId) return;

@@ -804,7 +804,7 @@ function copyClassCode(id) {
 }
 async function doArchiveMember(id) {
     try {
-        const r = await fetch(`http://127.0.0.1:5000/api/classes/${id}/archive-member`, {
+        const r = await fetch(`/api/classes/${id}/archive-member`, {
             method: 'POST', headers: { 'Authorization': `Bearer ${token}` }
         });
         const d = await r.json();
@@ -826,7 +826,7 @@ function closeCM() { document.getElementById('cmOverlay').classList.remove('open
 async function doUnenroll(id) {
     closeCM();
     try {
-        const r = await fetch(`http://127.0.0.1:5000/api/classes/${id}/unenroll`, {
+        const r = await fetch(`/api/classes/${id}/unenroll`, {
             method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` }
         });
         const d = await r.json();
@@ -888,7 +888,7 @@ function skeletonCards(n) {
 async function loadClasses() {
     document.getElementById('classesList').innerHTML = skeletonCards(4);
     try {
-        const data = await fetch('http://127.0.0.1:5000/api/classes/my-classes', {
+        const data = await fetch('/api/classes/my-classes', {
             headers: { 'Authorization': `Bearer ${token}` }
         }).then(r => r.json());
 
@@ -945,7 +945,7 @@ async function loadAllActivities(classIds) {
     const container = document.getElementById('allActivitiesList');
     try {
         const allActivities = (await Promise.all(
-            classIds.map(id => fetch(`http://127.0.0.1:5000/api/activities/${id}`, {
+            classIds.map(id => fetch(`/api/activities/${id}`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             }).then(r => r.json()))
         )).flat();
@@ -962,7 +962,7 @@ async function loadAllActivities(classIds) {
         }
 
         const submissions = await Promise.all(
-            allActivities.map(a => fetch(`http://127.0.0.1:5000/api/submissions/${a.id}/my-submission`, {
+            allActivities.map(a => fetch(`/api/submissions/${a.id}/my-submission`, {
                 headers: { 'Authorization': `Bearer ${token}` }
             }).then(r => r.ok ? r.json() : null).catch(() => null))
         );
@@ -1039,7 +1039,7 @@ async function confirmJoin() {
     btn.disabled = true; btn.querySelector('.button_text').innerHTML = '<i class="ph-bold ph-spinner"></i> Joining...';
 
     try {
-        const res  = await fetch('http://127.0.0.1:5000/api/classes/join', {
+        const res  = await fetch('/api/classes/join', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ class_code })

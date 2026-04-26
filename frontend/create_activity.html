@@ -5629,7 +5629,7 @@ let _groupData = [];
 
 async function loadGroupsForActivity() {
     try {
-        const res = await fetch(`http://127.0.0.1:5000/api/classes/${classId}/groups`, {
+        const res = await fetch(`/api/classes/${classId}/groups`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         if (!res.ok) return;
@@ -6527,12 +6527,12 @@ async function prefillFromDocx(activityId, suppressToast = false) {
     showToast('Loading parsed activity...', 'info');
     try {
         // Re-parse the DOCX from disk so any parser fixes are applied to the stored data
-        await fetch(`http://127.0.0.1:5000/api/activities/${activityId}/reparse`, {
+        await fetch(`/api/activities/${activityId}/reparse`, {
             method: 'POST',
             headers: { 'Authorization': `Bearer ${token}` }
         }).catch(() => {}); // silent — if file is missing or already latest, fall through
 
-        const res = await fetch(`http://127.0.0.1:5000/api/activities/${activityId}/parsed`, {
+        const res = await fetch(`/api/activities/${activityId}/parsed`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         if (!res.ok) { showToast('Cannot load parsed data!', 'error'); return; }
@@ -7344,7 +7344,7 @@ async function saveActivity() {
         return;
     }
     try {
-        const res = await fetch(`http://127.0.0.1:5000/api/activities/${classId}/create-manual`, {
+        const res = await fetch(`/api/activities/${classId}/create-manual`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ title, activity_data: activityData })
@@ -7384,7 +7384,7 @@ async function confirmPostToStream() {
     postBtn.disabled = true;
     postBtn.innerHTML = '<i class="ph-bold ph-spinner"></i> Posting...';
     try {
-        const res = await fetch(`http://127.0.0.1:5000/api/stream/${classId}/stream`, {
+        const res = await fetch(`/api/stream/${classId}/stream`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({
@@ -7415,7 +7415,7 @@ async function confirmPostToStream() {
 async function prefillFromEdit(activityId) {
     showToast('Loading activity for editing...', 'info');
     try {
-        const res = await fetch(`http://127.0.0.1:5000/api/activities/${activityId}/parsed`, {
+        const res = await fetch(`/api/activities/${activityId}/parsed`, {
             headers: { 'Authorization': `Bearer ${token}` }
         });
         if (!res.ok) { showToast('Cannot load activity!', 'error'); return; }
@@ -7454,7 +7454,7 @@ async function saveActivityEdit(activityId) {
     const textOverlays = collectTextOverlays();
 
     try {
-        const res = await fetch(`http://127.0.0.1:5000/api/activities/${activityId}/update`, {
+        const res = await fetch(`/api/activities/${activityId}/update`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
             body: JSON.stringify({ title, text_overlays: textOverlays })

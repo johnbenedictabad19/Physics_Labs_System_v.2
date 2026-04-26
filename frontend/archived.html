@@ -259,7 +259,7 @@ function skeletonCards(n) {
 async function loadArchived() {
     document.getElementById('archivedList').innerHTML = skeletonCards(4);
     try {
-        const data = await fetch('http://127.0.0.1:5000/api/classes/archived', {
+        const data = await fetch('/api/classes/archived', {
             headers: { 'Authorization': `Bearer ${token}` }
         }).then(r => r.json());
 
@@ -313,8 +313,8 @@ async function loadArchived() {
 async function doUnarchive(id) {
     try {
         const endpoint = role === 'professor'
-            ? `http://127.0.0.1:5000/api/classes/${id}/archive`
-            : `http://127.0.0.1:5000/api/classes/${id}/archive-member`;
+            ? `/api/classes/${id}/archive`
+            : `/api/classes/${id}/archive-member`;
         const r = await fetch(endpoint, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
         const d = await r.json();
         if (r.ok) { showToast(d.message, 'success'); loadArchived(); }
