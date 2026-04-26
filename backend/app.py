@@ -27,9 +27,10 @@ app = Flask(__name__,
     template_folder='../frontend'
 )
 
-_origins = os.environ.get('ALLOWED_ORIGINS', 'http://localhost:5000').split(',')
-CORS(app, resources={r"/*": {"origins": _origins}})
-socketio.init_app(app, cors_allowed_origins=_origins, async_mode='gevent')
+_origins = os.environ.get('ALLOWED_ORIGINS', '*')
+_origins_list = _origins if _origins == '*' else _origins.split(',')
+CORS(app, resources={r"/*": {"origins": _origins_list}})
+socketio.init_app(app, cors_allowed_origins=_origins_list, async_mode='gevent')
 limiter.init_app(app)
 
 # Configuration

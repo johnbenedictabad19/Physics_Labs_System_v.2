@@ -59,7 +59,7 @@ const applyTheme = (t) => {
   if (themeToggle) themeToggle.checked = (t === 'dark');
   if (themeToggleCta) themeToggleCta.checked = (t === 'dark');
 };
-applyTheme(localStorage.getItem('physlab_theme') || 'dark');
+applyTheme(localStorage.getItem('physlab_theme') || 'light');
 themeToggle?.addEventListener('change', () => applyTheme(themeToggle.checked ? 'dark' : 'light'));
 themeToggleCta?.addEventListener('change', () => applyTheme(themeToggleCta.checked ? 'dark' : 'light'));
 

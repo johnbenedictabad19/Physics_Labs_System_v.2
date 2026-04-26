@@ -73,11 +73,11 @@ code{font-family:'JetBrains Mono',ui-monospace,monospace;font-size:0.9em;backgro
 #splash.hidden{opacity:0;visibility:hidden;pointer-events:none}
 .splash-logo{display:flex;flex-direction:column;align-items:center;gap:16px;animation:splashIn .6s cubic-bezier(.22,1,.36,1) both}
 .splash-logo img{width:64px;height:64px;filter:drop-shadow(0 0 24px rgba(10,102,194,.6))}
-.splash-logo-text{font-family:'Abril Fatface',serif;font-size:28px;letter-spacing:2px;color:var(--white,#fff)}
+.splash-logo-text{font-family:'Abril Fatface',serif;font-size:28px;letter-spacing:2px;color:var(--white)}
 .splash-bar-wrap{width:220px;display:flex;flex-direction:column;align-items:center;gap:8px;animation:splashIn .6s .15s cubic-bezier(.22,1,.36,1) both}
-.splash-track{width:100%;height:3px;background:rgba(255,255,255,.1);border-radius:99px;overflow:hidden}
+.splash-track{width:100%;height:3px;background:var(--border,rgba(255,255,255,.1));border-radius:99px;overflow:hidden}
 .splash-fill{height:100%;width:0%;background:linear-gradient(90deg,#0A66C2,#06B6D4);border-radius:99px;transition:width .25s ease}
-.splash-pct{font-size:12px;font-family:'JetBrains Mono',monospace;color:rgba(255,255,255,.45);letter-spacing:1px}
+.splash-pct{font-size:12px;font-family:'JetBrains Mono',monospace;color:var(--text-muted,rgba(255,255,255,.45));letter-spacing:1px}
 @keyframes splashIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
 
 /* ═══ NAV ═══ */

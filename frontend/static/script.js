@@ -32,7 +32,7 @@ function observeFade(root) {
 (function () {
     if (typeof io === 'undefined') return;
     try {
-        const _dev = io(`${BASE_URL}`, { transports: ['websocket'] });
+        const _dev = io(`${BASE_URL}`, { transports: ['websocket', 'polling'], extraHeaders: { 'ngrok-skip-browser-warning': 'true' } });
         _dev.on('dev_reload', () => window.location.reload());
     } catch (e) {}
 })();
@@ -486,7 +486,7 @@ function _getMyUserId() {
 function _setupNotifSocket() {
     const myId = _getMyUserId();
     if (!myId) return;
-    const sock = window._phSocket || io(`${BASE_URL}`);
+    const sock = window._phSocket || io(`${BASE_URL}`, { transports: ['websocket', 'polling'], extraHeaders: { 'ngrok-skip-browser-warning': 'true' } });
     window._phSocket = sock;
     sock.on('new_notification', n => {
         if (parseInt(n.user_id) !== myId) return;

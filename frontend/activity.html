@@ -1981,7 +1981,7 @@ async function loadActivity() {
 
         // Student: always set up real-time grade listener regardless of group/submission status
         if (role === 'student') {
-            const gradeSock = window._phSocket || io('');
+            const gradeSock = window._phSocket || io('', { transports: ['websocket', 'polling'], extraHeaders: { 'ngrok-skip-browser-warning': 'true' } });
             window._phSocket = gradeSock;
             gradeSock.on('submission_graded', _onSubmissionGraded);
         }
@@ -4396,16 +4396,24 @@ function initCollab() {
     _collabRoom = { activity_id: activityId, group_id: myGroup.id };
     // Reuse the socket created by script.js notification bell (if already created),
     // so we only have one WebSocket connection per page.
-    collabSocket = window._phSocket || io('', { transports: ['websocket', 'polling'] });
+    collabSocket = window._phSocket || io('', { transports: ['websocket', 'polling'], extraHeaders: { 'ngrok-skip-browser-warning': 'true' } });
     window._phSocket = collabSocket;
 
+    const _joinRoom = () => {
+        collabSocket.emit('join_collab', { token, ...(_collabRoom) });
+        // Also fetch latest group draft from DB in case room state is empty
+        fetch(`/api/submissions/${activityId}/group-draft`, {
+            headers: { 'Authorization': `Bearer ${token}` }
+        }).then(r => r.ok ? r.json() : null).then(d => {
+            if (d && (d.answers || d.table_data)) {
+                applyDraftData(d);
+            }
+        }).catch(() => {});
+    };
+
     // Emit join immediately if socket already connected (reused from notification bell)
-    if (collabSocket.connected) {
-        collabSocket.emit('join_collab', { token, ...(_collabRoom) });
-    }
-    collabSocket.on('connect', () => {
-        collabSocket.emit('join_collab', { token, ...(_collabRoom) });
-    });
+    if (collabSocket.connected) _joinRoom();
+    collabSocket.on('connect', _joinRoom);
     collabSocket.on('presence_update',   _onPresenceUpdate);
     collabSocket.on('field_updated',     _onFieldUpdated);
     collabSocket.on('field_focused',     _onFieldFocused);
