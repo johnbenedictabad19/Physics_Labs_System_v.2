@@ -42,7 +42,7 @@ def format_post(post, current_user_id):
                 'id': a.id,
                 'title': a.title,
                 'file_type': a.file_type,
-                'due_date_display': a.due_date.strftime('%b %d, %Y %I:%M %p') if a.due_date else None,
+                'due_date_display': (a.due_date.isoformat() + 'Z') if a.due_date else None,
                 'is_overdue': bool(a.due_date and a.due_date < datetime.utcnow())
             }
 
@@ -56,7 +56,7 @@ def format_post(post, current_user_id):
             'user_role':  commenter.role if commenter else '',
             'avatar':     commenter.avatar or '' if commenter else '',
             'message':    c.message,
-            'created_at': c.created_at.strftime('%b %d, %Y %I:%M %p'),
+            'created_at': c.created_at.isoformat() + 'Z',
             'is_mine':    c.user_id == current_user_id
         })
 
@@ -69,7 +69,7 @@ def format_post(post, current_user_id):
         'posted_by':     author.full_name if author else 'Unknown',
         'avatar':        author.avatar or '' if author else '',
         'is_mine':       post.posted_by_id == current_user_id,
-        'created_at':    post.created_at.strftime('%b %d, %Y %I:%M %p'),
+        'created_at':    post.created_at.isoformat() + 'Z',
         'comments':      comments,
         'comment_count': len(comments)
     }
@@ -200,7 +200,7 @@ def add_comment(class_id, post_id):
         'user_role':  user.role,
         'avatar':     user.avatar or '',
         'message':    comment.message,
-        'created_at': comment.created_at.strftime('%b %d, %Y %I:%M %p'),
+        'created_at': comment.created_at.isoformat() + 'Z',
         'is_mine':    True
     }), 201
 

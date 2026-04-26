@@ -2808,6 +2808,7 @@
 
             // Only show activities that were explicitly posted to stream
             const parseDate = s => { try { return new Date(s); } catch { return new Date(0); } };
+            const fmtDatetime = s => { try { return new Date(s).toLocaleString('en-PH', { month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit', hour12:true }); } catch { return s; } };
             const allPosts = [...streamPosts]
                 .sort((a, b) => parseDate(b.created_at) - parseDate(a.created_at));
 
@@ -2851,7 +2852,7 @@
             const cfg = pillCfg[key];
             const icon = fileIcons[a.file_type] || fileIcons.docx;
             const dueHtml = a.due_date_display
-                ? `<span style="color:${a.is_overdue?'#ef4444':'#3b82f6'}">${a.is_overdue?'⚠ Overdue':'Due'}: ${a.due_date_display}</span>`
+                ? `<span style="color:${a.is_overdue?'#ef4444':'#3b82f6'}">${a.is_overdue?'⚠ Overdue':'Due'}: ${fmtDatetime(a.due_date_display)}</span>`
                 : '';
             const hasDue = !!a.due_date_display;
             const dueBsaColor  = hasDue ? '#f59e0b' : '#10b981';
@@ -2903,7 +2904,7 @@
                     <div>
                         <div class="stream-post-name">${p.posted_by}</div>
                         <div class="stream-post-meta">
-                            ${p.created_at}
+                            ${fmtDatetime(p.created_at)}
                         </div>
                     </div>
                 </div>
@@ -2932,7 +2933,7 @@
                     </div>
                     <div class="stream-comment-text">${c.message}</div>
                     <div class="stream-comment-footer">
-                        <span>${c.created_at}</span>
+                        <span>${fmtDatetime(c.created_at)}</span>
                         ${delBtn}
                     </div>
                 </div>

@@ -331,7 +331,7 @@ def get_announcements(class_id):
         result.append({
             'message': a.message,
             'posted_by': poster.full_name,
-            'created_at': a.created_at.strftime('%b %d, %Y %I:%M %p')
+            'created_at': a.created_at.isoformat() + 'Z'
         })
     return jsonify(result), 200
 
@@ -777,7 +777,7 @@ def get_group_grade(class_id, group_id):
         'graded': True,
         'grade': leader_sub.grade,
         'feedback': leader_sub.feedback,
-        'graded_at': leader_sub.graded_at.strftime('%b %d, %Y %I:%M %p') if leader_sub.graded_at else None
+        'graded_at': (leader_sub.graded_at.isoformat() + 'Z') if leader_sub.graded_at else None
     }), 200
 
 
