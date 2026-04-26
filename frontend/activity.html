@@ -1981,7 +1981,7 @@ async function loadActivity() {
 
         // Student: always set up real-time grade listener regardless of group/submission status
         if (role === 'student') {
-            const gradeSock = window._phSocket || io('', { transports: ['websocket', 'polling'], extraHeaders: { 'ngrok-skip-browser-warning': 'true' } });
+            const gradeSock = window._phSocket || io(window.location.origin, { transports: ['websocket', 'polling'], extraHeaders: { 'ngrok-skip-browser-warning': 'true' } });
             window._phSocket = gradeSock;
             gradeSock.on('submission_graded', _onSubmissionGraded);
         }
@@ -4396,7 +4396,7 @@ function initCollab() {
     _collabRoom = { activity_id: activityId, group_id: myGroup.id };
     // Reuse the socket created by script.js notification bell (if already created),
     // so we only have one WebSocket connection per page.
-    collabSocket = window._phSocket || io('', { transports: ['websocket', 'polling'], extraHeaders: { 'ngrok-skip-browser-warning': 'true' } });
+    collabSocket = window._phSocket || io(window.location.origin, { transports: ['websocket', 'polling'], extraHeaders: { 'ngrok-skip-browser-warning': 'true' } });
     window._phSocket = collabSocket;
 
     const _joinRoom = () => {

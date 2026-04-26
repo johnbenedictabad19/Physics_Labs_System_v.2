@@ -19,7 +19,7 @@ def notify(user_id, message, link, notif_type):
             'message': message,
             'link':    link,
             'type':    notif_type,
-            'ts':      n.created_at.isoformat()
+            'ts':      n.created_at.isoformat() + 'Z'
         }
         socketio.emit('new_notification', payload, namespace='/')
     except Exception as e:
@@ -38,7 +38,7 @@ def get_notifications():
         'link':    n.link,
         'type':    n.notif_type,
         'is_read': n.is_read,
-        'ts':      n.created_at.isoformat()
+        'ts':      n.created_at.isoformat() + 'Z'
     } for n in notifs])
 
 

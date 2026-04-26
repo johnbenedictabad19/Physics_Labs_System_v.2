@@ -26,7 +26,7 @@ def emit_feed(class_id, event_type, actor_name, actor_role, message):
             'actor':    actor_name,
             'role':     actor_role,
             'message':  message,
-            'ts':       ev.created_at.isoformat()
+            'ts':       ev.created_at.isoformat() + 'Z'
         }, namespace='/')
     except Exception as e:
         print(f'[feed] emit error: {e}')
