@@ -61,7 +61,9 @@ function _getTokenExp() {
 }
 
 function _clearSession() {
-    ['token','role','full_name','first_name'].forEach(k => localStorage.removeItem(k));
+    const uid = localStorage.getItem('user_id');
+    if (uid) localStorage.removeItem('profile_avatar_' + uid);
+    ['token','role','full_name','first_name','last_name','middle_initial','email','student_number','user_id'].forEach(k => localStorage.removeItem(k));
 }
 
 function _expireSession() {
