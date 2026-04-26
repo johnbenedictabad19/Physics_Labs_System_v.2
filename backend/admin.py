@@ -1,0 +1,362 @@
+from flask import Blueprint, request, jsonify
+from database import db
+from models import User, Class, Activity, Submission, ClassMember, Announcement, StreamPost, Group, ClassSession, FeedEvent, EditedContent, ClassInvite
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_bcrypt import Bcrypt
+
+admin = Blueprint('admin', __name__)
+bcrypt = Bcrypt()
+
+
+# ── HELPER: verify caller is admin ──────────────────────────
+def get_admin_or_403():
+    user_id = get_jwt_identity()
+    user    = User.query.get(user_id)
+    if not user or user.role != 'admin':
+        return None, jsonify({'message': 'Admin access required!'}), 403
+    return user, None, None
+
+
+# ============================================================
+# DASHBOARD STATS
+# ============================================================
+@admin.route('/admin/stats', methods=['GET'])
+@jwt_required()
+def get_stats():
+    user, err, code = get_admin_or_403()
+    if err: return err, code
+
+    total_users       = User.query.filter(User.role != 'admin').count()
+    total_professors  = User.query.filter_by(role='professor').count()
+    total_students    = User.query.filter_by(role='student').count()
+    pending_approvals = User.query.filter_by(role='professor', status='pending').count()
+    total_classes     = Class.query.count()
+    total_activities  = Activity.query.count()
+    total_submissions = Submission.query.count()
+
+    return jsonify({
+        'total_users':       total_users,
+        'total_professors':  total_professors,
+        'total_students':    total_students,
+        'pending_approvals': pending_approvals,
+        'total_classes':     total_classes,
+        'total_activities':  total_activities,
+        'total_submissions': total_submissions
+    }), 200
+
+
+# ============================================================
+# USERS
+# ============================================================
+
+# ── Get all users (exclude admins) ──
+@admin.route('/admin/users', methods=['GET'])
+@jwt_required()
+def get_all_users():
+    user, err, code = get_admin_or_403()
+    if err: return err, code
+
+    role_filter   = request.args.get('role')    # optional: professor | student
+    status_filter = request.args.get('status')  # optional: active | pending | deactivated
+    search        = request.args.get('search', '').strip().lower()
+
+    query = User.query.filter(User.role != 'admin')
+    if role_filter:   query = query.filter_by(role=role_filter)
+    if status_filter: query = query.filter_by(status=status_filter)
+
+    users = query.order_by(User.created_at.desc()).all()
+
+    # Search filter (name or email)
+    if search:
+        users = [u for u in users if search in u.full_name.lower() or search in (u.email or '').lower() or search in (u.student_number or '').lower()]
+
+    return jsonify([{
+        'id':             u.id,
+        'full_name':      u.full_name,
+        'first_name':     u.first_name,
+        'last_name':      u.last_name,
+        'middle_initial': u.middle_initial or '',
+        'email':          u.email or '',
+        'student_number': u.student_number or '',
+        'role':           u.role,
+        'status':         u.status,
+        'is_active':      u.is_active,
+        'avatar':         u.avatar or '',
+        'joined_at':      u.created_at.isoformat() if u.created_at else None
+    } for u in users]), 200
+
+
+# ── Get pending professor approvals ──
+@admin.route('/admin/pending-professors', methods=['GET'])
+@jwt_required()
+def get_pending_professors():
+    user, err, code = get_admin_or_403()
+    if err: return err, code
+
+    pending = User.query.filter_by(role='professor', status='pending').order_by(User.created_at.asc()).all()
+
+    return jsonify([{
+        'id':        u.id,
+        'full_name': u.full_name,
+        'email':     u.email or '',
+        'joined_at': u.created_at.isoformat() if u.created_at else None
+    } for u in pending]), 200
+
+
+# ── Approve professor ──
+@admin.route('/admin/users/<int:user_id>/approve', methods=['POST'])
+@jwt_required()
+def approve_professor(user_id):
+    user, err, code = get_admin_or_403()
+    if err: return err, code
+
+    target = User.query.get(user_id)
+    if not target:
+        return jsonify({'message': 'User not found!'}), 404
+    if target.role != 'professor':
+        return jsonify({'message': 'User is not a professor!'}), 400
+
+    target.status    = 'active'
+    target.is_active = True
+    db.session.commit()
+
+    return jsonify({'message': f'{target.full_name} has been approved!'}), 200
+
+
+# ── Reject / delete pending professor ──
+@admin.route('/admin/users/<int:user_id>/reject', methods=['DELETE'])
+@jwt_required()
+def reject_professor(user_id):
+    user, err, code = get_admin_or_403()
+    if err: return err, code
+
+    target = User.query.get(user_id)
+    if not target:
+        return jsonify({'message': 'User not found!'}), 404
+
+    db.session.delete(target)
+    db.session.commit()
+
+    return jsonify({'message': f'{target.full_name} has been rejected and removed.'}), 200
+
+
+# ── Deactivate user ──
+@admin.route('/admin/users/<int:user_id>/deactivate', methods=['POST'])
+@jwt_required()
+def deactivate_user(user_id):
+    user, err, code = get_admin_or_403()
+    if err: return err, code
+
+    target = User.query.get(user_id)
+    if not target:
+        return jsonify({'message': 'User not found!'}), 404
+
+    target.is_active = False
+    target.status    = 'deactivated'
+    db.session.commit()
+
+    return jsonify({'message': f'{target.full_name} has been deactivated.'}), 200
+
+
+# ── Reactivate user ──
+@admin.route('/admin/users/<int:user_id>/activate', methods=['POST'])
+@jwt_required()
+def activate_user(user_id):
+    user, err, code = get_admin_or_403()
+    if err: return err, code
+
+    target = User.query.get(user_id)
+    if not target:
+        return jsonify({'message': 'User not found!'}), 404
+
+    target.is_active = True
+    target.status    = 'active'
+    db.session.commit()
+
+    return jsonify({'message': f'{target.full_name} has been reactivated.'}), 200
+
+
+# ── Permanently delete user ──
+@admin.route('/admin/users/<int:user_id>/delete', methods=['DELETE'])
+@jwt_required()
+def delete_user(user_id):
+    user, err, code = get_admin_or_403()
+    if err: return err, code
+
+    target = User.query.get(user_id)
+    if not target:
+        return jsonify({'message': 'User not found!'}), 404
+
+    db.session.delete(target)
+    db.session.commit()
+
+    return jsonify({'message': f'{target.full_name} has been permanently deleted.'}), 200
+
+
+# ── Reset user password ──
+@admin.route('/admin/users/<int:user_id>/reset-password', methods=['POST'])
+@jwt_required()
+def reset_password(user_id):
+    user, err, code = get_admin_or_403()
+    if err: return err, code
+
+    target = User.query.get(user_id)
+    if not target:
+        return jsonify({'message': 'User not found!'}), 404
+
+    data         = request.get_json()
+    new_password = data.get('new_password', '').strip()
+
+    if not new_password or len(new_password) < 6:
+        return jsonify({'message': 'Password must be at least 6 characters!'}), 400
+
+    target.password = bcrypt.generate_password_hash(new_password).decode('utf-8')
+    db.session.commit()
+
+    return jsonify({'message': f'Password for {target.full_name} has been reset.'}), 200
+
+
+# ============================================================
+# CLASSES
+# ============================================================
+
+# ── Get all classes ──
+@admin.route('/admin/classes', methods=['GET'])
+@jwt_required()
+def get_all_classes():
+    user, err, code = get_admin_or_403()
+    if err: return err, code
+
+    search = request.args.get('search', '').strip().lower()
+    classes = Class.query.order_by(Class.created_at.desc()).all()
+
+    result = []
+    for c in classes:
+        professor   = User.query.get(c.professor_id)
+        member_count = ClassMember.query.filter_by(class_id=c.id).count()
+        activity_count = Activity.query.filter_by(class_id=c.id).count()
+
+        if search and search not in c.class_name.lower() and search not in c.subject.lower():
+            continue
+
+        result.append({
+            'id':             c.id,
+            'class_name':     c.class_name,
+            'subject':        c.subject,
+            'section':        c.section,
+            'class_code':     c.class_code,
+            'professor_name': professor.full_name if professor else '—',
+            'professor_email': professor.email if professor else '—',
+            'member_count':   member_count,
+            'activity_count': activity_count,
+            'created_at':     c.created_at.isoformat() if c.created_at else None,
+            'is_archived':    c.is_archived or False
+        })
+
+    return jsonify(result), 200
+
+
+# ── Archive (delete) class ──
+@admin.route('/admin/classes/<int:class_id>/delete', methods=['DELETE'])
+@jwt_required()
+def delete_class(class_id):
+    user, err, code = get_admin_or_403()
+    if err: return err, code
+
+    target = Class.query.get(class_id)
+    if not target:
+        return jsonify({'message': 'Class not found!'}), 404
+
+    class_name = target.class_name
+
+    # Delete all related records to avoid orphaned rows
+    # Sessions + attendance (cascade via relationship)
+    for s in ClassSession.query.filter_by(class_id=class_id).all():
+        db.session.delete(s)
+
+    # Groups + members (cascade via relationship)
+    for g in Group.query.filter_by(class_id=class_id).all():
+        db.session.delete(g)
+
+    # Stream posts + comments (cascade via relationship)
+    for p in StreamPost.query.filter_by(class_id=class_id).all():
+        db.session.delete(p)
+
+    # Activities + their submissions and edited contents
+    for a in Activity.query.filter_by(class_id=class_id).all():
+        Submission.query.filter_by(activity_id=a.id).delete()
+        EditedContent.query.filter_by(activity_id=a.id).delete()
+        db.session.delete(a)
+
+    Announcement.query.filter_by(class_id=class_id).delete()
+    ClassMember.query.filter_by(class_id=class_id).delete()
+    ClassInvite.query.filter_by(class_id=class_id).delete()
+    FeedEvent.query.filter_by(class_id=class_id).delete()
+
+    db.session.delete(target)
+    db.session.commit()
+
+    return jsonify({'message': f'Class "{class_name}" has been deleted.'}), 200
+
+
+# ============================================================
+# SEED DEFAULT ADMIN (run once)
+# ============================================================
+def seed_admin(app):
+    with app.app_context():
+        existing = User.query.filter_by(role='admin').first()
+        if not existing:
+            import os
+            admin_password = os.environ.get('ADMIN_PASSWORD', 'admin123')
+            hashed = bcrypt.generate_password_hash(admin_password).decode('utf-8')
+            admin_user = User(
+                last_name      = 'Admin',
+                first_name     = 'System',
+                middle_initial = None,
+                email          = 'admin@physlab.com',
+                student_number = None,
+                birthday       = None,
+                password       = hashed,
+                role           = 'admin',
+                status         = 'active',
+                is_active      = True
+            )
+            db.session.add(admin_user)
+            db.session.commit()
+            print('✅ Default admin created: admin@physlab.com')
+        else:
+            print('ℹ️  Admin already exists.')
+
+
+# ── Archive class ──
+@admin.route('/admin/classes/<int:class_id>/archive', methods=['POST'])
+@jwt_required()
+def archive_class(class_id):
+    user, err, code = get_admin_or_403()
+    if err: return err, code
+
+    target = Class.query.get(class_id)
+    if not target:
+        return jsonify({'message': 'Class not found!'}), 404
+    if target.is_archived:
+        return jsonify({'message': 'Class is already archived!'}), 400
+
+    target.is_archived = True
+    db.session.commit()
+    return jsonify({'message': f'Class "{target.class_name}" has been archived.'}), 200
+
+
+# ── Unarchive class ──
+@admin.route('/admin/classes/<int:class_id>/unarchive', methods=['POST'])
+@jwt_required()
+def unarchive_class(class_id):
+    user, err, code = get_admin_or_403()
+    if err: return err, code
+
+    target = Class.query.get(class_id)
+    if not target:
+        return jsonify({'message': 'Class not found!'}), 404
+
+    target.is_archived = False
+    db.session.commit()
+    return jsonify({'message': f'Class "{target.class_name}" has been restored.'}), 200

@@ -1,0 +1,486 @@
+from flask import Blueprint, request, jsonify
+from flask_jwt_extended import jwt_required, get_jwt_identity
+from database import db
+from models import Activity, User, StreamPost
+import os
+import json
+from datetime import datetime
+
+# Load .env for ANTHROPIC_API_KEY
+try:
+    from dotenv import load_dotenv
+    load_dotenv()
+except ImportError:
+    pass  # dotenv not installed, use system env vars
+
+activities = Blueprint('activities', __name__)
+
+UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'uploads')
+ALLOWED_EXTENSIONS = {'docx', 'pdf'}
+
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+def format_activity(a):
+    return {
+        'id': a.id,
+        'title': a.title,
+        'file_type': a.file_type,
+        'created_at': a.created_at.strftime('%b %d, %Y') if a.created_at else '',
+        'due_date': a.due_date.strftime('%Y-%m-%dT%H:%M') if a.due_date else None,
+        'due_date_display': a.due_date.strftime('%b %d, %Y %I:%M %p') if a.due_date else None
+    }
+
+
+# ===== UPLOAD ACTIVITY =====
+@activities.route('/<int:class_id>/upload', methods=['POST'])
+@jwt_required()
+def upload_activity(class_id):
+    user_id = get_jwt_identity()
+    user = User.query.get(int(user_id))
+
+    if user.role != 'professor':
+        return jsonify({'message': 'Only professors can upload activities!'}), 403
+
+    if 'file' not in request.files:
+        return jsonify({'message': 'No file uploaded!'}), 400
+
+    file = request.files['file']
+    title = request.form.get('title', '').strip()
+
+    if not title:
+        return jsonify({'message': 'Please provide an activity title!'}), 400
+    if file.filename == '':
+        return jsonify({'message': 'No file selected!'}), 400
+    if not allowed_file(file.filename):
+        return jsonify({'message': 'Only DOCX and PDF files are allowed!'}), 400
+
+    file_ext = file.filename.rsplit('.', 1)[1].lower()
+    safe_filename = f"class{class_id}_{int(__import__('time').time())}.{file_ext}"
+    filepath = os.path.join(UPLOAD_FOLDER, safe_filename)
+    file.save(filepath)
+
+    parsed_data = None
+    if file_ext == 'docx':
+        try:
+            from parser import parse_docx
+            parsed_data = parse_docx(filepath)
+        except Exception as e:
+            import traceback
+            print(f"Parser error: {e}")
+            traceback.print_exc()
+
+    new_activity = Activity(
+        class_id=class_id,
+        uploaded_by=user.id,
+        title=title,
+        filename=safe_filename,
+        file_type=file_ext,
+        parsed_content=json.dumps(parsed_data) if parsed_data else None
+    )
+    db.session.add(new_activity)
+    db.session.commit()
+
+    return jsonify({
+        'message': 'Activity uploaded successfully!',
+        'id': new_activity.id,
+        'parsed': parsed_data is not None,
+        'file_type': file_ext
+    }), 201
+
+
+# ===== GET ACTIVITIES =====
+@activities.route('/<int:class_id>', methods=['GET'])
+@jwt_required()
+def get_activities(class_id):
+    from sqlalchemy import exists
+    acts = Activity.query.filter_by(class_id=class_id)\
+        .filter(exists().where(StreamPost.activity_id == Activity.id))\
+        .order_by(Activity.created_at.desc()).all()
+    return jsonify([format_activity(a) for a in acts]), 200
+
+
+# ===== GET PARSED CONTENT =====
+@activities.route('/<int:activity_id>/parsed', methods=['GET'])
+@jwt_required()
+def get_parsed(activity_id):
+    activity = Activity.query.get(activity_id)
+    if not activity:
+        return jsonify({'message': 'Activity not found!'}), 404
+    if not activity.parsed_content:
+        # Return 404 with clear JSON message (not HTML)
+        file_type = activity.file_type.upper() if activity.file_type else 'file'
+        return jsonify({
+            'message': f'No preview available for {file_type} files. Download to view.'
+        }), 404
+    try:
+        data = json.loads(activity.parsed_content)
+        data['class_id'] = activity.class_id   # inject so frontend can fetch groups without URL param
+        return jsonify(data), 200
+    except (json.JSONDecodeError, TypeError):
+        return jsonify({'message': 'Activity data is corrupted. Please re-upload.'}), 500
+
+
+# ===== RE-PARSE ACTIVITY =====
+@activities.route('/<int:activity_id>/reparse', methods=['POST'])
+@jwt_required()
+def reparse_activity(activity_id):
+    user_id = get_jwt_identity()
+    user = User.query.get(int(user_id))
+    if user.role != 'professor':
+        return jsonify({'message': 'Only professors can re-parse activities!'}), 403
+    activity = Activity.query.get(activity_id)
+    if not activity:
+        return jsonify({'message': 'Activity not found!'}), 404
+    if activity.file_type != 'docx':
+        return jsonify({'message': 'Re-parse is only available for DOCX files.'}), 400
+    filepath = os.path.join(UPLOAD_FOLDER, activity.filename)
+    if not os.path.exists(filepath):
+        return jsonify({'message': 'Original file not found on server. Please re-upload.'}), 404
+    try:
+        from parser import parse_docx
+        parsed_data = parse_docx(filepath)
+        activity.parsed_content = json.dumps(parsed_data) if parsed_data else None
+        db.session.commit()
+        return jsonify({'message': 'Activity re-parsed successfully!'}), 200
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        return jsonify({'message': f'Parse error: {str(e)}'}), 500
+
+
+# ===== DELETE ACTIVITY =====
+@activities.route('/<int:activity_id>/delete', methods=['DELETE'])
+@jwt_required()
+def delete_activity(activity_id):
+    user_id = get_jwt_identity()
+    user = User.query.get(int(user_id))
+
+    if user.role != 'professor':
+        return jsonify({'message': 'Only professors can delete activities!'}), 403
+
+    activity = Activity.query.get(activity_id)
+    if not activity:
+        return jsonify({'message': 'Activity not found!'}), 404
+
+    from models import Submission, EditedContent
+    Submission.query.filter_by(activity_id=activity.id).delete()
+    EditedContent.query.filter_by(activity_id=activity.id).delete()
+
+    file_path = os.path.join(UPLOAD_FOLDER, activity.filename)
+    if os.path.exists(file_path):
+        try:
+            os.remove(file_path)
+        except:
+            pass
+
+    db.session.delete(activity)
+    db.session.commit()
+    return jsonify({'message': 'Activity deleted!'}), 200
+
+
+# ===== SAVE EDITED CONTENT =====
+@activities.route('/<int:activity_id>/save-edit', methods=['POST'])
+@jwt_required()
+def save_edit(activity_id):
+    from models import EditedContent
+    user_id = get_jwt_identity()
+    user = User.query.get(int(user_id))
+
+    if user.role != 'professor':
+        return jsonify({'message': 'Only professors can edit activities!'}), 403
+
+    data = request.get_json()
+    section_type = data.get('section_type')
+    content_html = data.get('content_html')
+
+    if not section_type or not content_html:
+        return jsonify({'message': 'Missing data!'}), 400
+
+    existing = EditedContent.query.filter_by(
+        activity_id=activity_id,
+        section_type=section_type
+    ).first()
+
+    if existing:
+        existing.content_html = content_html
+        existing.updated_at = datetime.utcnow()
+    else:
+        new_edit = EditedContent(
+            activity_id=activity_id,
+            section_type=section_type,
+            content_html=content_html
+        )
+        db.session.add(new_edit)
+
+    db.session.commit()
+    return jsonify({'message': 'Saved successfully!'}), 200
+
+
+# ===== GET EDITED CONTENTS =====
+@activities.route('/<int:activity_id>/edited', methods=['GET'])
+@jwt_required()
+def get_edited(activity_id):
+    from models import EditedContent
+    edits = EditedContent.query.filter_by(activity_id=activity_id).all()
+    result = {}
+    for e in edits:
+        result[e.section_type] = e.content_html
+    return jsonify(result), 200
+
+
+# ===== CREATE MANUAL ACTIVITY =====
+@activities.route('/<int:class_id>/create-manual', methods=['POST'])
+@jwt_required()
+def create_manual(class_id):
+    user_id = get_jwt_identity()
+    user = User.query.get(int(user_id))
+
+    if user.role != 'professor':
+        return jsonify({'message': 'Only professors can create activities!'}), 403
+
+    data = request.get_json()
+    if not data:
+        return jsonify({'message': 'No data received!'}), 400
+
+    title = data.get('title', '').strip()
+    activity_data = data.get('activity_data', {})
+
+    if not title:
+        return jsonify({'message': 'Please provide a title!'}), 400
+
+    try:
+        parsed_content = {
+            'sections': build_sections_from_manual(activity_data),
+            'tables': activity_data.get('tables', [])
+        }
+    except Exception as e:
+        print(f"Build sections error: {e}")
+        return jsonify({'message': f'Error processing activity data: {str(e)}'}), 500
+
+    new_activity = Activity(
+        class_id=class_id,
+        uploaded_by=user.id,
+        title=title,
+        filename=f'manual_{int(__import__("time").time())}.json',
+        file_type='manual',
+        parsed_content=json.dumps(parsed_content)
+    )
+    db.session.add(new_activity)
+    db.session.commit()
+
+    # Feed event
+    try:
+        from feed import emit_feed
+        emit_feed(class_id, 'activity_posted', user.full_name, 'professor',
+                  f'{user.full_name} posted "{title}"')
+    except Exception:
+        pass
+
+    return jsonify({'message': 'Activity created!', 'id': new_activity.id}), 201
+
+
+
+
+# ===== UPDATE ACTIVITY (Option B — preserve original parsed_content, save text overlays only) =====
+@activities.route('/<int:activity_id>/update', methods=['PUT'])
+@jwt_required()
+def update_activity(activity_id):
+    user_id = get_jwt_identity()
+    user = User.query.get(int(user_id))
+
+    if user.role != 'professor':
+        return jsonify({'message': 'Only professors can edit activities!'}), 403
+
+    activity = Activity.query.get(activity_id)
+    if not activity:
+        return jsonify({'message': 'Activity not found!'}), 404
+
+    data = request.get_json()
+    if not data:
+        return jsonify({'message': 'No data received!'}), 400
+
+    title = data.get('title', '').strip()
+    if not title:
+        return jsonify({'message': 'Please provide a title!'}), 400
+
+    # Always update title
+    activity.title = title
+
+    # For DOCX activities — preserve original parsed_content (with images)
+    # Only save text overlays via EditedContent table
+    text_overlays = data.get('text_overlays', {})
+    if text_overlays:
+        from models import EditedContent
+        for section_type, html in text_overlays.items():
+            if not html:
+                continue
+            existing = EditedContent.query.filter_by(
+                activity_id=activity_id,
+                section_type=section_type
+            ).first()
+            if existing:
+                existing.content_html = html
+                existing.updated_at = datetime.utcnow()
+            else:
+                db.session.add(EditedContent(
+                    activity_id=activity_id,
+                    section_type=section_type,
+                    content_html=html
+                ))
+
+    # For manual activities (no original parsed_content with images) — full update
+    if activity.file_type == 'manual':
+        activity_data = data.get('activity_data', {})
+        try:
+            parsed_content = {
+                'sections': build_sections_from_manual(activity_data),
+                'tables': activity_data.get('tables', [])
+            }
+            activity.parsed_content = json.dumps(parsed_content)
+        except Exception as e:
+            return jsonify({'message': f'Error processing activity data: {str(e)}'}), 500
+
+    db.session.commit()
+    return jsonify({'message': 'Activity updated!', 'id': activity.id}), 200
+
+# ===== SET DUE DATE =====
+@activities.route('/<int:activity_id>/set-due-date', methods=['POST'])
+@jwt_required()
+def set_due_date(activity_id):
+    user_id = get_jwt_identity()
+    user = User.query.get(int(user_id))
+
+    if user.role != 'professor':
+        return jsonify({'message': 'Only professors can set due dates!'}), 403
+
+    activity = Activity.query.get(activity_id)
+    if not activity:
+        return jsonify({'message': 'Activity not found!'}), 404
+
+    data = request.get_json()
+    due_date_str = data.get('due_date')
+
+    if due_date_str:
+        try:
+            activity.due_date = datetime.fromisoformat(due_date_str)
+        except ValueError:
+            return jsonify({'message': 'Invalid date format!'}), 400
+    else:
+        activity.due_date = None
+
+    db.session.commit()
+    return jsonify({'message': 'Due date updated!'}), 200
+
+
+# ===== BUILD SECTIONS FROM MANUAL =====
+def build_sections_from_manual(data):
+    """
+    FIXED: student_info is at TOP LEVEL of activity_data,
+    not nested inside 'sections'. Matches what create_activity.html sends.
+    """
+    sections = []
+    sec = data.get('sections', {})
+
+    # Lab title
+    lab_num   = data.get('lab_number', '') or sec.get('lab_number', 'LABORATORY ACTIVITY')
+    lab_title = data.get('lab_title', '')  or sec.get('lab_title', '')
+    sections.append({
+        'type': 'lab_title',
+        'title': lab_num or 'LABORATORY ACTIVITY',
+        'content': [{'text': lab_title}] if lab_title else []
+    })
+
+    # Introduction
+    intro = sec.get('introduction', '')
+    if intro:
+        sections.append({
+            'type': 'introduction',
+            'title': 'INTRODUCTION',
+            'content': [{'text': intro}]
+        })
+
+    # Outcomes
+    outcomes = sec.get('outcomes', '')
+    if outcomes:
+        sections.append({
+            'type': 'outcomes',
+            'title': 'TARGET LEARNING OUTCOMES',
+            'content': [{'text': outcomes}]
+        })
+
+    # Materials
+    materials = sec.get('materials', [])
+    if materials:
+        s = {'type': 'materials', 'title': 'MATERIALS', 'content': materials}
+        if sec.get('materials_view_html'):
+            s['view_html'] = sec['materials_view_html']
+        sections.append(s)
+
+    # Procedures
+    procedures = sec.get('procedures', [])
+    if procedures:
+        s = {'type': 'procedures', 'title': 'PROCEDURES', 'content': procedures}
+        if sec.get('procedures_view_html'):
+            s['view_html'] = sec['procedures_view_html']
+        sections.append(s)
+
+    # Data sheet
+    datasheet_desc = sec.get('datasheet_desc', '')
+    s = {
+        'type': 'data_sheet',
+        'title': 'DATA SHEET',
+        'content': [{'text': datasheet_desc}] if datasheet_desc else []
+    }
+    if sec.get('datasheet_view_html'):
+        s['view_html'] = sec['datasheet_view_html']
+    sections.append(s)
+
+    # Guide questions
+    questions = sec.get('guide_questions', [])
+    if questions:
+        s = {'type': 'guide_questions', 'title': 'GUIDE QUESTIONS', 'content': questions}
+        if sec.get('guide_questions_view_html'):
+            s['view_html'] = sec['guide_questions_view_html']
+        sections.append(s)
+
+    # References
+    references = sec.get('references', '')
+    if references:
+        sections.append({
+            'type': 'references',
+            'title': 'REFERENCES',
+            'content': [{'text': references}]
+        })
+
+    # ✅ FIX: student_info is at TOP LEVEL of activity_data, not inside 'sections'
+    student_info = data.get('student_info', {})
+    members = student_info.get('members', [])
+    group_id   = student_info.get('group_id')
+    group_name = student_info.get('group_name', '')
+
+    content = []
+    for i, m in enumerate(members):
+        content.append({
+            'field': 'Name',
+            'type': 'member',
+            'value': m,
+            'is_leader': i == 0  # first member is leader (already sorted in frontend)
+        })
+    content.append({'field': 'Course/Year/Section', 'type': 'dropdown',
+                    'value': student_info.get('section', '')})
+    content.append({'field': 'Date', 'type': 'date',
+                    'value': student_info.get('date', '')})
+
+    sections.append({
+        'type': 'student_info',
+        'title': 'STUDENT INFORMATION',
+        'content': content,
+        'group_id': group_id,
+        'group_name': group_name
+    })
+
+    return sections

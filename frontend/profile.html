@@ -1,0 +1,1375 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script>(function(){var t=localStorage.getItem('physlab_theme')||'light';document.documentElement.setAttribute('data-theme',t);if(sessionStorage.getItem('physlab_nav')){sessionStorage.removeItem('physlab_nav');document.documentElement.setAttribute('data-entering','');}})();</script>
+
+    <meta charset="UTF-8">
+    <link rel="icon" href="/static/favicons/profile.svg" type="image/svg+xml">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="PHYSLAB">
+    <link rel="apple-touch-icon" href="/static/logo.svg">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile & Settings — PHYSLAB</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Abril+Fatface&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" href="static/style.css">
+    <style>
+
+/* ═══ THEME VARIABLES ═══ */
+:root { --primary:#0A66C2; --primary-l:#5b9bd5; --primary-dark:#004182; --primary-dark-l:#a78bfa; }
+[data-theme="dark"] {
+    --bg:#1B1F23; --bg-2:#16191D; --surface:#22272B;
+    --border:rgba(255,255,255,0.08); --border-h:rgba(10,102,194,0.15);
+    --text:#ffffff; --text-2:rgba(255,255,255,0.65); --text-3:rgba(255,255,255,0.35);
+    --input-bg:rgba(255,255,255,0.05); --input-bg-f:rgba(255,255,255,0.08);
+    --placeholder:rgba(255,255,255,0.25); --card-bg:rgba(255,255,255,0.03);
+    --tile-bg:rgba(255,255,255,0.04); --pw-bar:#2d2b4e;
+}
+[data-theme="light"] {
+    --bg:#F3F2EF; --bg-2:#E8E7E3; --surface:#ffffff;
+    --border:rgba(10,102,194,0.12); --border-h:rgba(10,102,194,0.45);
+    --text:#1B1F23; --text-2:#555555; --text-3:#888888;
+    --input-bg:#F9F9F9; --input-bg-f:#F0F0F0; --placeholder:#AAAAAA;
+    --card-bg:rgba(10,102,194,0.02); --tile-bg:#f8f9fe; --pw-bar:#e5e7eb;
+}
+
+/* ═══ BG EFFECTS ═══ */
+html, body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); transition:background 0.3s,color 0.3s; }
+body::before { content:''; position:fixed; top:-200px; left:-200px; width:600px; height:600px;
+    background:transparent; pointer-events:none; z-index:0; }
+body::after  { content:''; position:fixed; bottom:-200px; right:-200px; width:500px; height:500px;
+    background:transparent; pointer-events:none; z-index:0; }
+.bg-grid { position:fixed; inset:0; z-index:0; pointer-events:none;
+    
+    background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size:60px 60px; }
+.particles { position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+.particle { position:absolute; width:2px; height:2px; border-radius:50%;
+    background:rgba(129,140,248,0.7); animation:floatP linear infinite; }
+@keyframes floatP {
+    0%   { transform:translateY(100vh) translateX(0) scale(0); opacity:0; }
+    10%  { opacity:1; } 90% { opacity:0.5; }
+    100% { transform:translateY(-100px) translateX(var(--drift)) scale(1.5); opacity:0; }
+}
+
+/* ═══ NAVBAR ═══ */
+.navbar {
+    background: rgba(15,14,26,0.45) !important;
+    backdrop-filter: blur(40px) saturate(180%) !important;
+    border: 1px solid rgba(255,255,255,0.09) !important;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.07) !important;
+}
+[data-theme="light"] .navbar {
+    background: rgba(255,255,255,0.75) !important;
+    border-color: rgba(10,102,194,0.15) !important;
+    box-shadow: 0 8px 32px rgba(10,102,194,0.1), 0 2px 8px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.9) !important;
+}
+.nav-brand {
+    font-family:'Abril Fatface',sans-serif !important; font-size:15px !important;
+    font-weight:800 !important; letter-spacing:1px !important;
+    color:var(--text) !important; display:flex; align-items:center; gap:10px; text-decoration:none;
+}
+/* Update mo itong CSS para sa logo container */
+.brand-icon {
+    width: 32px; /* O 40px depende sa page */
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+/* Idagdag mo itong rule para sa mismong image */
+.brand-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.nav-hello { font-size:13px; color:var(--text-2); }
+.nav-hello strong { color:var(--text); }
+.badge-prof {
+    background:rgba(245,158,11,0.15);
+    color:#f59e0b; border:1px solid rgba(245,158,11,0.3);
+    padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700;
+}
+.badge-student {
+    background:rgba(59,130,246,0.12); color:#60a5fa;
+    border:1px solid rgba(59,130,246,0.2);
+    padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700;
+}
+.theme-btn { width:34px; height:34px; background:var(--input-bg); border:1px solid var(--border);
+    border-radius:9px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+    font-size:16px; color:var(--text-2); transition:all 0.2s; }
+.theme-btn:hover { background:var(--input-bg-f); color:var(--text); border-color:var(--border-h); }
+.nav-avatar-wrap { position:relative; }
+.nav-avatar { width:34px; height:34px; border-radius:10px;
+    background:#0A66C2;
+    border:none; display:flex; align-items:center; justify-content:center;
+    overflow:hidden; cursor:pointer; transition:transform 0.18s, box-shadow 0.18s; flex-shrink:0; }
+.nav-avatar:hover { transform:scale(1.07); box-shadow:0 4px 12px rgba(10,102,194,0.15); }
+.nav-av-initial { font-family:'Inter',sans-serif; font-size:13px; font-weight:800; color:white; pointer-events:none; }
+.nav-avatar img { width:100%; height:100%; object-fit:cover; display:none; border-radius:8px; }
+.nav-dropdown {
+    display:none; position:absolute; right:0; top:calc(100% + 10px);
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:10px; min-width:185px;
+    box-shadow:0 8px 24px rgba(0,0,0,0.25); overflow:hidden; z-index:300;
+}
+.nav-dropdown.open { display:block; }
+.nav-dropdown a, .nav-dropdown button {
+    display:flex; align-items:center; gap:10px;
+    width:100%; padding:10px 16px; text-align:left;
+    font-size:13px; font-weight:500; color:var(--text);
+    background:none; border:none; text-decoration:none;
+    cursor:pointer; transition:background 0.15s;
+    font-family:'Inter',sans-serif; box-sizing:border-box;
+}
+.nav-dropdown a:hover, .nav-dropdown button:hover { background:rgba(255,255,255,0.06); }
+[data-theme="light"] .nav-dropdown a:hover,
+[data-theme="light"] .nav-dropdown button:hover { background:rgba(0,0,0,0.05); }
+.nd-divider { height:1px; background:var(--border); margin:4px 0; }
+.nd-logout { color:#fca5a5 !important; }
+.nd-logout:hover { background:rgba(239,68,68,0.08) !important; }
+.btn-logout { display:flex; align-items:center; gap:6px; background:transparent !important;
+    border:1px solid var(--border) !important; color:var(--text-2) !important;
+    padding:7px 14px !important; border-radius:9px !important; font-size:13px !important;
+    font-weight:600 !important; cursor:pointer; transition:all 0.2s; }
+.btn-logout:hover { border-color:rgba(239,68,68,0.4) !important; color:#fca5a5 !important; background:rgba(239,68,68,0.07) !important; }
+        @media (max-width: 768px) {
+            .navbar { padding: 0 14px; max-width: calc(100vw - 24px); }
+            .nav-brand { font-size: 16px; }
+            .nav-hello { display: none; }
+            .badge-prof, .badge-student { display: none; }
+            .btn-logout { padding: 6px 10px; font-size: 12px; }
+        }
+        @media (max-width: 480px) {
+            .navbar { padding: 0 12px; max-width: calc(100vw - 16px); }
+            .nav-brand { font-size: 14px; }
+
+            /* Profile card body */
+            .pf-wrap { padding: 0 12px; }
+            .pf-card-body { padding: 14px 14px; }
+            .pf-card-head { padding: 12px 14px; }
+
+            /* Name row — stack to single column on mobile */
+            .pf-name-row { grid-template-columns: 1fr !important; }
+
+            /* Input boxes */
+            .pf-inp-box input { font-size: 13px; padding: 9px 0; }
+
+            /* Save button full width */
+            .pf-btn { width: 100%; justify-content: center; }
+
+            /* Preferences row */
+            .pf-pref-name { font-size: 13px; }
+            .pf-pref-sub  { font-size: 11px; }
+        }
+[data-theme="light"] .btn-logout { color:#555555 !important; }
+[data-theme="light"] .btn-logout:hover { color:#dc2626 !important; }
+
+/* ═══ LAYOUT ═══ */
+body.dashboard-body { background:var(--bg) !important; }
+.pf-wrap { max-width:680px; margin:80px auto 60px; padding:0 20px; position:relative; z-index:1; }
+
+/* ═══ HERO CARD ═══ */
+.pf-hero { background:var(--surface); border-radius:20px; border:1px solid var(--border);
+    box-shadow:none; overflow:hidden; margin-bottom:14px; }
+.pf-hero-banner { height:90px; background:#0A66C2; position:relative; overflow:hidden; }
+.pf-hero-banner::before { content:''; position:absolute; width:180px; height:180px; border-radius:50%;
+    background:rgba(255,255,255,0.07); top:-80px; right:60px; }
+.pf-hero-banner::after  { content:''; position:absolute; width:100px; height:100px; border-radius:50%;
+    background:rgba(255,255,255,0.05); bottom:-30px; left:100px; }
+.pf-hero-body { padding:0 28px 24px; position:relative; }
+.pf-avatar-row { display:flex; align-items:flex-end; justify-content:space-between; margin-bottom:14px; }
+.pf-avatar-wrap { position:relative; }
+.pf-avatar { width:80px; height:80px; border-radius:20px; border:4px solid var(--surface);
+    box-shadow:0 4px 16px rgba(0,0,0,0.2); background:#0A66C2;
+    display:flex; align-items:center; justify-content:center; font-family:'Inter',sans-serif;
+    font-size:30px; font-weight:800; color:white; overflow:hidden; cursor:pointer;
+    margin-top:-40px; transition:transform 0.2s; }
+.pf-avatar:hover { transform:scale(1.04); }
+.pf-avatar img { width:100%; height:100%; object-fit:cover; border-radius:16px; }
+.pf-cam-btn { position:absolute; bottom:-4px; right:-4px; width:26px; height:26px; border-radius:8px;
+    background:var(--surface); border:none; box-shadow:0 2px 8px rgba(0,0,0,0.2);
+    display:flex; align-items:center; justify-content:center; cursor:pointer; font-size:13px;
+    color:var(--primary-l); transition:all 0.2s; }
+.pf-cam-btn:hover { background:var(--primary); color:white; }
+.pf-avatar-actions { display:flex; gap:8px; padding-bottom:4px; }
+.pf-role-pill { display:inline-flex; align-items:center; gap:5px; font-size:11px; font-weight:700;
+    color:var(--primary-l); background:rgba(10,102,194,0.1); border:1.5px solid rgba(10,102,194,0.2);
+    border-radius:20px; padding:4px 12px; }
+[data-theme="light"] .pf-role-pill { color:var(--primary); background:#ede9fe; border-color:#c4b5fd; }
+.pf-name { font-family:'Inter',sans-serif; font-size:20px; font-weight:800; color:var(--text); margin-bottom:4px; }
+.pf-email-txt { font-size:13px; color:var(--text-3); }
+input[type="file"]#avatarInput { display:none; }
+
+/* ═══ SECTION CARD ═══ */
+.pf-card { background:var(--surface); border-radius:18px; margin-bottom:12px;
+    border:1px solid var(--border); overflow:hidden; transition:border-color 0.2s; }
+.pf-card:hover { border-color:var(--border-h); }
+.pf-card-head { display:flex; align-items:center; gap:12px; padding:16px 22px;
+    border-bottom:1px solid var(--border); background:var(--input-bg); }
+.pf-c-icon { width:34px; height:34px; border-radius:10px; display:flex; align-items:center;
+    justify-content:center; font-size:16px; flex-shrink:0; }
+.ic-blue   { background:rgba(59,130,246,0.12);  color:#60a5fa; }
+.ic-purple { background:rgba(139,92,246,0.12);  color:#a78bfa; }
+.ic-green  { background:rgba(16,185,129,0.12);  color:#34d399; }
+.ic-amber  { background:rgba(245,158,11,0.12);  color:#fbbf24; }
+.ic-red    { background:rgba(239,68,68,0.12);   color:#f87171; }
+[data-theme="light"] .ic-blue   { background:#eff6ff; color:#3b82f6; }
+[data-theme="light"] .ic-purple { background:#EBF3FB; color:#8b5cf6; }
+[data-theme="light"] .ic-green  { background:#f0fdf4; color:#10b981; }
+[data-theme="light"] .ic-amber  { background:#fff7ed; color:#f59e0b; }
+[data-theme="light"] .ic-red    { background:#fff1f2; color:#f43f5e; }
+.pf-card-title { font-family:'Inter',sans-serif; font-size:13px; font-weight:700; color:var(--text); }
+.pf-card-desc  { font-size:12px; color:var(--text-3); margin-top:1px; }
+.pf-card-body  { padding:20px 22px; }
+
+/* ═══ FIELDS ═══ */
+.pf-field { margin-bottom:14px; }
+.pf-field:last-of-type { margin-bottom:0; }
+.pf-lbl { font-size:11px; font-weight:700; color:var(--text-3); text-transform:uppercase;
+    letter-spacing:0.8px; display:block; margin-bottom:6px; }
+.pf-inp-box { display:flex; align-items:center; gap:10px; background:var(--input-bg);
+    border:1.5px solid var(--border); border-radius:12px; padding:0 14px; transition:all 0.2s; }
+.pf-inp-box:focus-within { border-color:var(--primary); background:var(--input-bg-f);
+    box-shadow:0 0 0 3px rgba(10,102,194,0.1); }
+.pf-inp-box i { font-size:15px; color:var(--text-3); flex-shrink:0; }
+.pf-inp-box input { flex:1; border:none; background:transparent; padding:11px 0;
+    font-size:14px; font-family:'Inter',sans-serif; color:var(--text); outline:none; }
+.pf-inp-box input::placeholder { color:var(--placeholder); }
+.pf-inp-box input:disabled { color:var(--text-3); cursor:default; }
+.pf-eye { background:none; border:none; color:var(--text-3); cursor:pointer;
+    font-size:15px; padding:4px; display:flex; align-items:center; transition:color 0.2s; }
+.pf-eye:hover { color:var(--primary-l); }
+[data-theme="light"] .pf-eye:hover { color:var(--primary); }
+
+/* Password strength */
+.pw-bars { display:flex; gap:3px; margin-top:7px; }
+.pw-bar  { flex:1; height:3px; border-radius:2px; background:var(--pw-bar); transition:background 0.3s; }
+.pw-hint { font-size:11px; font-weight:600; color:var(--text-3); margin-top:4px; }
+
+/* ═══ SAVE BTN ═══ */
+.pf-btn { display:inline-flex; align-items:center; gap:7px;
+    background:#0A66C2; color:white;
+    border:none; padding:10px 22px; border-radius:11px; font-family:'Inter',sans-serif;
+    font-size:13px; font-weight:600; cursor:pointer;
+    box-shadow:0 4px 14px rgba(10,102,194,0.12); transition:all 0.25s; margin-top:14px; }
+.pf-btn:hover { box-shadow:0 6px 18px rgba(10,102,194,0.15); }
+.pf-btn:disabled { opacity:0.65; transform:none; cursor:not-allowed; }
+
+/* ═══ INFO GRID ═══ */
+.pf-info-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+@media(max-width:480px){ .pf-info-grid { grid-template-columns:1fr; } }
+.pf-info-tile { background:var(--tile-bg); border:1px solid var(--border); border-radius:12px; padding:14px 16px; }
+.pf-tile-lbl  { font-size:10px; font-weight:700; color:var(--text-3); text-transform:uppercase;
+    letter-spacing:0.8px; display:flex; align-items:center; gap:5px; margin-bottom:5px; }
+.pf-tile-val  { font-family:'Inter',sans-serif; font-size:14px; font-weight:700; color:var(--text); word-break:break-all; }
+
+/* ═══ PREFERENCES TOGGLE ═══ */
+.pf-pref-row { display:flex; align-items:center; justify-content:space-between;
+    padding:13px 0; border-bottom:1px solid var(--border); }
+.pf-pref-row:first-child { padding-top:0; }
+.pf-pref-row:last-child  { padding-bottom:0; border-bottom:none; }
+.pf-pref-left { display:flex; align-items:center; gap:12px; }
+.pf-pref-icon { width:36px; height:36px; border-radius:10px; display:flex; align-items:center;
+    justify-content:center; font-size:17px; }
+.pf-pref-name { font-family:'Inter',sans-serif; font-size:14px; font-weight:600; color:var(--text); }
+.pf-pref-sub  { font-size:12px; color:var(--text-3); margin-top:1px; }
+.pf-toggle { position:relative; display:inline-block; width:46px; height:24px; }
+.pf-toggle input { opacity:0; width:0; height:0; }
+.pf-tog-sl { position:absolute; inset:0; background:var(--input-bg-f); border:1px solid var(--border);
+    border-radius:24px; cursor:pointer; transition:all 0.3s; }
+.pf-tog-sl::before { content:''; position:absolute; width:18px; height:18px; left:3px; top:3px;
+    background:var(--text-3); border-radius:50%; transition:transform 0.3s cubic-bezier(0.22,1,0.36,1); }
+.pf-toggle input:checked + .pf-tog-sl { background:#0A66C2; border-color:var(--primary); }
+.pf-toggle input:checked + .pf-tog-sl::before { transform:translateX(22px); background:white; }
+
+/* ═══ DANGER BTNS ═══ */
+.pf-danger-row { display:flex; gap:10px; flex-wrap:wrap; }
+.pf-dng-btn { display:inline-flex; align-items:center; gap:7px;
+    background:rgba(239,68,68,0.08); color:#f87171; border:1.5px solid rgba(239,68,68,0.2);
+    padding:9px 18px; border-radius:11px; font-family:'Inter',sans-serif;
+    font-size:13px; font-weight:600; cursor:pointer; transition:all 0.2s; }
+.pf-dng-btn:hover { background:#ef4444; color:white; border-color:#ef4444; }
+[data-theme="light"] .pf-dng-btn { background:#fff1f2; color:#dc2626; border-color:#fecaca; }
+
+/* ═══ CONFIRM MODAL ═══ */
+.modal-overlay { display:none; position:fixed; inset:0; z-index:1000;
+    background:rgba(0,0,0,0.6); backdrop-filter:blur(4px);
+    align-items:center; justify-content:center; padding:20px; }
+.modal-overlay.active { display:flex; animation:overlayIn 0.2s ease; }
+@keyframes overlayIn { from{opacity:0} to{opacity:1} }
+.pf-modal-box { background:var(--surface); border:1px solid var(--border); border-radius:20px;
+    padding:30px 26px; max-width:360px; width:100%; text-align:center;
+    box-shadow:0 24px 80px rgba(0,0,0,0.4); animation:pfIn 0.3s cubic-bezier(0.22,1,0.36,1); }
+@keyframes pfIn { from{transform:translateY(14px) scale(0.97);opacity:0} to{transform:none;opacity:1} }
+.pf-modal-icon  { font-size:42px; margin-bottom:12px; }
+.pf-modal-title { font-family:'Inter',sans-serif; font-size:16px; font-weight:800; color:var(--text); margin-bottom:8px; }
+.pf-modal-msg   { font-size:13px; color:var(--text-2); line-height:1.6; margin-bottom:20px; }
+.pf-modal-btns  { display:flex; gap:8px; justify-content:center; }
+.pf-mc-btn { padding:9px 20px; border-radius:10px; border:1px solid var(--border);
+    background:var(--input-bg); color:var(--text-2); font-size:13px; font-weight:600;
+    cursor:pointer; font-family:'Inter',sans-serif; transition:all 0.2s; }
+.pf-mc-btn:hover { background:var(--input-bg-f); }
+.pf-mo-btn { padding:9px 20px; border-radius:10px; border:none;
+    background:#ef4444; color:white;
+    font-size:13px; font-weight:600; cursor:pointer; font-family:'Inter',sans-serif;
+    box-shadow:0 3px 10px rgba(239,68,68,0.3); transition:all 0.2s; }
+.pf-mo-btn:hover { transform:translateY(-1px); box-shadow:0 5px 14px rgba(239,68,68,0.4); }
+
+/* ═══ TOAST ═══ */
+.pf-toast-wrap { position:fixed; bottom:24px; right:24px; z-index:9999; display:flex; flex-direction:column; gap:8px; }
+.pf-toast { display:flex; align-items:center; gap:10px; padding:12px 18px; border-radius:12px;
+    font-size:13px; font-weight:600; min-width:220px; box-shadow:0 8px 24px rgba(0,0,0,0.25);
+    animation:toastIn 0.3s ease; border:1px solid; }
+@keyframes toastIn { from{transform:translateX(30px);opacity:0} to{transform:none;opacity:1} }
+.pf-toast.success { background:rgba(52,211,153,0.15); color:#34d399; border-color:rgba(52,211,153,0.3); }
+.pf-toast.error   { background:rgba(239,68,68,0.15);  color:#f87171; border-color:rgba(239,68,68,0.3); }
+.pf-toast.warning { background:rgba(245,158,11,0.15); color:#fbbf24; border-color:rgba(245,158,11,0.3); }
+.pf-toast.info    { background:rgba(10,102,194,0.15);  color:#5b9bd5; border-color:rgba(10,102,194,0.12); }
+[data-theme="light"] .pf-toast.success { background:#d1fae5; color:#059669; }
+[data-theme="light"] .pf-toast.error   { background:#fee2e2; color:#dc2626; }
+[data-theme="light"] .pf-toast.warning { background:#fef3c7; color:#d97706; }
+[data-theme="light"] .pf-toast.info    { background:#ede9fe; color:#6d28d9; }
+
+
+        .pf-wrap {
+            max-width: 680px;
+            margin: 80px auto 60px;
+            padding: 0 20px;
+        }
+
+        /* ===== PROFILE HERO CARD ===== */
+        .pf-hero {
+            background: white;
+            border-radius: 20px;
+            border: 1px solid #f0f1fa;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+            overflow: hidden;
+            margin-bottom: 14px;
+        }
+
+        .pf-hero-banner {
+            height: 90px;
+            background: #0A66C2;
+            position: relative;
+            overflow: hidden;
+        }
+        .pf-hero-banner::before {
+            content: '';
+            position: absolute;
+            width: 180px; height: 180px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.07);
+            top: -80px; right: 60px;
+        }
+        .pf-hero-banner::after {
+            content: '';
+            position: absolute;
+            width: 100px; height: 100px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.05);
+            bottom: -30px; left: 100px;
+        }
+
+        .pf-hero-body {
+            padding: 0 28px 24px;
+            position: relative;
+        }
+
+        /* Avatar */
+        .pf-avatar-row {
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+
+        .pf-avatar-wrap { position: relative; }
+
+        .pf-avatar {
+            width: 80px; height: 80px;
+            border-radius: 20px;
+            border: 4px solid white;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+            background: #0A66C2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-family: 'Inter', sans-serif;
+            font-size: 30px;
+            font-weight: 800;
+            color: white;
+            overflow: hidden;
+            cursor: pointer;
+            margin-top: -40px;
+            transition: transform 0.2s;
+        }
+        .pf-avatar:hover { transform: scale(1.04); }
+        .pf-avatar img { width:100%; height:100%; object-fit:cover; border-radius:16px; }
+
+        .pf-cam-btn {
+            position: absolute;
+            bottom: -4px; right: -4px;
+            width: 26px; height: 26px;
+            border-radius: 8px;
+            background: white;
+            border: none;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.14);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 13px;
+            color: #0A66C2;
+            transition: all 0.2s;
+        }
+        .pf-cam-btn:hover { background: #0A66C2; color: white; }
+
+        .pf-avatar-actions {
+            display: flex;
+            gap: 8px;
+            padding-bottom: 4px;
+        }
+
+        .pf-role-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 11px;
+            font-weight: 700;
+            color: #0A66C2;
+            background: #EBF3FB;
+            border: 1.5px solid #c7d2fe;
+            border-radius: 20px;
+            padding: 4px 12px;
+        }
+
+        .pf-name {
+            font-family: 'Inter', sans-serif;
+            font-size: 20px;
+            font-weight: 800;
+            color: #1a1d3a;
+            margin-bottom: 4px;
+        }
+        .pf-email-txt {
+            font-size: 13px;
+            color: #9ca3af;
+        }
+
+        input[type="file"]#avatarInput { display: none; }
+
+        /* ===== SECTION CARD ===== */
+        .pf-card {
+            background: white;
+            border-radius: 18px;
+            margin-bottom: 12px;
+            border: 1px solid #f0f1fa;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            overflow: hidden;
+        }
+
+        .pf-card-head {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 16px 22px;
+            border-bottom: 1px solid #f4f5fb;
+            background: #fafbff;
+        }
+
+        .pf-c-icon {
+            width: 34px; height: 34px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+        .ic-blue   { background:#eff6ff; color:#3b82f6; }
+        .ic-purple { background:#EBF3FB; color:#8b5cf6; }
+        .ic-green  { background:#f0fdf4; color:#10b981; }
+        .ic-amber  { background:#fff7ed; color:#f59e0b; }
+        .ic-red    { background:#fff1f2; color:#f43f5e; }
+
+        .pf-card-title {
+            font-family: 'Inter', sans-serif;
+            font-size: 13px;
+            font-weight: 700;
+            color: #1a1d3a;
+        }
+        .pf-card-desc { font-size: 12px; color: #9ca3af; margin-top: 1px; }
+
+        .pf-card-body { padding: 20px 22px; }
+
+        /* ===== FIELD ===== */
+        .pf-field { margin-bottom: 14px; }
+        .pf-field:last-of-type { margin-bottom: 0; }
+
+        .pf-lbl {
+            font-size: 11px;
+            font-weight: 700;
+            color: #9ca3af;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        .pf-inp-box {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: #f8f9fe;
+            border: 1.5px solid #eaecf5;
+            border-radius: 12px;
+            padding: 0 14px;
+            transition: all 0.2s;
+        }
+        .pf-inp-box:focus-within {
+            border-color: #0A66C2;
+            background: white;
+            box-shadow: 0 0 0 3px rgba(10,102,194,0.1);
+        }
+        .pf-inp-box i { font-size: 15px; color: #b0b7d3; flex-shrink: 0; }
+        .pf-inp-box input {
+            flex: 1;
+            border: none;
+            background: transparent;
+            padding: 11px 0;
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+            color: #1a1d3a;
+            outline: none;
+        }
+        .pf-inp-box input::placeholder { color: #c8cde0; }
+        .pf-inp-box input:disabled { color: #9ca3af; cursor: default; }
+
+        .pf-eye {
+            background: none; border: none;
+            color: #b0b7d3; cursor: pointer;
+            font-size: 15px; padding: 4px;
+            display: flex; align-items: center;
+            transition: color 0.2s;
+        }
+        .pf-eye:hover { color: #0A66C2; }
+
+        /* Password strength */
+        .pw-bars { display:flex; gap:3px; margin-top:7px; }
+        .pw-bar {
+            flex:1; height:3px; border-radius:2px;
+            background: #e5e7eb; transition: background 0.3s;
+        }
+        .pw-hint { font-size:11px; font-weight:600; color:#9ca3af; margin-top:4px; }
+
+        /* ===== SAVE BTN ===== */
+        .pf-btn {
+            -moz-appearance:none; -webkit-appearance:none; appearance:none;
+            border:none; background:none; color:#fff;
+            cursor:pointer; position:relative;
+            padding:8px; margin-top:14px;
+            font-weight:700; font-size:13px; font-family:'Inter',sans-serif;
+            letter-spacing:0.4px; text-transform:uppercase; transition:all .15s ease;
+        }
+        .pf-btn::before, .pf-btn::after { content:''; display:block; position:absolute; right:0; left:0; height:calc(50% - 5px); border:1px solid rgba(10,102,194,0.5); transition:all .15s ease; }
+        .pf-btn::before { top:0; border-bottom-width:0; }
+        .pf-btn::after  { bottom:0; border-top-width:0; }
+        .pf-btn:focus { outline:none; }
+        .pf-btn:active::before, .pf-btn:active::after { right:3px; left:3px; }
+        .pf-btn:active::before { top:3px; }
+        .pf-btn:active::after  { bottom:3px; }
+        .pf-btn:disabled { opacity:0.55; cursor:not-allowed; pointer-events:none; }
+        .pf-btn .button_lg { background-color:#0A66C2; }
+        .pf-btn .button_lg::before, .pf-btn .button_lg::after { background-color:#0A66C2; }
+        .pf-btn .button_sl { background-color:#004182; }
+        .pf-btn:hover:not(:disabled) .button_sl { width:calc(100% + 15px); }
+        .pf-btn:hover:not(:disabled) .button_lg::after { background-color:#fff; }
+
+        /* ===== INFO GRID ===== */
+        .pf-info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        @media(max-width:480px){ .pf-info-grid { grid-template-columns: 1fr; } }
+
+        .pf-info-tile {
+            background: #f8f9fe;
+            border: 1px solid #f0f1fa;
+            border-radius: 12px;
+            padding: 14px 16px;
+        }
+        .pf-tile-lbl {
+            font-size: 10px;
+            font-weight: 700;
+            color: #b0b7d3;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            margin-bottom: 5px;
+        }
+        .pf-tile-val {
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            font-weight: 700;
+            color: #1a1d3a;
+            word-break: break-all;
+        }
+
+        /* ===== PREFERENCE TOGGLE ROW ===== */
+        .pf-pref-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 13px 0;
+            border-bottom: 1px solid #f4f5fb;
+        }
+        .pf-pref-row:first-child { padding-top: 0; }
+        .pf-pref-row:last-child { padding-bottom: 0; border-bottom: none; }
+
+        .pf-pref-left { display: flex; align-items: center; gap: 12px; }
+        .pf-pref-icon {
+            width: 36px; height: 36px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 17px;
+        }
+        .pf-pref-name {
+            font-family: 'Inter', sans-serif;
+            font-size: 14px;
+            font-weight: 600;
+            color: #374151;
+        }
+        .pf-pref-sub { font-size: 12px; color: #9ca3af; margin-top: 1px; }
+
+        /* Toggle */
+        .pf-toggle { position:relative; display:inline-block; width:46px; height:24px; }
+        .pf-toggle input { opacity:0; width:0; height:0; }
+        .pf-tog-sl {
+            position:absolute; inset:0;
+            background:#e5e7eb; border-radius:24px;
+            cursor:pointer; transition: background 0.3s;
+        }
+        .pf-tog-sl::before {
+            content:''; position:absolute;
+            width:18px; height:18px;
+            left:3px; top:3px;
+            background:white; border-radius:50%;
+            transition: transform 0.3s cubic-bezier(0.22,1,0.36,1);
+            box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+        }
+        .pf-toggle input:checked + .pf-tog-sl { background: #0A66C2; }
+        .pf-toggle input:checked + .pf-tog-sl::before { transform: translateX(22px); }
+
+        /* ===== DANGER BTNS ===== */
+        .pf-danger-row { display:flex; gap:10px; flex-wrap:wrap; }
+        .pf-dng-btn {
+            display:inline-flex; align-items:center; gap:8px;
+            border:none; background:#ef4444; color:#fff;
+            cursor:pointer; padding:10px 18px; border-radius:10px;
+            font-weight:600; font-size:13px; font-family:'Inter',sans-serif;
+            transition:background 0.2s;
+        }
+        .pf-dng-btn:hover { background:#dc2626; }
+        .pf-dng-btn:focus { outline:none; }
+
+        /* ===== CONFIRM MODAL ===== */
+        .pf-modal-box {
+            background: white;
+            border-radius: 20px;
+            padding: 30px 26px;
+            max-width: 360px;
+            width: 100%;
+            text-align: center;
+            box-shadow: 0 24px 80px rgba(0,0,0,0.18);
+            animation: pfIn 0.3s cubic-bezier(0.22,1,0.36,1);
+        }
+        @keyframes pfIn { from { transform: translateY(14px) scale(0.97); opacity:0; } to { transform:none; opacity:1; } }
+        .pf-modal-icon { font-size: 42px; margin-bottom: 12px; }
+        .pf-modal-title {
+            font-family: 'Inter', sans-serif;
+            font-size: 16px; font-weight: 800;
+            color: #1a1d3a; margin-bottom: 8px;
+        }
+        .pf-modal-msg { font-size: 13px; color: #6b7280; line-height: 1.6; margin-bottom: 20px; }
+        .pf-modal-btns { display: flex; gap: 8px; justify-content: center; }
+        .pf-mc-btn {
+            -moz-appearance:none; -webkit-appearance:none; appearance:none;
+            border:none; background:none; color:#fff;
+            cursor:pointer; position:relative; overflow:hidden;
+            padding:8px; min-width:90px;
+            font-weight:700; font-size:12px; font-family:'Inter',sans-serif;
+            letter-spacing:0.4px; text-transform:uppercase; transition:all .15s ease;
+        }
+        .pf-mc-btn::before, .pf-mc-btn::after { content:''; display:block; position:absolute; right:0; left:0; height:calc(50% - 5px); border:1px solid rgba(107,114,128,0.4); transition:all .15s ease; }
+        .pf-mc-btn::before { top:0; border-bottom-width:0; }
+        .pf-mc-btn::after  { bottom:0; border-top-width:0; }
+        .pf-mc-btn:focus { outline:none; }
+        .pf-mc-btn:active::before, .pf-mc-btn:active::after { right:3px; left:3px; }
+        .pf-mc-btn:active::before { top:3px; }
+        .pf-mc-btn:active::after  { bottom:3px; }
+        .pf-mc-btn .button_lg { background-color:#6b7280; }
+        .pf-mc-btn .button_lg::before, .pf-mc-btn .button_lg::after { background-color:#6b7280; }
+        .pf-mc-btn .button_sl { background-color:#4b5563; }
+        .pf-mc-btn:hover .button_sl { width:calc(100% + 15px); }
+        .pf-mc-btn:hover .button_lg::after { background-color:#fff; }
+        .pf-mo-btn {
+            -moz-appearance:none; -webkit-appearance:none; appearance:none;
+            border:none; background:none; color:#fff;
+            cursor:pointer; position:relative; overflow:hidden;
+            padding:8px; min-width:90px;
+            font-weight:700; font-size:12px; font-family:'Inter',sans-serif;
+            letter-spacing:0.4px; text-transform:uppercase; transition:all .15s ease;
+        }
+        .pf-mo-btn::before, .pf-mo-btn::after { content:''; display:block; position:absolute; right:0; left:0; height:calc(50% - 5px); border:1px solid rgba(239,68,68,0.5); transition:all .15s ease; }
+        .pf-mo-btn::before { top:0; border-bottom-width:0; }
+        .pf-mo-btn::after  { bottom:0; border-top-width:0; }
+        .pf-mo-btn:focus { outline:none; }
+        .pf-mo-btn:active::before, .pf-mo-btn:active::after { right:3px; left:3px; }
+        .pf-mo-btn:active::before { top:3px; }
+        .pf-mo-btn:active::after  { bottom:3px; }
+        .pf-mo-btn .button_lg { background-color:#ef4444; }
+        .pf-mo-btn .button_lg::before, .pf-mo-btn .button_lg::after { background-color:#ef4444; }
+        .pf-mo-btn .button_sl { background-color:#dc2626; }
+        .pf-mo-btn:hover .button_sl { width:calc(100% + 15px); }
+        .pf-mo-btn:hover .button_lg::after { background-color:#fff; }
+
+
+        /* ===== NAV AVATAR ===== */
+        .nav-avatar {
+            width: 34px; height: 34px; border-radius: 10px;
+            background: #0A66C2;
+            display: flex; align-items: center; justify-content: center;
+            font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 800; color: white;
+            text-decoration: none; overflow: hidden; flex-shrink: 0;
+            border: 2px solid rgba(255,255,255,0.3);
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .nav-avatar:hover { transform: scale(1.07); box-shadow: 0 4px 12px rgba(10,102,194,0.35); }
+        .nav-avatar img { width:100%; height:100%; object-fit:cover; border-radius:8px; display:none; }
+        .nav-avatar .nav-av-initial { font-size:13px; font-weight:800; }
+
+                
+
+        /* ── Slide Fill shared ── */
+        .button_lg {
+            position:relative; display:flex; align-items:center; justify-content:center; gap:8px;
+            padding:10px 20px; color:#fff; overflow:hidden;
+        }
+        .button_lg::before { content:''; display:block; position:absolute; top:0; left:0; width:2px; height:2px; background-color:inherit; }
+        .button_lg::after  { content:''; display:block; position:absolute; right:0; bottom:0; width:4px; height:4px; background-color:inherit; transition:all .2s ease; }
+        .button_sl { display:block; position:absolute; top:0; bottom:-1px; left:-8px; width:0; transform:skew(-15deg); transition:all .2s ease; }
+        .button_text { position:relative; display:flex; align-items:center; gap:8px; }
+
+        /* ── Sun Moon Toggle ── */
+        .switch { font-size:17px; position:relative; display:inline-block; width:46px; height:24px; }
+        .switch .input { opacity:0; width:0; height:0; }
+        .switch .slider { position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#73C0FC; transition:.4s; border-radius:30px; }
+        .switch .slider:before { position:absolute; content:''; height:20px; width:20px; border-radius:20px; left:2px; bottom:2px; z-index:2; background-color:#e8e8e8; transition:.4s; }
+        .switch .sun svg { position:absolute; top:4px; left:25px; z-index:1; width:16px; height:16px; animation:rotate 15s linear infinite; }
+        .switch .moon svg { fill:#73C0FC; position:absolute; top:4px; left:4px; z-index:1; width:16px; height:16px; animation:tilt 5s linear infinite; }
+        @keyframes rotate { 0%{transform:rotate(0)} 100%{transform:rotate(360deg)} }
+        @keyframes tilt { 0%{transform:rotate(0deg)} 25%{transform:rotate(-10deg)} 75%{transform:rotate(10deg)} 100%{transform:rotate(0deg)} }
+        .switch .input:checked + .slider { background-color:#183153; }
+        .switch .input:focus  + .slider { box-shadow:0 0 1px #183153; }
+        .switch .input:checked + .slider:before { transform:translateX(22px); }
+        .switch .input:checked ~ .moon svg { fill:#183153; }
+    </style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="particles" id="particles"></div>
+
+<nav class="navbar">
+    <div class="nav-left">
+        <a class="nav-brand" href="/dashboard_professor" id="navBrandLink">
+            <div class="brand-icon">
+                <img src="static/logo.svg" alt="PHYSLAB Logo">
+            </div>
+            PHYSLAB
+        </a>
+    </div>
+    <div class="nav-user">
+        <div class="nav-avatar-wrap">
+            <button class="nav-avatar" id="navAvatar" onclick="toggleNavDropdown()" title="Menu">
+                <span class="nav-av-initial"></span><img alt="avatar">
+            </button>
+            <div class="nav-dropdown" id="navDropdown"></div>
+        </div>
+    </div>
+</nav>
+
+<div class="pf-wrap">
+
+    <!-- ===== HERO CARD ===== -->
+    <div class="pf-hero">
+        <div class="pf-hero-banner"></div>
+        <div class="pf-hero-body">
+            <div class="pf-avatar-row">
+                <!-- Avatar -->
+                <div class="pf-avatar-wrap">
+                    <div class="pf-avatar" id="avatarEl" onclick="document.getElementById('avatarInput').click()">
+                        <span id="avatarInitial"></span>
+                        <img id="avatarImg" style="display:none;">
+                    </div>
+                    <button class="pf-cam-btn" onclick="document.getElementById('avatarInput').click()">
+                        <i class="ph-bold ph-camera"></i>
+                    </button>
+                    <input type="file" id="avatarInput" accept="image/*" onchange="previewAvatar(this)">
+                </div>
+                <!-- Role pill top right -->
+                <div class="pf-avatar-actions">
+                    <div class="pf-role-pill">
+                        <i class="ph-bold ph-identification-badge"></i>
+                        <span id="rolePill">—</span>
+                    </div>
+                </div>
+            </div>
+            <!-- Name & email BELOW avatar -->
+            <div class="pf-name" id="dispName">Loading...</div>
+            <div class="pf-email-txt" id="dispEmail">—</div>
+        </div>
+    </div>
+
+    <!-- ===== EDIT PROFILE ===== -->
+    <div class="pf-card">
+        <div class="pf-card-head">
+            <div class="pf-c-icon ic-blue"><i class="ph-bold ph-user"></i></div>
+            <div class="pf-card-head-text">
+                <div class="pf-card-title">Edit Profile</div>
+                <div class="pf-card-desc">Update your name and account details</div>
+            </div>
+        </div>
+        <div class="pf-card-body">
+            <!-- Name row -->
+            <div class="pf-name-row" style="display:grid;grid-template-columns:1fr 1fr 80px;gap:10px;margin-bottom:14px;">
+                <div class="pf-field" style="margin-bottom:0">
+                    <label class="pf-lbl">Last Name</label>
+                    <div class="pf-inp-box">
+                        <i class="ph-bold ph-user"></i>
+                        <input type="text" id="pfLastName" placeholder="Dela Cruz">
+                    </div>
+                </div>
+                <div class="pf-field" style="margin-bottom:0">
+                    <label class="pf-lbl">First Name</label>
+                    <div class="pf-inp-box">
+                        <i class="ph-bold ph-user"></i>
+                        <input type="text" id="pfFirstName" placeholder="Juan">
+                    </div>
+                </div>
+                <div class="pf-field" style="margin-bottom:0">
+                    <label class="pf-lbl">M.I.</label>
+                    <div class="pf-inp-box">
+                        <input type="text" id="pfMiddleInitial" placeholder="A" maxlength="2" style="padding-left:10px;">
+                    </div>
+                </div>
+            </div>
+            <!-- Identifier — email for professors, student number (read-only) for students -->
+            <div class="pf-field" id="emailField" style="display:none">
+                <label class="pf-lbl">Email Address</label>
+                <div class="pf-inp-box">
+                    <i class="ph-bold ph-envelope"></i>
+                    <input type="email" id="pfEmail" placeholder="prof@university.edu.ph">
+                </div>
+            </div>
+            <div class="pf-field" id="studentNumField" style="display:none">
+                <label class="pf-lbl">Student Number</label>
+                <div class="pf-inp-box">
+                    <i class="ph-bold ph-identification-card"></i>
+                    <input type="text" id="pfStudentNumber" placeholder="—" disabled>
+                </div>
+                <div style="font-size:11px;color:var(--text-3);margin-top:4px;">Student number cannot be changed. Contact admin if needed.</div>
+            </div>
+            <button class="pf-btn" onclick="saveProfile(this)">
+                <span class="button_lg">
+                    <span class="button_sl"></span>
+                    <span class="button_text"><i class="ph-bold ph-floppy-disk"></i> Save Changes</span>
+                </span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ===== CHANGE PASSWORD ===== -->
+    <div class="pf-card">
+        <div class="pf-card-head">
+            <div class="pf-c-icon ic-purple"><i class="ph-bold ph-lock"></i></div>
+            <div class="pf-card-head-text">
+                <div class="pf-card-title">Change Password</div>
+                <div class="pf-card-desc">Keep your account secure</div>
+            </div>
+        </div>
+        <div class="pf-card-body">
+            <div class="pf-field">
+                <label class="pf-lbl">Current Password</label>
+                <div class="pf-inp-box">
+                    <i class="ph-bold ph-lock"></i>
+                    <input type="password" id="pwCurrent" placeholder="Current password">
+                    <button class="pf-eye" onclick="toggleEye('pwCurrent',this)"><i class="ph-bold ph-eye"></i></button>
+                </div>
+            </div>
+            <div class="pf-field">
+                <label class="pf-lbl">New Password</label>
+                <div class="pf-inp-box">
+                    <i class="ph-bold ph-lock-key"></i>
+                    <input type="password" id="pwNew" placeholder="New password" oninput="checkStrength(this.value)">
+                    <button class="pf-eye" onclick="toggleEye('pwNew',this)"><i class="ph-bold ph-eye"></i></button>
+                </div>
+                <div class="pw-bars">
+                    <div class="pw-bar" id="b1"></div>
+                    <div class="pw-bar" id="b2"></div>
+                    <div class="pw-bar" id="b3"></div>
+                    <div class="pw-bar" id="b4"></div>
+                </div>
+                <div class="pw-hint" id="pwHint"></div>
+            </div>
+            <div class="pf-field">
+                <label class="pf-lbl">Confirm New Password</label>
+                <div class="pf-inp-box">
+                    <i class="ph-bold ph-check-circle"></i>
+                    <input type="password" id="pwConfirm" placeholder="Re-enter new password">
+                    <button class="pf-eye" onclick="toggleEye('pwConfirm',this)"><i class="ph-bold ph-eye"></i></button>
+                </div>
+            </div>
+            <button class="pf-btn" onclick="changePassword(this)">
+                <span class="button_lg">
+                    <span class="button_sl"></span>
+                    <span class="button_text"><i class="ph-bold ph-shield-check"></i> Update Password</span>
+                </span>
+            </button>
+        </div>
+    </div>
+
+    <!-- ===== ACCOUNT INFO ===== -->
+    <div class="pf-card">
+        <div class="pf-card-head">
+            <div class="pf-c-icon ic-green"><i class="ph-bold ph-identification-card"></i></div>
+            <div class="pf-card-head-text">
+                <div class="pf-card-title">Account Information</div>
+                <div class="pf-card-desc">Your account details</div>
+            </div>
+        </div>
+        <div class="pf-card-body">
+            <div class="pf-info-grid">
+                <div class="pf-info-tile">
+                    <div class="pf-tile-lbl"><i class="ph-bold ph-identification-badge"></i> Role</div>
+                    <div class="pf-tile-val" id="infoRole">—</div>
+                </div>
+                <div class="pf-info-tile" id="infoIdentifierTile">
+                    <div class="pf-tile-lbl" id="infoIdentifierLabel"><i class="ph-bold ph-envelope"></i> Email</div>
+                    <div class="pf-tile-val" id="infoIdentifier" style="font-size:12px;">—</div>
+                </div>
+                <div class="pf-info-tile">
+                    <div class="pf-tile-lbl"><i class="ph-bold ph-calendar"></i> Joined</div>
+                    <div class="pf-tile-val" id="infoJoined">—</div>
+                </div>
+                <div class="pf-info-tile">
+                    <div class="pf-tile-lbl"><i class="ph-bold ph-user"></i> Full Name</div>
+                    <div class="pf-tile-val" id="infoName">—</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== PREFERENCES ===== -->
+    <div class="pf-card">
+        <div class="pf-card-head">
+            <div class="pf-c-icon ic-amber"><i class="ph-bold ph-sliders"></i></div>
+            <div class="pf-card-head-text">
+                <div class="pf-card-title">Preferences</div>
+                <div class="pf-card-desc">Customize your experience</div>
+            </div>
+        </div>
+        <div class="pf-card-body">
+            <div class="pf-pref-row">
+                <div class="pf-pref-left">
+                    <div class="pf-pref-icon ic-purple">
+                        <i class="ph-bold ph-moon" id="themeIconPref"></i>
+                    </div>
+                    <div>
+                        <div class="pf-pref-name">Dark Mode</div>
+                        <div class="pf-pref-sub" id="themeSubPref">Currently using dark theme</div>
+                    </div>
+                </div>
+                <label class="switch">
+                    <span class="sun"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="#ffd43b"><circle r="5" cy="12" cx="12"></circle><path d="m21 13h-1a1 1 0 0 1 0-2h1a1 1 0 0 1 0 2zm-17 0h-1a1 1 0 0 1 0-2h1a1 1 0 0 1 0 2zm13.66-5.66a1 1 0 0 1 -.66-.29 1 1 0 0 1 0-1.41l.71-.71a1 1 0 1 1 1.41 1.41l-.71.71a1 1 0 0 1 -.75.29zm-12.02 12.02a1 1 0 0 1 -.71-.29 1 1 0 0 1 0-1.41l.71-.66a1 1 0 0 1 1.41 1.41l-.71.71a1 1 0 0 1 -.7.24zm6.36-14.36a1 1 0 0 1 -1-1v-1a1 1 0 0 1 2 0v1a1 1 0 0 1 -1 1zm0 17a1 1 0 0 1 -1-1v-1a1 1 0 0 1 2 0v1a1 1 0 0 1 -1 1zm-5.66-14.66a1 1 0 0 1 -.7-.29l-.71-.71a1 1 0 0 1 1.41-1.41l.71.71a1 1 0 0 1 0 1.41 1 1 0 0 1 -.71.29zm12.02 12.02a1 1 0 0 1 -.7-.29l-.66-.71a1 1 0 0 1 1.36-1.36l.71.71a1 1 0 0 1 0 1.41 1 1 0 0 1 -.71.24z"></path></g></svg></span>
+                    <span class="moon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path d="m223.5 32c-123.5 0-223.5 100.3-223.5 224s100 224 223.5 224c60.6 0 115.5-24.2 155.8-63.4 5-4.9 6.3-12.5 3.1-18.7s-10.1-9.7-17-8.5c-9.8 1.7-19.8 2.6-30.1 2.6-96.9 0-175.5-78.8-175.5-176 0-65.8 36-123.1 89.3-153.3 6.1-3.5 9.2-10.5 7.7-17.3s-7.3-11.9-14.3-12.5c-6.3-.5-12.6-.8-19-.8z"></path></svg></span>
+                    <input type="checkbox" class="input" id="darkToggle" onchange="handleThemeToggle(this.checked)">
+                    <span class="slider"></span>
+                </label>
+            </div>
+            <div class="pf-pref-row">
+                <div class="pf-pref-left">
+                    <div class="pf-pref-icon" style="background:#f0fdf4;color:#10b981;">
+                        <i class="ph-bold ph-bell"></i>
+                    </div>
+                    <div>
+                        <div class="pf-pref-name">Notifications</div>
+                        <div class="pf-pref-sub">Activity updates and reminders</div>
+                    </div>
+                </div>
+                <label class="pf-toggle">
+                    <input type="checkbox" id="notifToggle" checked>
+                    <span class="pf-tog-sl"></span>
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== DANGER ZONE ===== -->
+    <div class="pf-card">
+        <div class="pf-card-head">
+            <div class="pf-c-icon ic-red"><i class="ph-bold ph-warning-octagon"></i></div>
+            <div class="pf-card-head-text">
+                <div class="pf-card-title">Danger Zone</div>
+                <div class="pf-card-desc">Irreversible account actions</div>
+            </div>
+        </div>
+        <div class="pf-card-body">
+            <div class="pf-danger-row">
+                <button class="pf-dng-btn" onclick="doConfirm('🚪','Logout All Devices?','This will sign you out from all devices.',logoutAll)">
+                    <i class="ph-bold ph-sign-out"></i> Logout All Devices
+                </button>
+                <button class="pf-dng-btn" onclick="doConfirm('⚠️','Delete Account?','This is permanent and cannot be undone. All your data will be removed.',deleteAccount)">
+                    <i class="ph-bold ph-trash"></i> Delete Account
+                </button>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- CONFIRM MODAL -->
+<div class="modal-overlay" id="pfModal">
+    <div class="pf-modal-box">
+        <div class="pf-modal-icon" id="mIcon"></div>
+        <div class="pf-modal-title" id="mTitle"></div>
+        <div class="pf-modal-msg" id="mMsg"></div>
+        <div class="pf-modal-btns">
+            <button class="pf-mc-btn" onclick="closeModal()">
+                <span class="button_lg">
+                    <span class="button_sl"></span>
+                    <span class="button_text">Cancel</span>
+                </span>
+            </button>
+            <button class="pf-mo-btn" id="mOkBtn">
+                <span class="button_lg">
+                    <span class="button_sl"></span>
+                    <span class="button_text">Confirm</span>
+                </span>
+            </button>
+        </div>
+    </div>
+</div>
+
+<script src="static/script.js"></script>
+<script src="static/navbar.js"></script>
+<div class="pf-toast-wrap" id="pfToastWrap"></div>
+<script>
+// Override showToast for profile page
+function showToast(msg, type='success') {
+    const wrap = document.getElementById('pfToastWrap');
+    if (!wrap) return;
+    const t = document.createElement('div');
+    t.className = `pf-toast ${type}`;
+    const icons = { success:'ph-check-circle', error:'ph-x-circle', warning:'ph-warning-circle', info:'ph-info' };
+    t.innerHTML = `<i class="ph-bold ${icons[type]||'ph-info'}"></i> ${msg}`;
+    wrap.appendChild(t);
+    setTimeout(() => t.remove(), 3000);
+}
+const token = localStorage.getItem('token');
+const role  = localStorage.getItem('role');
+if (!token) window.location.href = '/login';
+initSessionGuard();
+document.body.classList.add('dashboard-body');
+
+// ── Theme ──
+function applyTheme(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    localStorage.setItem('physlab_theme', t);
+    const isDark = t === 'dark';
+    const icon = document.getElementById('themeIconPref');
+    const sub  = document.getElementById('themeSubPref');
+    const tog  = document.getElementById('darkToggle');
+    if (icon) icon.className = isDark ? 'ph-bold ph-moon' : 'ph-bold ph-sun';
+    if (sub)  sub.textContent = isDark ? 'Currently using dark theme' : 'Currently using light theme';
+    if (tog)  tog.checked = isDark;
+}
+function handleThemeToggle(on) {
+    applyTheme(on ? 'dark' : 'light');
+    showToast(on ? 'Dark mode on' : 'Light mode on', 'info');
+}
+applyTheme(localStorage.getItem('physlab_theme') || 'dark');
+
+// ── Particles ──
+(function() {
+    const pw = document.getElementById('particles');
+    if (!pw) return;
+    for (let i = 0; i < 25; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.cssText = `left:${Math.random()*100}%;animation-delay:-${Math.random()*8}s;animation-duration:${6+Math.random()*8}s;--drift:${(Math.random()-.5)*200}px`;
+        pw.appendChild(p);
+    }
+})();
+
+// ===== LOAD FROM API then INIT =====
+async function loadProfileFromAPI() {
+    try {
+        const res = await fetch('http://127.0.0.1:5000/api/auth/profile', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+            const d = await res.json();
+            localStorage.setItem('full_name',      d.full_name);
+            localStorage.setItem('first_name',     d.first_name     || '');
+            localStorage.setItem('last_name',      d.last_name      || '');
+            localStorage.setItem('middle_initial', d.middle_initial || '');
+            localStorage.setItem('email',          d.email          || '');
+            localStorage.setItem('student_number', d.student_number || '');
+            localStorage.setItem('joined_at',      d.joined_at      || '');
+            if (d.avatar) localStorage.setItem('profile_avatar_' + localStorage.getItem('user_id'), d.avatar);
+        }
+    } catch {}
+    initPage();
+}
+
+function initPage() {
+    const fullName      = localStorage.getItem('full_name')      || 'User';
+    const firstName     = localStorage.getItem('first_name')     || '';
+    const lastName      = localStorage.getItem('last_name')      || '';
+    const middleInitial = localStorage.getItem('middle_initial') || '';
+    const email         = localStorage.getItem('email')          || '';
+    const studentNumber = localStorage.getItem('student_number') || '';
+    const joined        = localStorage.getItem('joined_at')      || '';
+
+    // Navbar (userName/roleBadge removed)
+    const rb = document.getElementById('roleBadge');
+    if (rb) {
+        rb.textContent = role === 'professor' ? 'Professor' : 'Student';
+        rb.className   = role === 'professor' ? 'badge-prof' : 'badge-student';
+    }
+    const brandLink = document.getElementById('navBrandLink');
+    if (brandLink) brandLink.href = role === 'professor' ? '/dashboard_professor' : '/dashboard_student';
+
+    // Hero
+    document.getElementById('avatarInitial').textContent = (firstName || fullName).charAt(0).toUpperCase();
+    document.getElementById('dispName').textContent  = fullName;
+    // show email for prof, student number for student
+    document.getElementById('dispEmail').textContent = role === 'professor' ? email : studentNumber;
+    document.getElementById('rolePill').textContent  = role === 'professor' ? 'Professor' : 'Student';
+
+    // Prefill form fields
+    document.getElementById('pfLastName').value      = lastName;
+    document.getElementById('pfFirstName').value     = firstName;
+    document.getElementById('pfMiddleInitial').value = middleInitial;
+
+    // Show correct identifier field
+    if (role === 'professor') {
+        document.getElementById('emailField').style.display      = '';
+        document.getElementById('studentNumField').style.display = 'none';
+        document.getElementById('pfEmail').value = email;
+    } else {
+        document.getElementById('emailField').style.display      = 'none';
+        document.getElementById('studentNumField').style.display = '';
+        document.getElementById('pfStudentNumber').value = studentNumber || '—';
+    }
+
+    // Info tiles
+    document.getElementById('infoRole').textContent = role === 'professor' ? 'Professor' : 'Student';
+    document.getElementById('infoName').textContent = fullName;
+    // Identifier tile label + value
+    const identLabel = document.getElementById('infoIdentifierLabel');
+    const identVal   = document.getElementById('infoIdentifier');
+    if (role === 'professor') {
+        identLabel.innerHTML = '<i class="ph-bold ph-envelope"></i> Email';
+        identVal.textContent = email || '—';
+    } else {
+        identLabel.innerHTML = '<i class="ph-bold ph-identification-card"></i> Student No.';
+        identVal.textContent = studentNumber || '—';
+    }
+    document.getElementById('infoJoined').textContent = joined
+        ? new Date(joined).toLocaleDateString('en-PH', {year:'numeric', month:'short', day:'numeric'})
+        : '—';
+
+    // Saved avatar
+    const saved = localStorage.getItem('profile_avatar_' + localStorage.getItem('user_id'));
+    if (saved) {
+        document.getElementById('avatarImg').src = saved;
+        document.getElementById('avatarImg').style.display  = 'block';
+        document.getElementById('avatarInitial').style.display = 'none';
+    }
+    initNavAvatar();
+}
+
+// ===== AVATAR =====
+function previewAvatar(input) {
+    if (!input.files[0]) return;
+    const reader = new FileReader();
+    reader.onload = async e => {
+        const dataUrl = e.target.result;
+        // Show preview immediately
+        document.getElementById('avatarImg').src = dataUrl;
+        document.getElementById('avatarImg').style.display = 'block';
+        document.getElementById('avatarInitial').style.display = 'none';
+        // Upload to server
+        try {
+            const res = await fetch('http://127.0.0.1:5000/api/auth/upload-avatar', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ avatar: dataUrl })
+            });
+            const d = await res.json();
+            if (res.ok) {
+                localStorage.setItem('profile_avatar_' + localStorage.getItem('user_id'), dataUrl);
+                initNavAvatar();
+                showToast('Profile picture updated!', 'success');
+            } else {
+                showToast(d.message || 'Upload failed!', 'error');
+            }
+        } catch { showToast('Cannot connect to server!', 'error'); }
+    };
+    reader.readAsDataURL(input.files[0]);
+}
+
+// ===== SAVE PROFILE =====
+async function saveProfile(btn) {
+    const lastName      = document.getElementById('pfLastName').value.trim();
+    const firstName     = document.getElementById('pfFirstName').value.trim();
+    const middleInitial = document.getElementById('pfMiddleInitial').value.trim();
+    const email         = role === 'professor' ? document.getElementById('pfEmail').value.trim() : '';
+
+    if (!lastName || !firstName) { showToast('Last name and first name are required!', 'warning'); return; }
+    if (role === 'professor' && !email) { showToast('Email is required!', 'warning'); return; }
+
+    btn.disabled = true;
+    btn.querySelector('.button_text').innerHTML = '<i class="ph-bold ph-spinner"></i> Saving...';
+    try {
+        const res = await fetch('http://127.0.0.1:5000/api/auth/update-profile', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ last_name: lastName, first_name: firstName, middle_initial: middleInitial, email })
+        });
+        const d = await res.json();
+        if (res.ok) {
+            // Update localStorage
+            localStorage.setItem('last_name',      d.last_name);
+            localStorage.setItem('first_name',     d.first_name);
+            localStorage.setItem('middle_initial', d.middle_initial || '');
+            localStorage.setItem('full_name',      d.full_name);
+            if (role === 'professor') localStorage.setItem('email', d.email);
+
+            // Update UI
+            document.getElementById('dispName').textContent  = d.full_name;
+            document.getElementById('dispEmail').textContent = role === 'professor' ? d.email : localStorage.getItem('student_number');
+            // userName removed from navbar
+            document.getElementById('avatarInitial').textContent = d.first_name.charAt(0).toUpperCase();
+            document.getElementById('infoName').textContent  = d.full_name;
+            document.getElementById('infoIdentifier').textContent = role === 'professor' ? d.email : localStorage.getItem('student_number');
+            showToast('Profile updated!', 'success');
+        } else { showToast(d.message || 'Cannot update!', 'error'); }
+    } catch { showToast('Cannot connect to server!', 'error'); }
+    finally {
+        btn.disabled = false;
+        btn.querySelector('.button_text').innerHTML = '<i class="ph-bold ph-floppy-disk"></i> Save Changes';
+    }
+}
+
+// ===== CHANGE PASSWORD =====
+async function changePassword(btn) {
+    const cur  = document.getElementById('pwCurrent').value;
+    const nw   = document.getElementById('pwNew').value;
+    const conf = document.getElementById('pwConfirm').value;
+    if (!cur || !nw || !conf) { showToast('Please fill in all fields!', 'warning'); return; }
+    if (nw !== conf)           { showToast('New passwords do not match!', 'error'); return; }
+    if (nw.length < 6)         { showToast('Password must be at least 6 characters!', 'warning'); return; }
+
+    btn.disabled = true;
+    btn.querySelector('.button_text').innerHTML = '<i class="ph-bold ph-spinner"></i> Updating...';
+    try {
+        const res = await fetch('http://127.0.0.1:5000/api/auth/change-password', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ current_password: cur, new_password: nw })
+        });
+        const d = await res.json();
+        if (res.ok) {
+            document.getElementById('pwCurrent').value = '';
+            document.getElementById('pwNew').value     = '';
+            document.getElementById('pwConfirm').value = '';
+            checkStrength('');
+            showToast('Password updated!', 'success');
+        } else { showToast(d.message || 'Cannot update password!', 'error'); }
+    } catch { showToast('Cannot connect to server!', 'error'); }
+    finally {
+        btn.disabled = false;
+        btn.querySelector('.button_text').innerHTML = '<i class="ph-bold ph-shield-check"></i> Update Password';
+    }
+}
+
+// ===== PW STRENGTH =====
+function checkStrength(pw) {
+    let s = 0;
+    if (pw.length >= 6)  s++;
+    if (pw.length >= 10) s++;
+    if (/[A-Z]/.test(pw) && /[0-9]/.test(pw)) s++;
+    if (/[^A-Za-z0-9]/.test(pw)) s++;
+    const clrs = ['#ef4444','#f59e0b','#3b82f6','#10b981'];
+    const lbls = ['Weak','Fair','Good','Strong'];
+    ['b1','b2','b3','b4'].forEach((id,i) => {
+        document.getElementById(id).style.background = i < s ? clrs[s-1] : '#e5e7eb';
+    });
+    const hint = document.getElementById('pwHint');
+    hint.textContent = pw ? (lbls[s-1] || '') : '';
+    hint.style.color = s > 0 ? clrs[s-1] : '#9ca3af';
+}
+
+// ===== TOGGLE EYE =====
+function toggleEye(inputId, btn) {
+    const inp = document.getElementById(inputId);
+    const ico = btn.querySelector('i');
+    if (inp.type === 'password') { inp.type = 'text'; ico.className = 'ph-bold ph-eye-slash'; }
+    else { inp.type = 'password'; ico.className = 'ph-bold ph-eye'; }
+}
+
+// ===== DARK MODE ===== (handled by applyTheme above)
+function toggleDark(on) { handleThemeToggle(on); }
+
+// ===== CONFIRM MODAL =====
+function doConfirm(icon, title, msg, fn) {
+    document.getElementById('mIcon').textContent  = icon;
+    document.getElementById('mTitle').textContent = title;
+    document.getElementById('mMsg').textContent   = msg;
+    document.getElementById('mOkBtn').onclick = () => { closeModal(); fn(); };
+    document.getElementById('pfModal').classList.add('active');
+}
+function closeModal() { document.getElementById('pfModal').classList.remove('active'); }
+
+function logoutAll() { logout(); }
+
+async function deleteAccount() {
+    try {
+        await fetch('http://127.0.0.1:5000/api/auth/delete-account', {
+            method: 'DELETE',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        localStorage.clear();
+        window.location.href = '/login';
+    } catch { showToast('Cannot connect to server!', 'error'); }
+}
+
+
+loadProfileFromAPI();
+</script>
+</body>
+</html>

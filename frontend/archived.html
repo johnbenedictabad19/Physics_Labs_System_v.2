@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <script>(function(){var t=localStorage.getItem('physlab_theme')||'light';document.documentElement.setAttribute('data-theme',t);if(sessionStorage.getItem('physlab_nav')){sessionStorage.removeItem('physlab_nav');document.documentElement.setAttribute('data-entering','');}})();</script>
+    <meta charset="UTF-8">
+    <link rel="icon" href="/static/logo.svg" type="image/svg+xml">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PHYSLAB — Archived</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Abril+Fatface&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <link rel="stylesheet" href="static/style.css">
+    <style>
+        /* ── Navbar ── */
+        .navbar {
+            position: fixed; top: 14px; left: 50%; transform: translateX(-50%);
+            z-index: 200; width: calc(100% - 48px); max-width: 1280px;
+            height: 52px; padding: 0 18px;
+            display: flex; align-items: center; justify-content: space-between; gap: 12px;
+            background: rgba(15,14,26,0.45); backdrop-filter: blur(40px) saturate(180%);
+            border-radius: 26px; border: 1px solid rgba(255,255,255,0.09);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.07);
+            transition: background 0.3s;
+        }
+        [data-theme="light"] .navbar {
+            background: rgba(255,255,255,0.75); border-color: rgba(10,102,194,0.15);
+            box-shadow: 0 8px 32px rgba(10,102,194,0.1), inset 0 1px 0 rgba(255,255,255,0.9);
+        }
+        .nav-left { display: flex; align-items: center; gap: 14px; }
+        .nav-brand {
+            font-family: 'Abril Fatface', sans-serif; font-size: 16px; font-weight: 700;
+            color: var(--text); display: flex; align-items: center; gap: 10px; text-decoration: none;
+        }
+        .brand-icon { width: 32px; height: 32px; display: flex; align-items: center; justify-content: center; border-radius: 12px; overflow: hidden; }
+        .brand-icon img { width: 100%; height: 100%; object-fit: contain; }
+        .nav-user { display: flex; align-items: center; gap: 10px; }
+        .nav-avatar {
+            width: 34px; height: 34px; border-radius: 8px; background: #0A66C2;
+            display: flex; align-items: center; justify-content: center;
+            color: white; font-weight: 800; font-size: 13px;
+            border: none; cursor: pointer; overflow: hidden;
+            transition: transform 0.18s, box-shadow 0.18s;
+        }
+        .nav-avatar:hover { transform: scale(1.07); box-shadow: 0 4px 12px rgba(10,102,194,0.15); }
+        .nav-avatar img { width: 100%; height: 100%; object-fit: cover; display: none; }
+        .nav-av-initial { font-size: 13px; font-weight: 800; }
+        /* Nav Dropdown */
+        .nav-avatar-wrap { position: relative; }
+        .nav-dropdown {
+            display: none; position: absolute; right: 0; top: calc(100% + 10px);
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 10px; min-width: 185px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.25); overflow: hidden; z-index: 300;
+        }
+        .nav-dropdown.open { display: block; }
+        .nav-dropdown a, .nav-dropdown button {
+            display: flex; align-items: center; gap: 10px;
+            width: 100%; padding: 10px 16px; text-align: left;
+            font-size: 13px; font-weight: 500; color: var(--text);
+            background: none; border: none; text-decoration: none;
+            cursor: pointer; transition: background 0.15s;
+            font-family: 'Inter', sans-serif; box-sizing: border-box;
+        }
+        .nav-dropdown a:hover, .nav-dropdown button:hover { background: rgba(255,255,255,0.06); }
+        [data-theme="light"] .nav-dropdown a:hover,
+        [data-theme="light"] .nav-dropdown button:hover { background: rgba(0,0,0,0.05); }
+        .nd-divider { height: 1px; background: var(--border); margin: 4px 0; }
+        .nd-logout { color: #fca5a5 !important; }
+        .nd-logout:hover { background: rgba(239,68,68,0.08) !important; }
+
+        /* ── Layout ── */
+        .page-container { max-width: 1100px; margin: 0 auto; padding: 88px 28px 60px; }
+        .page-header { margin-bottom: 28px; display: flex; align-items: center; gap: 14px; }
+        .page-icon {
+            width: 44px; height: 44px; border-radius: 12px;
+            background: rgba(10,102,194,0.12); border: 1px solid rgba(10,102,194,0.2);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px; color: #0A66C2;
+        }
+        .page-title { font-size: 20px; font-weight: 800; color: var(--text); }
+        .page-sub { font-size: 13px; color: var(--text-2); margin-top: 2px; }
+
+        /* ── Cards ── */
+        .classes-grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px;
+        }
+        .db-class-card {
+            border-radius: 16px; overflow: visible; border: 1px solid var(--border);
+            background: var(--surface); opacity: 0.75; transition: all 0.25s;
+            position: relative;
+        }
+        .db-class-card:hover { opacity: 1; transform: translateY(-3px); box-shadow: 0 12px 36px rgba(0,0,0,0.2); }
+        .cc-banner {
+            height: 90px; position: relative; overflow: hidden;
+            display: flex; align-items: flex-end; padding: 10px 14px;
+            border-radius: 14px 14px 0 0;
+        }
+        .tb-0 { background: repeating-linear-gradient(45deg, rgba(167,139,250,0.15) 0, rgba(167,139,250,0.15) 1.5px, transparent 1.5px, transparent 14px), linear-gradient(135deg, #6d28d9, #4c1d95); }
+        .tb-1 { background: repeating-linear-gradient(45deg,rgba(251,146,60,0.13) 0,rgba(251,146,60,0.13) 2px,transparent 2px,transparent 16px), linear-gradient(135deg,#1e3a5f,#0a1628); }
+        .tb-2 { background: repeating-linear-gradient(0deg,rgba(251,191,36,0.1) 0,rgba(251,191,36,0.1) 1.5px,transparent 1.5px,transparent 14px), linear-gradient(135deg,#7c2d12,#1c0a00); }
+        .tb-3 { background: repeating-linear-gradient(60deg,rgba(129,140,248,0.13) 0,rgba(129,140,248,0.13) 1px,transparent 1px,transparent 10px), repeating-linear-gradient(-60deg,rgba(129,140,248,0.13) 0,rgba(129,140,248,0.13) 1px,transparent 1px,transparent 10px), linear-gradient(135deg,#0c1445,#050a1e); }
+        .tb-4 { background: radial-gradient(circle,rgba(34,211,238,0.15) 1px,transparent 1px), linear-gradient(135deg,#0A66C2,#004182); background-size: 14px 14px, 100% 100%; }
+        .tb-5 { background: radial-gradient(rgba(132,204,22,0.18) 1px,transparent 1px), linear-gradient(135deg,#052e16,#010b05); background-size: 14px 14px, 100% 100%; }
+        .tb-6 { background: linear-gradient(135deg,#1a1625,#0d1117); }
+        .archived-badge {
+            position: absolute; top: 10px; right: 10px; z-index: 2;
+            background: rgba(0,0,0,0.45); border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 5px; padding: 2px 8px;
+            font-size: 10px; font-weight: 700; color: rgba(255,255,255,0.7);
+            letter-spacing: 0.8px; backdrop-filter: blur(4px);
+        }
+        .cc-card-body { padding: 14px 16px 16px; }
+        .cc-class-name { font-size: 13px; font-weight: 700; color: var(--text); margin-bottom: 3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .cc-class-sub { font-size: 12px; color: var(--text-2); margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .cc-class-section { font-size: 11px; color: var(--text-3); margin-bottom: 10px; }
+        .cc-card-footer { display: flex; align-items: center; padding-top: 10px; border-top: 1px solid var(--border); }
+        .cc-prof, .cc-students { font-size: 12px; color: var(--text-2); display: flex; align-items: center; gap: 5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        .cc-prof i, .cc-students i { color: #0A66C2; flex-shrink: 0; }
+        .cc-card-actions { padding: 0 16px 14px; }
+        .btn-unarchive {
+            overflow:hidden; height:38px; width:100%;
+            display:inline-flex; align-items:center; justify-content:center;
+            background:transparent; border:1px solid rgba(91,155,213,0.3); border-radius:3px;
+            font-size:11px; letter-spacing:1px; font-weight:600;
+            text-transform:uppercase; font-family:'Inter',sans-serif;
+            color:var(--text-2); cursor:pointer; position:relative; transition:all 0.3s ease;
+        }
+        .btn-unarchive::before, .btn-unarchive::after { content:""; position:absolute; width:0; height:2px; background-color:var(--primary); transition:all 0.5s cubic-bezier(0.35,0.1,0.25,1); }
+        .btn-unarchive::before { right:0; top:0; }
+        .btn-unarchive::after  { left:0; bottom:0; transition:all 0.3s cubic-bezier(0.35,0.1,0.25,1); }
+        .btn-unarchive > span.bc-span { width:100%; height:100%; position:absolute; left:0; top:0; z-index:1; }
+        .btn-unarchive > span.bc-span::before, .btn-unarchive > span.bc-span::after { content:""; position:absolute; width:2px; height:0; background-color:var(--primary); transition:all 0.3s cubic-bezier(0.35,0.1,0.25,1); }
+        .btn-unarchive > span.bc-span::before { right:0; top:0; transition:all 0.5s cubic-bezier(0.35,0.1,0.25,1); }
+        .btn-unarchive > span.bc-span::after  { left:0; bottom:0; }
+        .btn-unarchive-inner { position:absolute; inset:0; z-index:2; }
+        .btn-unarchive-default, .btn-unarchive-hover { position:absolute; width:100%; display:flex; align-items:center; justify-content:center; gap:7px; transition:all 0.4s cubic-bezier(0.35,0.1,0.25,1); }
+        .btn-unarchive-default { top:50%; transform:translateY(-50%); color:var(--text-2); }
+        .btn-unarchive-hover   { top:150%; color:#0A66C2; }
+        .btn-unarchive:hover::before, .btn-unarchive:hover::after { width:100%; }
+        .btn-unarchive:hover > span.bc-span::before, .btn-unarchive:hover > span.bc-span::after { height:100%; }
+        .btn-unarchive:hover .btn-unarchive-default { top:-50%; transform:translateY(0) rotate(5deg); }
+        .btn-unarchive:hover .btn-unarchive-hover   { top:50%; transform:translateY(-50%); }
+        .archived-by-prof-note { font-size: 11px; color: var(--text-3); font-style: italic; text-align: center; padding: 6px 0; }
+
+        /* ── Empty state ── */
+        .empty-state { text-align: center; padding: 60px 20px; color: var(--text-3); }
+        .empty-state i { font-size: 48px; margin-bottom: 16px; display: block; }
+        .empty-state p { font-size: 14px; margin-bottom: 6px; }
+        .empty-state span { font-size: 13px; color: var(--text-3); }
+
+        /* ── Skeleton ── */
+        .skeleton-card { border-radius: 16px; overflow: hidden; border: 1px solid var(--border); background: var(--surface); }
+        .sk-banner { height: 90px; border-radius: 0; }
+        .sk-body { padding: 14px 16px; }
+        .sk-title { height: 14px; border-radius: 6px; margin-bottom: 8px; width: 70%; }
+        .sk-sub   { height: 12px; border-radius: 6px; margin-bottom: 6px; width: 55%; }
+        .sk-sub2  { height: 10px; border-radius: 6px; width: 40%; }
+        .skeleton-box { background: var(--border); animation: skPulse 1.4s ease-in-out infinite; }
+        @keyframes skPulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+        @media (max-width: 768px) {
+            .navbar { padding: 0 14px; width: calc(100% - 24px); }
+            .page-container { padding: 80px 16px 40px; }
+        }
+    </style>
+</head>
+<body class="dashboard-body">
+
+<div class="bg-grid"></div>
+<div class="particles" id="particles"></div>
+
+<nav class="navbar">
+    <div class="nav-left">
+        <a class="nav-brand" href="javascript:history.back()">
+            <div class="brand-icon"><img src="static/logo.svg" alt="PHYSLAB Logo"></div>
+            PHYSLAB
+        </a>
+    </div>
+    <div class="nav-user">
+        <div class="nav-avatar-wrap">
+            <button class="nav-avatar" id="navAvatar" onclick="toggleNavDropdown()" title="Menu">
+                <span class="nav-av-initial"></span><img alt="avatar">
+            </button>
+            <div class="nav-dropdown" id="navDropdown"></div>
+        </div>
+    </div>
+</nav>
+
+<div class="page-container">
+    <div class="page-header">
+        <div class="page-icon"><i class="ph-bold ph-archive"></i></div>
+        <div>
+            <div class="page-title">Archived Classes</div>
+            <div class="page-sub" id="pageSubtitle">Your archived classes</div>
+        </div>
+    </div>
+    <div id="archivedList"></div>
+</div>
+
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<script src="static/script.js"></script>
+<script src="static/navbar.js"></script>
+<script>
+function applyTheme(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    localStorage.setItem('physlab_theme', t);
+}
+applyTheme(localStorage.getItem('physlab_theme') || 'dark');
+
+const token = localStorage.getItem('token');
+if (!token) window.location.href = '/login';
+initSessionGuard();
+
+const role = localStorage.getItem('role');
+
+
+document.getElementById('pageSubtitle').textContent = role === 'professor'
+    ? 'Classes you have archived — unarchive to make them active again'
+    : 'Classes you have archived — unarchive to bring them back to your dashboard';
+
+// ── Themes ──
+const THEMES = [
+    { id:0, icon:'ph-atom',          bannerClass:'tb-0', physicist:'static/physicists/einstein.jpg',
+      decos:[{icon:'ph-atom',size:54,top:-8,right:54,opacity:0.08,rotate:15},{icon:'ph-atom',size:28,top:46,right:20,opacity:0.07,rotate:-10}] },
+    { id:1, icon:'ph-gear-six',      bannerClass:'tb-1', physicist:'static/physicists/newton.jpg',
+      decos:[{icon:'ph-gear-six',size:58,top:-10,right:56,opacity:0.09,rotate:20},{icon:'ph-gear-six',size:26,top:48,right:18,opacity:0.07,rotate:-15}] },
+    { id:2, icon:'ph-wave-sine',     bannerClass:'tb-2', physicist:'static/physicists/planck.jpg',
+      decos:[{icon:'ph-wave-sine',size:52,top:-6,right:52,opacity:0.09,rotate:0},{icon:'ph-wave-sine',size:24,top:50,right:16,opacity:0.07,rotate:5}] },
+    { id:3, icon:'ph-lightning',     bannerClass:'tb-3', physicist:'static/physicists/maxwell.jpg',
+      decos:[{icon:'ph-lightning',size:56,top:-10,right:54,opacity:0.1,rotate:10},{icon:'ph-lightning',size:26,top:48,right:18,opacity:0.07,rotate:-8}] },
+    { id:4, icon:'ph-eye',           bannerClass:'tb-4', physicist:'static/physicists/feynman.jpg',
+      decos:[{icon:'ph-eye',size:54,top:-8,right:52,opacity:0.09,rotate:-5},{icon:'ph-eye',size:24,top:50,right:16,opacity:0.07,rotate:5}] },
+    { id:5, icon:'ph-circuit-board', bannerClass:'tb-5', physicist:'static/physicists/tesla.jpg',
+      decos:[{icon:'ph-circuit-board',size:56,top:-10,right:54,opacity:0.09,rotate:12},{icon:'ph-circuit-board',size:26,top:48,right:18,opacity:0.07,rotate:-10}] },
+    { id:6, icon:'ph-image',         bannerClass:'tb-6', physicist:null, decos:[] },
+];
+
+function renderBannerDecos(t, physOpacity) {
+    const decos = t.decos.map(d =>
+        `<i class="ph-bold ${d.icon}" style="position:absolute;font-size:${d.size}px;top:${d.top}px;right:${d.right}px;opacity:${d.opacity};transform:rotate(${d.rotate}deg);color:white;pointer-events:none;user-select:none;line-height:1;"></i>`
+    ).join('');
+    const phys = t.physicist ? `<img src="${t.physicist}" alt="" style="position:absolute;right:0;top:0;height:100%;width:80px;object-fit:cover;object-position:top center;opacity:${physOpacity};filter:grayscale(100%) contrast(1.1) brightness(1.1);-webkit-mask-image:linear-gradient(to right,transparent 0%,black 52%);mask-image:linear-gradient(to right,transparent 0%,black 52%);pointer-events:none;">` : '';
+    return decos + phys;
+}
+
+function skeletonCards(n) {
+    return `<div class="classes-grid">${Array.from({length:n}, () => `
+        <div class="skeleton-card">
+            <div class="skeleton-box sk-banner"></div>
+            <div class="sk-body">
+                <div class="skeleton-box sk-title"></div>
+                <div class="skeleton-box sk-sub"></div>
+                <div class="skeleton-box sk-sub2"></div>
+            </div>
+        </div>`).join('')}</div>`;
+}
+
+async function loadArchived() {
+    document.getElementById('archivedList').innerHTML = skeletonCards(4);
+    try {
+        const data = await fetch('http://127.0.0.1:5000/api/classes/archived', {
+            headers: { 'Authorization': `Bearer ${token}` }
+        }).then(r => r.json());
+
+        if (!data.length) {
+            document.getElementById('archivedList').innerHTML = `
+                <div class="empty-state">
+                    <i class="ph-bold ph-archive"></i>
+                    <p>No archived classes yet</p>
+                    <span>${role === 'professor' ? 'Archive a class from the 3-dot menu on your dashboard.' : 'Archive a class from the 3-dot menu on your dashboard.'}</span>
+                </div>`;
+            return;
+        }
+
+        document.getElementById('archivedList').innerHTML = `<div class="classes-grid">${data.map(c => {
+            const t = THEMES[c.theme || 0];
+            const isCustom = c.theme === 6 && c.banner_image;
+            const bannerStyle = isCustom ? `style="background:url('${c.banner_image}') center/cover no-repeat,#111;"` : '';
+            const footer = role === 'professor'
+                ? `<span class="cc-students"><i class="ph-bold ph-users"></i> ${c.student_count || 0} student/s</span>`
+                : `<span class="cc-prof"><i class="ph-bold ph-chalkboard-teacher"></i> ${c.professor_name || ''}</span>`;
+            return `
+            <div class="db-class-card" onclick="navigateTo('/class_detail?id=${c.id}')" style="cursor:pointer;">
+                <div class="cc-banner ${t.bannerClass}" ${bannerStyle}>
+                    ${isCustom ? '' : renderBannerDecos(t, 0.18)}
+                    <span class="archived-badge">ARCHIVED</span>
+                </div>
+                <div class="cc-card-body">
+                    <div class="cc-class-name">${c.class_name}</div>
+                    <div class="cc-class-sub">${c.subject}</div>
+                    <div class="cc-class-section">${c.section}</div>
+                    <div class="cc-card-footer">${footer}</div>
+                </div>
+                <div class="cc-card-actions">
+                    ${role === 'professor' || !c.archived_by_prof
+                        ? `<button class="btn-unarchive" onclick="event.stopPropagation();doUnarchive(${c.id})">
+                            <span class="bc-span"></span>
+                            <div class="btn-unarchive-inner">
+                                <div class="btn-unarchive-default"><i class="ph-bold ph-arrow-counter-clockwise"></i> Unarchive</div>
+                                <div class="btn-unarchive-hover"><i class="ph-bold ph-arrow-counter-clockwise"></i> Unarchive</div>
+                            </div>
+                           </button>`
+                        : `<div class="archived-by-prof-note">Archived by professor</div>`}
+                </div>
+            </div>`;
+        }).join('')}</div>`;
+    } catch {
+        showToast('Cannot load archived classes!', 'error');
+    }
+}
+
+async function doUnarchive(id) {
+    try {
+        const endpoint = role === 'professor'
+            ? `http://127.0.0.1:5000/api/classes/${id}/archive`
+            : `http://127.0.0.1:5000/api/classes/${id}/archive-member`;
+        const r = await fetch(endpoint, { method: 'POST', headers: { 'Authorization': `Bearer ${token}` } });
+        const d = await r.json();
+        if (r.ok) { showToast(d.message, 'success'); loadArchived(); }
+        else showToast(d.message || 'Failed!', 'error');
+    } catch { showToast('Cannot connect to server!', 'error'); }
+}
+
+loadArchived();
+document.body.classList.add('dashboard-body');
+initParticles?.();
+
+// ═══ REAL-TIME CLASS UPDATES ═══
+(function() {
+    const socket = io();
+    socket.on('class_update', function() {
+        loadArchived();
+    });
+})();
+</script>
+</body>
+</html>

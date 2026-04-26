@@ -1,0 +1,938 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <script>(function(){var t=localStorage.getItem('physlab_theme')||'light';document.documentElement.setAttribute('data-theme',t);if(sessionStorage.getItem('physlab_nav')){sessionStorage.removeItem('physlab_nav');document.documentElement.setAttribute('data-entering','');}})();</script>
+
+    <meta charset="UTF-8">
+    <link rel="icon" href="/static/favicons/admin_dashboard.svg" type="image/svg+xml">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard — PHYSLAB</title>
+    <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800;900&family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&family=Abril+Fatface&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        /* ═══ THEME VARIABLES ═══ */
+        :root { --primary:#0A66C2; --primary-l:#5b9bd5; --primary-dark:#004182; --primary-dark-l:#a78bfa; }
+        [data-theme="dark"] {
+            --bg:#1B1F23; --bg-2:#16191D; --surface:#22272B;
+            --border:rgba(255,255,255,0.08); --border-h:rgba(10,102,194,0.15);
+            --text:#ffffff; --text-2:rgba(255,255,255,0.65); --text-3:rgba(255,255,255,0.35);
+            --input-bg:rgba(255,255,255,0.05); --input-bg-f:rgba(255,255,255,0.08);
+            --placeholder:rgba(255,255,255,0.25); --card-bg:rgba(255,255,255,0.03);
+        }
+        [data-theme="light"] {
+            --bg:#F3F2EF; --bg-2:#E8E7E3; --surface:#ffffff;
+            --border:rgba(10,102,194,0.12); --border-h:rgba(10,102,194,0.45);
+            --text:#1B1F23; --text-2:#555555; --text-3:#888888;
+            --input-bg:#F9F9F9; --input-bg-f:#F0F0F0; --placeholder:#AAAAAA; --card-bg:rgba(10,102,194,0.02);
+        }
+
+        /* ═══ BG EFFECTS ═══ */
+        html, body { height: 100%; font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); }
+        body::before { content:''; position:fixed; top:-200px; left:-200px; width:600px; height:600px;
+            background:transparent; pointer-events:none; z-index:0; }
+        body::after  { content:''; position:fixed; bottom:-200px; right:-200px; width:500px; height:500px;
+            background:transparent; pointer-events:none; z-index:0; }
+        .bg-grid { position:fixed; inset:0; z-index:0; pointer-events:none;
+            
+            background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
+            background-size:60px 60px; }
+        .particles { position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+        .particle { position:absolute; width:2px; height:2px; border-radius:50%;
+            background:rgba(129,140,248,0.7); animation:floatP linear infinite; }
+        @keyframes floatP {
+            0%   { transform:translateY(100vh) translateX(0) scale(0); opacity:0; }
+            10%  { opacity:1; } 90% { opacity:0.5; }
+            100% { transform:translateY(-100px) translateX(var(--drift)) scale(1.5); opacity:0; }
+        }
+
+        /* ═══ NAVBAR ═══ */
+        .navbar {
+            position: fixed;
+            top: 14px; left: 50%; right: auto;
+            transform: translateX(-50%);
+            z-index: 200;
+            width: calc(100% - 48px); max-width: 1280px;
+            height: 52px; padding: 0 18px;
+            display: flex; align-items: center; justify-content: space-between; gap: 12px;
+            background: rgba(15,14,26,0.45);
+            backdrop-filter: blur(40px) saturate(180%);
+            -webkit-backdrop-filter: blur(40px) saturate(180%);
+            border-radius: 26px;
+            border: 1px solid rgba(220,38,38,0.25);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.35), 0 2px 8px rgba(220,38,38,0.15), inset 0 1px 0 rgba(255,255,255,0.07);
+            transition: box-shadow 0.3s, background 0.3s;
+        }
+        [data-theme="light"] .navbar {
+            background: rgba(255,255,255,0.75);
+            border-color: rgba(220,38,38,0.2);
+            box-shadow: 0 8px 32px rgba(220,38,38,0.1), 0 2px 8px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.9);
+        }
+        .nav-left { display:flex; align-items:center; gap:14px; }
+        .nav-brand { font-family:'Abril Fatface',sans-serif; font-size:15px; font-weight:800;
+            letter-spacing:1px; color:var(--text); display:flex; align-items:center; gap:10px; text-decoration:none; }
+        .nav-brand-icon { width:32px; height:32px; border-radius:9px;
+            background:#ef4444; /* red for admin */
+            display:flex; align-items:center; justify-content:center; font-size:16px; color:white; }
+        .badge-admin { background:rgba(239,68,68,0.15);
+            color:#f87171; border:1px solid rgba(239,68,68,0.3);
+            padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700; }
+        .nav-user { display:flex; align-items:center; gap:10px; }
+        .nav-avatar { width:34px; height:34px; border-radius:9px;
+            background:#ef4444;
+            display:flex; align-items:center; justify-content:center;
+            color:white; font-weight:800; font-size:13px;
+            text-decoration:none; overflow:hidden; transition:transform 0.18s, box-shadow 0.18s; }
+        .nav-avatar:hover { transform:scale(1.07); box-shadow:0 4px 12px rgba(239,68,68,0.4); }
+        .nav-avatar img { width:100%; height:100%; object-fit:cover; display:none; }
+        .nav-av-initial { font-size:13px; font-weight:800; }
+        .theme-btn { width:34px; height:34px; background:var(--input-bg); border:1px solid var(--border);
+            border-radius:9px; cursor:pointer; display:flex; align-items:center; justify-content:center;
+            font-size:16px; color:var(--text-2); transition:all 0.2s; }
+        .theme-btn:hover { background:var(--input-bg-f); color:var(--text); border-color:var(--border-h); }
+        .btn-logout { display:flex; align-items:center; gap:6px; background:transparent; border:1px solid var(--border);
+            color:var(--text-2); padding:7px 14px; border-radius:9px; font-size:13px; font-weight:600;
+            cursor:pointer; transition:all 0.2s; font-family:'DM Sans',sans-serif; }
+        .btn-logout:hover { border-color:rgba(239,68,68,0.4); color:#fca5a5; background:rgba(239,68,68,0.07); }
+
+        /* ═══ LAYOUT ═══ */
+        .main { position:relative; z-index:1; max-width:1200px; margin:0 auto; padding:80px 24px 32px; }
+
+        /* ═══ PAGE HEADER ═══ */
+        .page-header { margin-bottom:28px; }
+        .page-header h1 { font-family:'Sora',sans-serif; font-size:26px; font-weight:800;
+            color:var(--text); letter-spacing:-0.3px; margin-bottom:6px; }
+        .page-header p { font-size:14px; color:var(--text-2); }
+
+        /* ═══ STATS GRID ═══ */
+        .stats-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:14px; margin-bottom:28px; }
+        .stat-card { background:var(--surface); border:1px solid var(--border); border-radius:16px;
+            padding:18px 20px; display:flex; align-items:center; gap:14px; transition:border-color 0.2s, transform 0.2s; cursor:default; }
+        .stat-card:hover { border-color:var(--border-h); }
+        .stat-icon { width:44px; height:44px; border-radius:12px; flex-shrink:0;
+            display:flex; align-items:center; justify-content:center; font-size:20px; }
+        .si-red    { background:rgba(239,68,68,0.12);   color:#f87171; }
+        .si-blue   { background:rgba(59,130,246,0.12);  color:#60a5fa; }
+        .si-green  { background:rgba(16,185,129,0.12);  color:#34d399; }
+        .si-purple { background:rgba(139,92,246,0.12);  color:#a78bfa; }
+        .si-amber  { background:rgba(245,158,11,0.12);  color:#fbbf24; }
+        .si-indigo { background:rgba(10,102,194,0.12);   color:#5b9bd5; }
+        .si-pink   { background:rgba(236,72,153,0.12);  color:#f472b6; }
+        .stat-num  { font-family:'Sora',sans-serif; font-size:26px; font-weight:800; color:var(--text); line-height:1; margin-bottom:4px; }
+        .stat-label { font-size:12px; color:var(--text-3); font-weight:500; }
+
+        /* ═══ PENDING ALERT ═══ */
+        .pending-alert { display:none; align-items:center; gap:12px; padding:14px 18px;
+            background:rgba(245,158,11,0.1); border:1.5px solid rgba(245,158,11,0.3);
+            border-radius:14px; margin-bottom:24px; }
+        .pending-alert.show { display:flex; animation:slideIn 0.3s ease; }
+        @keyframes slideIn { from { opacity:0; transform:translateY(-8px); } to { opacity:1; transform:none; } }
+        .pending-alert-icon { font-size:22px; color:#fbbf24; flex-shrink:0; }
+        .pending-alert-text { flex:1; font-size:13px; color:var(--text-2); }
+        .pending-alert-text strong { color:#fbbf24; }
+        .btn-view-pending { background:rgba(245,158,11,0.15); border:1px solid rgba(245,158,11,0.3);
+            color:#fbbf24; padding:7px 14px; border-radius:8px; font-size:12px; font-weight:700;
+            cursor:pointer; transition:all 0.2s; font-family:'DM Sans',sans-serif; white-space:nowrap; }
+        .btn-view-pending:hover { background:rgba(245,158,11,0.25); }
+
+        /* ═══ SECTION TABS ═══ */
+        .tabs { display:flex; gap:4px; background:var(--input-bg); border:1px solid var(--border);
+            border-radius:12px; padding:4px; margin-bottom:20px; width:fit-content; flex-wrap:wrap;
+            position:relative; }
+        .tab-ind { position:absolute; top:4px; bottom:4px; left:0; border-radius:9px;
+            background:rgba(10,102,194,0.12); border:1.5px solid var(--primary);
+            width:80px; transform:translateX(4px);
+            transition:transform 0.3s cubic-bezier(0.4,0,0.2,1), width 0.3s cubic-bezier(0.4,0,0.2,1);
+            pointer-events:none; z-index:0; }
+        .tab-btn { padding:8px 18px; border:none; border-radius:9px; background:transparent;
+            font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600; color:var(--text-3);
+            cursor:pointer; transition:color 0.25s; display:flex; align-items:center; gap:6px;
+            position:relative; z-index:1; }
+        .tab-btn:hover { color:var(--text-2); }
+        .tab-btn.active { color:var(--primary-l); }
+        [data-theme="light"] .tab-btn.active { color:var(--primary); }
+
+        /* ═══ SECTION CARD ═══ */
+        .section-card { background:var(--surface); border:1px solid var(--border); border-radius:16px; padding:22px 24px; }
+        .section-title { font-family:'Sora',sans-serif; font-size:15px; font-weight:700;
+            color:var(--text); margin-bottom:18px; display:flex; align-items:center; gap:8px; }
+
+        /* ═══ SEARCH BAR ═══ */
+        .search-bar { display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap; }
+        .search-input-wrap { position:relative; flex:1; min-width:200px; }
+        .search-input-wrap i { position:absolute; left:12px; top:50%; transform:translateY(-50%);
+            color:var(--text-3); font-size:15px; pointer-events:none; }
+        .search-input { width:100%; padding:9px 12px 9px 36px; background:var(--input-bg);
+            border:1.5px solid var(--border); border-radius:10px; color:var(--text);
+            font-size:13px; font-family:'DM Sans',sans-serif; outline:none; transition:border-color 0.2s; }
+        .search-input::placeholder { color:var(--placeholder); }
+        .search-input:focus { border-color:var(--border-h); }
+        .filter-select { padding:9px 32px 9px 14px; background:var(--input-bg); border:1.5px solid var(--border);
+            border-radius:10px; color:var(--text); font-size:13px; font-family:'DM Sans',sans-serif;
+            outline:none; cursor:pointer; transition:border-color 0.2s;
+            -webkit-appearance:none; -moz-appearance:none; appearance:none;
+            background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat:no-repeat; background-position:right 10px center; }
+        .filter-select:focus { border-color:var(--border-h); }
+        /* Fix browser-native option dropdown background */
+        .filter-select option {
+            background: #22272B;
+            color: #ffffff;
+        }
+        [data-theme="light"] .filter-select option {
+            background: #ffffff;
+            color: #1B1F23;
+        }
+
+        /* ═══ TABLE ═══ */
+        .table-wrap { overflow-x:auto; border-radius:12px; border:1px solid var(--border); }
+        table { width:100%; border-collapse:collapse; min-width:600px; font-size:13px; }
+        thead th { background:var(--input-bg); padding:11px 16px; text-align:left;
+            font-weight:700; color:var(--text-3); font-size:11px; text-transform:uppercase; letter-spacing:0.5px;
+            white-space:nowrap; }
+        tbody td { padding:12px 16px; border-bottom:1px solid var(--border); color:var(--text-2); vertical-align:middle; }
+        tbody tr:last-child td { border-bottom:none; }
+        tbody tr:hover td { background:var(--input-bg); }
+
+        /* ═══ AVATAR IN TABLE ═══ */
+        .table-avatar { display:flex; align-items:center; gap:10px; }
+        .tav { width:34px; height:34px; border-radius:9px; flex-shrink:0;
+            display:flex; align-items:center; justify-content:center;
+            font-weight:800; font-size:13px; color:white; overflow:hidden; }
+        .tav img { width:100%; height:100%; object-fit:cover; }
+        .tav-name { font-weight:600; color:var(--text); }
+        .tav-email { font-size:11px; color:var(--text-3); margin-top:2px; }
+
+        /* ═══ STATUS BADGES ═══ */
+        .badge { display:inline-flex; align-items:center; gap:4px; padding:3px 10px;
+            border-radius:20px; font-size:11px; font-weight:700; white-space:nowrap; }
+        .badge-active      { background:rgba(52,211,153,0.12); color:#34d399; border:1px solid rgba(52,211,153,0.25); }
+        .badge-pending     { background:rgba(245,158,11,0.12);  color:#fbbf24; border:1px solid rgba(245,158,11,0.25); }
+        .badge-deactivated { background:rgba(239,68,68,0.1);    color:#f87171; border:1px solid rgba(239,68,68,0.2); }
+        .badge-professor   { background:rgba(10,102,194,0.12);   color:#5b9bd5; border:1px solid rgba(10,102,194,0.2); }
+        .badge-student     { background:rgba(59,130,246,0.12);  color:#60a5fa; border:1px solid rgba(59,130,246,0.2); }
+        [data-theme="light"] .badge-active      { background:#d1fae5; color:#059669; }
+        [data-theme="light"] .badge-pending     { background:#fef3c7; color:#d97706; }
+        [data-theme="light"] .badge-deactivated { background:#fee2e2; color:#dc2626; }
+        [data-theme="light"] .badge-professor   { background:#ede9fe; color:#6d28d9; }
+        [data-theme="light"] .badge-student     { background:#eff6ff; color:#2563eb; }
+
+        /* ═══ ACTION BUTTONS ═══ */
+        .actions { display:flex; gap:6px; flex-wrap:wrap; }
+        .btn-action { padding:5px 11px; border-radius:7px; font-size:11px; font-weight:700;
+            cursor:pointer; border:1.5px solid; font-family:'DM Sans',sans-serif;
+            transition:all 0.15s; display:inline-flex; align-items:center; gap:4px; white-space:nowrap; }
+        .btn-approve  { background:rgba(52,211,153,0.1);  color:#34d399; border-color:rgba(52,211,153,0.25); }
+        .btn-approve:hover  { background:#059669; color:white; border-color:#059669; }
+        .btn-reject   { background:rgba(239,68,68,0.1);   color:#f87171; border-color:rgba(239,68,68,0.25); }
+        .btn-reject:hover   { background:#ef4444; color:white; border-color:#ef4444; }
+        .btn-deactivate { background:rgba(245,158,11,0.1); color:#fbbf24; border-color:rgba(245,158,11,0.25); }
+        .btn-deactivate:hover { background:#d97706; color:white; border-color:#d97706; }
+        .btn-activate { background:rgba(52,211,153,0.1); color:#34d399; border-color:rgba(52,211,153,0.25); }
+        .btn-activate:hover { background:#059669; color:white; border-color:#059669; }
+        .btn-delete   { background:rgba(239,68,68,0.08);  color:#f87171; border-color:rgba(239,68,68,0.2); }
+        .btn-delete:hover   { background:#ef4444; color:white; border-color:#ef4444; }
+        .btn-reset-pw { background:var(--input-bg); color:var(--text-3); border-color:var(--border); }
+        .btn-reset-pw:hover { background:var(--input-bg-f); color:var(--text-2); border-color:var(--border-h); }
+
+        /* ═══ EMPTY STATE ═══ */
+        .empty-state { text-align:center; padding:48px 24px; color:var(--text-3); }
+        .empty-state i { font-size:40px; opacity:0.3; margin-bottom:12px; display:block; }
+        .empty-state p { font-size:14px; }
+
+        /* ═══ LOADING ═══ */
+        .skeleton { background:var(--input-bg); border-radius:6px; animation:shimmer 1.5s infinite; }
+        @keyframes shimmer { 0%,100%{opacity:0.4} 50%{opacity:0.8} }
+
+        /* ═══ TOAST ═══ */
+        .toast-wrap { position:fixed; bottom:24px; right:24px; z-index:9999; display:flex; flex-direction:column; gap:8px; }
+        .toast { display:flex; align-items:center; gap:10px; padding:12px 18px;
+            border-radius:12px; font-size:13px; font-weight:600; min-width:260px;
+            box-shadow:0 8px 24px rgba(0,0,0,0.25); animation:toastIn 0.3s ease;
+            border:1px solid; }
+        @keyframes toastIn { from{transform:translateX(30px);opacity:0} to{transform:none;opacity:1} }
+        .toast.success { background:rgba(52,211,153,0.15); color:#34d399; border-color:rgba(52,211,153,0.3); }
+        .toast.error   { background:rgba(239,68,68,0.15);  color:#f87171; border-color:rgba(239,68,68,0.3); }
+        .toast.warning { background:rgba(245,158,11,0.15); color:#fbbf24; border-color:rgba(245,158,11,0.3); }
+        [data-theme="light"] .toast.success { background:#d1fae5; color:#059669; }
+        [data-theme="light"] .toast.error   { background:#fee2e2; color:#dc2626; }
+        [data-theme="light"] .toast.warning { background:#fef3c7; color:#d97706; }
+
+        /* ═══ MODAL (confirm + reset pw) ═══ */
+        .modal-overlay { display:none; position:fixed; inset:0; z-index:1000;
+            background:rgba(0,0,0,0.6); backdrop-filter:blur(4px);
+            align-items:center; justify-content:center; padding:20px; }
+        .modal-overlay.active { display:flex; animation:overlayIn 0.2s ease; }
+        @keyframes overlayIn { from{opacity:0} to{opacity:1} }
+        .modal-box { background:var(--surface); border:1px solid var(--border); border-radius:18px;
+            width:100%; max-width:420px; padding:28px; box-shadow:0 24px 80px rgba(0,0,0,0.4);
+            animation:modalIn 0.25s cubic-bezier(0.22,1,0.36,1); }
+        @keyframes modalIn { from{transform:scale(0.96) translateY(12px);opacity:0} to{transform:none;opacity:1} }
+        .modal-icon { width:52px; height:52px; border-radius:14px; margin-bottom:16px;
+            display:flex; align-items:center; justify-content:center; font-size:24px; }
+        .modal-icon.danger  { background:rgba(239,68,68,0.15);  color:#f87171; }
+        .modal-icon.warning { background:rgba(245,158,11,0.15); color:#fbbf24; }
+        .modal-icon.info    { background:rgba(10,102,194,0.15);  color:#5b9bd5; }
+        .modal-title { font-family:'Sora',sans-serif; font-size:17px; font-weight:700;
+            color:var(--text); margin-bottom:8px; }
+        .modal-desc { font-size:13px; color:var(--text-2); line-height:1.7; margin-bottom:20px; }
+        .modal-actions { display:flex; gap:10px; justify-content:flex-end; }
+        .btn-modal-cancel { padding:9px 18px; background:var(--input-bg); border:1px solid var(--border);
+            border-radius:9px; color:var(--text-2); font-size:13px; font-weight:600;
+            cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.2s; }
+        .btn-modal-cancel:hover { background:var(--input-bg-f); }
+        .btn-modal-confirm { padding:9px 18px; border:none; border-radius:9px; color:white;
+            font-size:13px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif; transition:all 0.2s; }
+        .btn-modal-confirm.danger  { background:#ef4444; }
+        .btn-modal-confirm.danger:hover  { background:#dc2626; }
+        .btn-modal-confirm.warning { background:#d97706; }
+        .btn-modal-confirm.warning:hover { background:#b45309; }
+        .btn-modal-confirm.info    { background:var(--primary); }
+        .btn-modal-confirm.info:hover    { background:#4338ca; }
+        .modal-input { width:100%; padding:10px 14px; background:var(--input-bg);
+            border:1.5px solid var(--border); border-radius:10px; color:var(--text);
+            font-size:14px; font-family:'DM Sans',sans-serif; outline:none;
+            transition:border-color 0.2s; margin-bottom:14px; box-sizing:border-box; }
+        .modal-input:focus { border-color:var(--primary); }
+        .modal-input::placeholder { color:var(--placeholder); }
+        .modal-label { font-size:12px; color:var(--text-3); font-weight:600; display:block; margin-bottom:7px; }
+
+        /* ═══ SECTION VIEWS ═══ */
+        .tab-view { display:none; }
+        .tab-view.active { display:block; }
+
+        /* ═══ DATE COL ═══ */
+        .date-col { font-size:12px; color:var(--text-3); white-space:nowrap; }
+
+    </style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="particles" id="particles"></div>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+    <div class="nav-left">
+        <a class="nav-brand" href="#">
+            <div class="nav-brand-icon"><i class="ph-bold ph-shield-check"></i></div>
+            PHYSLAB
+        </a>
+    </div>
+    <div class="nav-user">
+        <button class="theme-btn" onclick="toggleTheme()" title="Toggle theme">
+            <i class="ph-bold ph-sun" id="themeIcon"></i>
+        </button>
+        <a class="nav-avatar" id="navAvatar" href="/profile" title="My Profile">
+            <span class="nav-av-initial"></span><img alt="avatar">
+        </a>
+        <button class="btn-logout" onclick="logout()">
+            <i class="ph-bold ph-sign-out"></i> Logout
+        </button>
+    </div>
+</nav>
+
+<!-- MAIN -->
+<div class="main">
+
+    <!-- Page Header -->
+    <div class="page-header">
+        <h1><i class="ph-bold ph-shield-check" style="color:#f87171;margin-right:8px;"></i>Admin Dashboard</h1>
+        <p>Manage users, approve professors, and oversee all classes.</p>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="stats-grid" id="statsGrid">
+        <div class="stat-card"><div class="stat-icon si-blue"><i class="ph-bold ph-users"></i></div>
+            <div><div class="stat-num" id="statUsers">—</div><div class="stat-label">Total Users</div></div></div>
+        <div class="stat-card"><div class="stat-icon si-purple"><i class="ph-bold ph-chalkboard-teacher"></i></div>
+            <div><div class="stat-num" id="statProfessors">—</div><div class="stat-label">Professors</div></div></div>
+        <div class="stat-card"><div class="stat-icon si-indigo"><i class="ph-bold ph-student"></i></div>
+            <div><div class="stat-num" id="statStudents">—</div><div class="stat-label">Students</div></div></div>
+        <div class="stat-card"><div class="stat-icon si-amber"><i class="ph-bold ph-clock"></i></div>
+            <div><div class="stat-num" id="statPending" style="color:#fbbf24;">—</div><div class="stat-label">Pending Approvals</div></div></div>
+        <div class="stat-card"><div class="stat-icon si-green"><i class="ph-bold ph-books"></i></div>
+            <div><div class="stat-num" id="statClasses">—</div><div class="stat-label">Total Classes</div></div></div>
+        <div class="stat-card"><div class="stat-icon si-pink"><i class="ph-bold ph-flask"></i></div>
+            <div><div class="stat-num" id="statActivities">—</div><div class="stat-label">Activities</div></div></div>
+        <div class="stat-card"><div class="stat-icon si-red"><i class="ph-bold ph-paper-plane-tilt"></i></div>
+            <div><div class="stat-num" id="statSubmissions">—</div><div class="stat-label">Submissions</div></div></div>
+    </div>
+
+    <!-- Pending Alert -->
+    <div class="pending-alert" id="pendingAlert">
+        <i class="ph-bold ph-warning-circle pending-alert-icon"></i>
+        <div class="pending-alert-text">
+            <strong id="pendingCount">0</strong> professor account(s) are waiting for your approval.
+        </div>
+        <button class="btn-view-pending" onclick="switchTab('pending')">
+            <i class="ph-bold ph-arrow-right"></i> Review Now
+        </button>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs">
+        <div class="tab-ind" id="adminTabInd"></div>
+        <button class="tab-btn active" id="tab-pending" onclick="switchTab('pending')">
+            <i class="ph-bold ph-clock"></i> Pending Approvals
+        </button>
+        <button class="tab-btn" id="tab-users" onclick="switchTab('users')">
+            <i class="ph-bold ph-users"></i> All Users
+        </button>
+        <button class="tab-btn" id="tab-classes" onclick="switchTab('classes')">
+            <i class="ph-bold ph-books"></i> Classes
+        </button>
+    </div>
+
+    <!-- ══ PENDING APPROVALS ══ -->
+    <div class="tab-view active" id="view-pending">
+        <div class="section-card">
+            <div class="section-title"><i class="ph-bold ph-clock" style="color:#fbbf24;"></i> Pending Professor Approvals</div>
+            <div id="pendingList"></div>
+        </div>
+    </div>
+
+    <!-- ══ ALL USERS ══ -->
+    <div class="tab-view" id="view-users">
+        <div class="section-card">
+            <div class="section-title"><i class="ph-bold ph-users"></i> All Users</div>
+            <div class="search-bar">
+                <div class="search-input-wrap">
+                    <i class="ph-bold ph-magnifying-glass"></i>
+                    <input class="search-input" id="userSearch" placeholder="Search name or email..." oninput="renderUsers()">
+                </div>
+                <select class="filter-select" id="userRoleFilter" onchange="renderUsers()">
+                    <option value="">All Roles</option>
+                    <option value="professor">Professor</option>
+                    <option value="student">Student</option>
+                </select>
+                <select class="filter-select" id="userStatusFilter" onchange="renderUsers()">
+                    <option value="">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="pending">Pending</option>
+                    <option value="deactivated">Deactivated</option>
+                </select>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>User</th>
+                            <th>Role</th>
+                            <th>Status</th>
+                            <th>Joined</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="usersTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- ══ CLASSES ══ -->
+    <div class="tab-view" id="view-classes">
+        <div class="section-card">
+            <div class="section-title"><i class="ph-bold ph-books"></i> All Classes</div>
+            <div class="search-bar">
+                <div class="search-input-wrap">
+                    <i class="ph-bold ph-magnifying-glass"></i>
+                    <input class="search-input" id="classSearch" placeholder="Search class name or subject..." oninput="renderClasses()">
+                </div>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Class</th>
+                            <th>Professor</th>
+                            <th>Code</th>
+                            <th>Students</th>
+                            <th>Activities</th>
+                            <th>Created</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="classesTableBody"></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+</div>
+
+<!-- TOAST -->
+<div class="toast-wrap" id="toastWrap"></div>
+
+<!-- CONFIRM MODAL -->
+<div class="modal-overlay" id="confirmModal">
+    <div class="modal-box">
+        <div class="modal-icon" id="confirmIcon"><i class="ph-bold ph-warning" id="confirmIconI"></i></div>
+        <div class="modal-title" id="confirmTitle">Are you sure?</div>
+        <div class="modal-desc"  id="confirmDesc">This action cannot be undone.</div>
+        <div class="modal-actions">
+            <button class="btn-modal-cancel" onclick="closeConfirm()">Cancel</button>
+            <button class="btn-modal-confirm" id="confirmBtn" onclick="runConfirm()">Confirm</button>
+        </div>
+    </div>
+</div>
+
+<!-- RESET PASSWORD MODAL -->
+<div class="modal-overlay" id="resetPwModal">
+    <div class="modal-box">
+        <div class="modal-icon info"><i class="ph-bold ph-key"></i></div>
+        <div class="modal-title">Reset Password</div>
+        <div class="modal-desc">Set a new password for <strong id="resetPwName"></strong>.</div>
+        <label class="modal-label">New Password (min. 6 characters)</label>
+        <input class="modal-input" type="password" id="resetPwInput" placeholder="Enter new password">
+        <div class="modal-actions">
+            <button class="btn-modal-cancel" onclick="closeResetPw()">Cancel</button>
+            <button class="btn-modal-confirm info" onclick="submitResetPw()">
+                <i class="ph-bold ph-floppy-disk"></i> Save Password
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+const token = localStorage.getItem('token');
+const role  = localStorage.getItem('role');
+if (!token || role !== 'admin') window.location.href = '/login';
+
+const _adminName = localStorage.getItem('full_name') || 'Admin';
+const _adminAvEl = document.getElementById('navAvatar');
+if (_adminAvEl) {
+    const ini = _adminAvEl.querySelector('.nav-av-initial');
+    if (ini) ini.textContent = _adminName.charAt(0).toUpperCase();
+    const pic = localStorage.getItem('avatar_url');
+    if (pic) { const img = _adminAvEl.querySelector('img'); if (img) { img.src = pic; img.style.display = 'block'; if (ini) ini.style.display = 'none'; } }
+}
+
+const BASE = 'http://127.0.0.1:5000/api';
+const HEADERS = () => ({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` });
+
+let allUsers   = [];
+let allClasses = [];
+let _confirmCb = null;
+let _resetPwUserId = null;
+
+// ══ THEME ══
+function applyTheme(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    localStorage.setItem('physlab_theme', t);
+    const icon = document.getElementById('themeIcon');
+    if (icon) icon.className = t === 'dark' ? 'ph-bold ph-sun' : 'ph-bold ph-moon';
+}
+function toggleTheme() {
+    applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark');
+}
+applyTheme(localStorage.getItem('physlab_theme') || 'dark');
+
+// ══ PARTICLES ══
+(function() {
+    const pw = document.getElementById('particles');
+    for (let i = 0; i < 25; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.cssText = `left:${Math.random()*100}%;animation-delay:-${Math.random()*8}s;animation-duration:${6+Math.random()*8}s;--drift:${(Math.random()-.5)*200}px`;
+        pw.appendChild(p);
+    }
+})();
+
+// ══ LOGOUT ══
+function logout() {
+    localStorage.clear();
+    window.location.href = '/login';
+}
+
+// ══ TOAST ══
+function showToast(msg, type='success') {
+    const wrap = document.getElementById('toastWrap');
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    const icons = { success:'ph-check-circle', error:'ph-x-circle', warning:'ph-warning-circle' };
+    t.innerHTML = `<i class="ph-bold ${icons[type]||'ph-info'}"></i> ${msg}`;
+    wrap.appendChild(t);
+    setTimeout(() => t.remove(), 3000);
+}
+
+// ══ CONFIRM MODAL ══
+function openConfirm({ title, desc, type='danger', confirmLabel='Confirm', cb }) {
+    document.getElementById('confirmTitle').textContent = title;
+    document.getElementById('confirmDesc').textContent  = desc;
+    const icon = document.getElementById('confirmIcon');
+    const btn  = document.getElementById('confirmBtn');
+    icon.className = `modal-icon ${type}`;
+    btn.className  = `btn-modal-confirm ${type}`;
+    btn.textContent = confirmLabel;
+    _confirmCb = cb;
+    document.getElementById('confirmModal').classList.add('active');
+}
+function closeConfirm() { document.getElementById('confirmModal').classList.remove('active'); _confirmCb = null; }
+function runConfirm()   { if (_confirmCb) _confirmCb(); closeConfirm(); }
+
+// ══ RESET PW MODAL ══
+function openResetPw(userId, name) {
+    _resetPwUserId = userId;
+    document.getElementById('resetPwName').textContent = name;
+    document.getElementById('resetPwInput').value = '';
+    document.getElementById('resetPwModal').classList.add('active');
+}
+function closeResetPw() { document.getElementById('resetPwModal').classList.remove('active'); _resetPwUserId = null; }
+async function submitResetPw() {
+    const pw = document.getElementById('resetPwInput').value.trim();
+    if (!pw || pw.length < 6) { showToast('Password must be at least 6 characters!', 'warning'); return; }
+    try {
+        const res = await fetch(`${BASE}/admin/users/${_resetPwUserId}/reset-password`, {
+            method:'POST', headers:HEADERS(), body:JSON.stringify({ new_password: pw })
+        });
+        const data = await res.json();
+        if (res.ok) { showToast(data.message, 'success'); closeResetPw(); }
+        else showToast(data.message || 'Failed!', 'error');
+    } catch { showToast('Cannot connect to server!', 'error'); }
+}
+
+// ══ TAB SWITCH ══
+function moveTabInd(el) {
+    const ind = document.getElementById('adminTabInd');
+    if (!ind || !el) return;
+    if (!el.offsetWidth) { setTimeout(() => moveTabInd(el), 30); return; }
+    ind.style.transform = `translateX(${el.offsetLeft}px)`;
+    ind.style.width = el.offsetWidth + 'px';
+}
+
+function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-view').forEach(v => v.classList.remove('active'));
+    const activeBtn = document.getElementById(`tab-${tab}`);
+    activeBtn.classList.add('active');
+    document.getElementById(`view-${tab}`).classList.add('active');
+    moveTabInd(activeBtn);
+}
+
+// ══ LOAD DATA ══
+function skeletonRows(n) {
+    return Array.from({length:n}, () => `
+    <div class="skeleton-row" style="margin-bottom:10px;">
+      <div class="skeleton-box sk-avatar"></div>
+      <div class="sk-lines">
+        <div class="skeleton-box sk-line1"></div>
+        <div class="skeleton-box sk-line2"></div>
+      </div>
+    </div>`).join('');
+}
+async function loadAll() {
+    document.getElementById('pendingList').innerHTML = skeletonRows(3);
+    await Promise.all([loadStats(), loadPending(), loadUsers(), loadClasses()]);
+}
+
+async function loadStats() {
+    try {
+        const res = await fetch(`${BASE}/admin/stats`, { headers: HEADERS() });
+        if (!res.ok) return;
+        const d = await res.json();
+        document.getElementById('statUsers').textContent       = d.total_users;
+        document.getElementById('statProfessors').textContent  = d.total_professors;
+        document.getElementById('statStudents').textContent    = d.total_students;
+        document.getElementById('statPending').textContent     = d.pending_approvals;
+        document.getElementById('statClasses').textContent     = d.total_classes;
+        document.getElementById('statActivities').textContent  = d.total_activities;
+        document.getElementById('statSubmissions').textContent = d.total_submissions;
+
+        if (d.pending_approvals > 0) {
+            document.getElementById('pendingCount').textContent = d.pending_approvals;
+            document.getElementById('pendingAlert').classList.add('show');
+        }
+    } catch {}
+}
+
+async function loadPending() {
+    try {
+        const res = await fetch(`${BASE}/admin/pending-professors`, { headers: HEADERS() });
+        const data = res.ok ? await res.json() : [];
+        renderPending(data);
+    } catch { renderPending([]); }
+}
+
+async function loadUsers() {
+    try {
+        const res = await fetch(`${BASE}/admin/users`, { headers: HEADERS() });
+        allUsers = res.ok ? await res.json() : [];
+        renderUsers();
+    } catch { allUsers = []; renderUsers(); }
+}
+
+async function loadClasses() {
+    try {
+        const res = await fetch(`${BASE}/admin/classes`, { headers: HEADERS() });
+        allClasses = res.ok ? await res.json() : [];
+        renderClasses();
+    } catch { allClasses = []; renderClasses(); }
+}
+
+// ══ AVATAR HTML ══
+const gradients = [
+    '#0A66C2',
+    '#f59e0b',
+    '#10b981',
+    '#3b82f6',
+    '#ec4899',
+];
+function nameGrad(name) {
+    let h = 0;
+    for (let i = 0; i < (name||'').length; i++) h = (h * 31 + name.charCodeAt(i)) & 0xffffffff;
+    return gradients[Math.abs(h) % gradients.length];
+}
+function avatarHtml(user) {
+    if (user.avatar) {
+        return `<div class="tav"><img src="${user.avatar}" alt="${user.full_name}"></div>`;
+    }
+    const init = (user.full_name||'?').trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase();
+    return `<div class="tav" style="background:${nameGrad(user.full_name)}">${init}</div>`;
+}
+
+function fmtDate(iso) {
+    if (!iso) return '—';
+    return new Date(iso).toLocaleDateString('en-US', { month:'short', day:'numeric', year:'numeric' });
+}
+
+// ══ RENDER PENDING ══
+function renderPending(list) {
+    const el = document.getElementById('pendingList');
+    if (!list.length) {
+        el.innerHTML = `<div class="empty-state"><i class="ph-bold ph-check-circle"></i><p>No pending approvals — all clear!</p></div>`;
+        return;
+    }
+    el.innerHTML = `<div class="table-wrap"><table>
+        <thead><tr><th>Professor</th><th>Registered</th><th>Actions</th></tr></thead>
+        <tbody>${list.map(u => `
+            <tr>
+                <td><div class="table-avatar">
+                    ${avatarHtml(u)}
+                    <div><div class="tav-name">${u.full_name}</div><div class="tav-email">${u.email}</div></div>
+                </div></td>
+                <td class="date-col">${fmtDate(u.joined_at)}</td>
+                <td><div class="actions">
+                    <button class="btn-action btn-approve" onclick="approveUser(${u.id},'${u.full_name}')">
+                        <i class="ph-bold ph-check"></i> Approve
+                    </button>
+                    <button class="btn-action btn-reject" onclick="rejectUser(${u.id},'${u.full_name}')">
+                        <i class="ph-bold ph-x"></i> Reject
+                    </button>
+                </div></td>
+            </tr>`).join('')}
+        </tbody></table></div>`;
+}
+
+// ══ RENDER USERS ══
+function renderUsers() {
+    const search  = document.getElementById('userSearch').value.trim().toLowerCase();
+    const roleFil = document.getElementById('userRoleFilter').value;
+    const statFil = document.getElementById('userStatusFilter').value;
+
+    let list = allUsers.filter(u => {
+        if (roleFil && u.role !== roleFil) return false;
+        if (statFil && u.status !== statFil) return false;
+        if (search && !u.full_name.toLowerCase().includes(search) && !u.email.toLowerCase().includes(search)) return false;
+        return true;
+    });
+
+    const tbody = document.getElementById('usersTableBody');
+    if (!list.length) {
+        tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><i class="ph-bold ph-users"></i><p>No users found.</p></div></td></tr>`;
+        return;
+    }
+    tbody.innerHTML = list.map(u => `
+        <tr>
+            <td><div class="table-avatar">
+                ${avatarHtml(u)}
+                <div><div class="tav-name">${u.full_name}</div><div class="tav-email">${u.email}</div></div>
+            </div></td>
+            <td><span class="badge badge-${u.role}">${u.role}</span></td>
+            <td><span class="badge badge-${u.status}">${u.status}</span></td>
+            <td class="date-col">${fmtDate(u.joined_at)}</td>
+            <td><div class="actions">
+                ${u.status === 'pending' ? `
+                    <button class="btn-action btn-approve" onclick="approveUser(${u.id},'${u.full_name}')">
+                        <i class="ph-bold ph-check"></i> Approve
+                    </button>` : ''}
+                ${u.is_active && u.status !== 'pending' ? `
+                    <button class="btn-action btn-deactivate" onclick="deactivateUser(${u.id},'${u.full_name}')">
+                        <i class="ph-bold ph-prohibit"></i> Deactivate
+                    </button>` : ''}
+                ${!u.is_active ? `
+                    <button class="btn-action btn-activate" onclick="activateUser(${u.id},'${u.full_name}')">
+                        <i class="ph-bold ph-check-circle"></i> Activate
+                    </button>` : ''}
+                <button class="btn-action btn-reset-pw" onclick="openResetPw(${u.id},'${u.full_name}')">
+                    <i class="ph-bold ph-key"></i> Reset PW
+                </button>
+                <button class="btn-action btn-delete" onclick="deleteUser(${u.id},'${u.full_name}')">
+                    <i class="ph-bold ph-trash"></i>
+                </button>
+            </div></td>
+        </tr>`).join('');
+}
+
+// ══ RENDER CLASSES ══
+function renderClasses() {
+    const search = document.getElementById('classSearch').value.trim().toLowerCase();
+    let list = allClasses.filter(c =>
+        !search || c.class_name.toLowerCase().includes(search) || c.subject.toLowerCase().includes(search)
+    );
+
+    const tbody = document.getElementById('classesTableBody');
+    if (!list.length) {
+        tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><i class="ph-bold ph-books"></i><p>No classes found.</p></div></td></tr>`;
+        return;
+    }
+    tbody.innerHTML = list.map(c => `
+        <tr style="${c.is_archived ? 'opacity:0.6;' : ''}">
+            <td>
+                <div class="tav-name">${c.class_name}
+                    ${c.is_archived ? '<span class="badge badge-deactivated" style="margin-left:6px;font-size:10px;">Archived</span>' : ''}
+                </div>
+                <div class="tav-email">${c.subject} · ${c.section}</div>
+            </td>
+            <td><div class="tav-name">${c.professor_name}</div><div class="tav-email">${c.professor_email}</div></td>
+            <td><span class="badge badge-professor" style="font-family:'Sora',sans-serif;letter-spacing:0.5px;">${c.class_code}</span></td>
+            <td>${c.member_count}</td>
+            <td>${c.activity_count}</td>
+            <td class="date-col">${fmtDate(c.created_at)}</td>
+            <td><div class="actions">
+                ${!c.is_archived ? `
+                    <button class="btn-action btn-deactivate" onclick="archiveClass(${c.id},'${c.class_name}')">
+                        <i class="ph-bold ph-archive"></i> Archive
+                    </button>` : `
+                    <button class="btn-action btn-activate" onclick="unarchiveClass(${c.id},'${c.class_name}')">
+                        <i class="ph-bold ph-arrow-counter-clockwise"></i> Restore
+                    </button>`}
+                <button class="btn-action btn-delete" onclick="deleteClass(${c.id},'${c.class_name}')">
+                    <i class="ph-bold ph-trash"></i>
+                </button>
+            </div></td>
+        </tr>`).join('');
+}
+
+// ══ ACTIONS ══
+async function approveUser(id, name) {
+    openConfirm({
+        title: 'Approve Professor',
+        desc: `Approve ${name}? They will be able to log in and create classes.`,
+        type: 'info', confirmLabel: 'Approve',
+        cb: async () => {
+            try {
+                const res = await fetch(`${BASE}/admin/users/${id}/approve`, { method:'POST', headers:HEADERS() });
+                const data = await res.json();
+                if (res.ok) { showToast(data.message, 'success'); await loadAll(); }
+                else showToast(data.message || 'Failed!', 'error');
+            } catch { showToast('Cannot connect!', 'error'); }
+        }
+    });
+}
+
+async function rejectUser(id, name) {
+    openConfirm({
+        title: 'Reject Professor',
+        desc: `Reject and permanently remove ${name}'s registration?`,
+        type: 'danger', confirmLabel: 'Reject & Remove',
+        cb: async () => {
+            try {
+                const res = await fetch(`${BASE}/admin/users/${id}/reject`, { method:'DELETE', headers:HEADERS() });
+                const data = await res.json();
+                if (res.ok) { showToast(data.message, 'success'); await loadAll(); }
+                else showToast(data.message || 'Failed!', 'error');
+            } catch { showToast('Cannot connect!', 'error'); }
+        }
+    });
+}
+
+async function deactivateUser(id, name) {
+    openConfirm({
+        title: 'Deactivate User',
+        desc: `Deactivate ${name}? They won't be able to log in until reactivated.`,
+        type: 'warning', confirmLabel: 'Deactivate',
+        cb: async () => {
+            try {
+                const res = await fetch(`${BASE}/admin/users/${id}/deactivate`, { method:'POST', headers:HEADERS() });
+                const data = await res.json();
+                if (res.ok) { showToast(data.message, 'success'); await loadAll(); }
+                else showToast(data.message || 'Failed!', 'error');
+            } catch { showToast('Cannot connect!', 'error'); }
+        }
+    });
+}
+
+async function activateUser(id, name) {
+    try {
+        const res = await fetch(`${BASE}/admin/users/${id}/activate`, { method:'POST', headers:HEADERS() });
+        const data = await res.json();
+        if (res.ok) { showToast(data.message, 'success'); await loadAll(); }
+        else showToast(data.message || 'Failed!', 'error');
+    } catch { showToast('Cannot connect!', 'error'); }
+}
+
+async function deleteUser(id, name) {
+    openConfirm({
+        title: 'Delete User',
+        desc: `Permanently delete ${name}? All their data will be removed. This cannot be undone.`,
+        type: 'danger', confirmLabel: 'Delete Permanently',
+        cb: async () => {
+            try {
+                const res = await fetch(`${BASE}/admin/users/${id}/delete`, { method:'DELETE', headers:HEADERS() });
+                const data = await res.json();
+                if (res.ok) { showToast(data.message, 'success'); await loadAll(); }
+                else showToast(data.message || 'Failed!', 'error');
+            } catch { showToast('Cannot connect!', 'error'); }
+        }
+    });
+}
+
+async function archiveClass(id, name) {
+    openConfirm({
+        title: 'Archive Class',
+        desc: `Archive "${name}"? The class will be hidden but data will be preserved. It can be restored later.`,
+        type: 'warning', confirmLabel: 'Archive',
+        cb: async () => {
+            try {
+                const res = await fetch(`${BASE}/admin/classes/${id}/archive`, { method:'POST', headers:HEADERS() });
+                const data = await res.json();
+                if (res.ok) { showToast(data.message, 'success'); await loadAll(); }
+                else showToast(data.message || 'Failed!', 'error');
+            } catch { showToast('Cannot connect!', 'error'); }
+        }
+    });
+}
+
+async function unarchiveClass(id, name) {
+    try {
+        const res = await fetch(`${BASE}/admin/classes/${id}/unarchive`, { method:'POST', headers:HEADERS() });
+        const data = await res.json();
+        if (res.ok) { showToast(data.message, 'success'); await loadAll(); }
+        else showToast(data.message || 'Failed!', 'error');
+    } catch { showToast('Cannot connect!', 'error'); }
+}
+
+async function deleteClass(id, name) {
+    openConfirm({
+        title: 'Delete Class',
+        desc: `Delete "${name}"? All activities and submissions inside will also be removed.`,
+        type: 'danger', confirmLabel: 'Delete Class',
+        cb: async () => {
+            try {
+                const res = await fetch(`${BASE}/admin/classes/${id}/delete`, { method:'DELETE', headers:HEADERS() });
+                const data = await res.json();
+                if (res.ok) { showToast(data.message, 'success'); await loadAll(); }
+                else showToast(data.message || 'Failed!', 'error');
+            } catch { showToast('Cannot connect!', 'error'); }
+        }
+    });
+}
+
+// ══ INIT ══
+loadAll();
+setTimeout(() => moveTabInd(document.querySelector('.tab-btn.active')), 50);
+</script>
+</body>
+</html>

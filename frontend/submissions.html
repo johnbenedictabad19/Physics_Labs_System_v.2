@@ -1,0 +1,1477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script>(function(){var t=localStorage.getItem('physlab_theme')||'light';document.documentElement.setAttribute('data-theme',t);if(sessionStorage.getItem('physlab_nav')){sessionStorage.removeItem('physlab_nav');document.documentElement.setAttribute('data-entering','');}})();</script>
+
+    <meta charset="UTF-8">
+    <link rel="icon" href="/static/favicons/submissions.svg" type="image/svg+xml">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="PHYSLAB">
+    <link rel="apple-touch-icon" href="/static/logo.svg">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Submissions — PHYSLAB</title>
+    <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800;900&family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&family=Abril+Fatface&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <link rel="stylesheet" href="static/style.css">
+    <style>
+
+/* ===== THEME VARIABLES ===== */
+:root { --primary:#0A66C2; --primary-l:#5b9bd5; --primary-dark:#004182; --primary-dark-l:#a78bfa; }
+[data-theme="dark"] {
+    --bg:#1B1F23; --bg-2:#16191D; --surface:#22272B;
+    --border:rgba(255,255,255,0.08); --border-h:rgba(10,102,194,0.15);
+    --text:#ffffff; --text-2:rgba(255,255,255,0.65); --text-3:rgba(255,255,255,0.35);
+    --input-bg:rgba(255,255,255,0.05); --input-bg-f:rgba(255,255,255,0.08);
+    --placeholder:rgba(255,255,255,0.25); --card-bg:rgba(255,255,255,0.03);
+}
+[data-theme="light"] {
+    --bg:#F3F2EF; --bg-2:#E8E7E3; --surface:#ffffff;
+    --border:rgba(10,102,194,0.12); --border-h:rgba(10,102,194,0.45);
+    --text:#1B1F23; --text-2:#555555; --text-3:#888888;
+    --input-bg:#F9F9F9; --input-bg-f:#F0F0F0; --placeholder:#AAAAAA; --card-bg:rgba(10,102,194,0.02);
+}
+
+/* ===== BG EFFECTS ===== */
+body::before { content:''; position:fixed; top:-200px; left:-200px; width:600px; height:600px;
+    background:transparent; pointer-events:none; z-index:0; }
+body::after  { content:''; position:fixed; bottom:-200px; right:-200px; width:500px; height:500px;
+    background:transparent; pointer-events:none; z-index:0; }
+.bg-grid { position:fixed; inset:0; z-index:0; pointer-events:none;
+    
+    background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
+    background-size:60px 60px; }
+.particles { position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+.particle { position:absolute; width:2px; height:2px; border-radius:50%;
+    background:rgba(129,140,248,0.7); animation:floatParticle linear infinite; }
+@keyframes floatParticle {
+    0%   { transform:translateY(100vh) translateX(0) scale(0); opacity:0; }
+    10%  { opacity:1; }
+    90%  { opacity:0.5; }
+    100% { transform:translateY(-100px) translateX(var(--drift)) scale(1.5); opacity:0; }
+}
+
+/* ===== NAVBAR ===== */
+.navbar {
+    background: rgba(15,14,26,0.45) !important;
+    backdrop-filter: blur(40px) saturate(180%) !important;
+    border: 1px solid rgba(255,255,255,0.09) !important;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.35), 0 2px 8px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.07) !important;
+}
+[data-theme="light"] .navbar {
+    background: rgba(255,255,255,0.75) !important;
+    border-color: rgba(10,102,194,0.15) !important;
+    box-shadow: 0 8px 32px rgba(10,102,194,0.1), 0 2px 8px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.9) !important;
+}
+
+.nav-brand {
+    font-family:'Abril Fatface','Sora',sans-serif !important;
+    font-size:15px !important; font-weight:800 !important; letter-spacing:1px !important;
+    color:var(--text) !important; display:flex; align-items:center; gap:10px; text-decoration:none;
+}
+/* Update mo itong CSS para sa logo container */
+.brand-icon {
+    width: 32px; /* O 40px depende sa page */
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    overflow: hidden;
+}
+
+/* Idagdag mo itong rule para sa mismong image */
+.brand-icon img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+
+.nav-hello { font-size:13px; color:var(--text-2); }
+.nav-hello strong { color:var(--text); }
+.badge-prof {
+    background:rgba(245,158,11,0.15);
+    color:#f59e0b; border:1px solid rgba(245,158,11,0.3);
+    padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700;
+}
+.nav-avatar {
+    width:34px; height:34px; border-radius:10px;
+    background:#0A66C2;
+    border:2px solid var(--border); display:flex; align-items:center; justify-content:center;
+    overflow:hidden; cursor:pointer; text-decoration:none; transition:border-color 0.2s; flex-shrink:0;
+}
+.nav-avatar:hover { border-color:var(--border-h); transform:none; box-shadow:none; }
+.nav-av-initial { font-family:'Sora',sans-serif; font-size:13px; font-weight:800; color:white; pointer-events:none; }
+.nav-avatar img { width:100%; height:100%; object-fit:cover; display:none; border-radius:8px; }
+.btn-logout {
+    display:flex; align-items:center; gap:6px;
+    background:transparent !important; border:1px solid var(--border) !important;
+    color:var(--text-2) !important; padding:7px 14px !important; border-radius:9px !important;
+    font-size:13px !important; font-weight:600 !important; cursor:pointer; transition:all 0.2s;
+}
+.btn-logout:hover { border-color:rgba(239,68,68,0.4) !important; color:#fca5a5 !important; background:rgba(239,68,68,0.07) !important; }
+        @media (max-width: 768px) {
+            .navbar { padding: 0 14px; max-width: calc(100vw - 24px); }
+            .nav-brand { font-size: 16px; }
+            .nav-hello { display: none; }
+            .badge-prof, .badge-student { display: none; }
+            .btn-logout { padding: 6px 10px; font-size: 12px; }
+        }
+        @media (max-width: 480px) {
+            .navbar { padding: 0 12px; max-width: calc(100vw - 16px); }
+            .nav-brand { font-size: 14px; }
+        }
+[data-theme="light"] .btn-logout { color:#555555 !important; }
+[data-theme="light"] .btn-logout:hover { color:#dc2626 !important; }
+.nav-avatar-wrap { position: relative; }
+.nav-avatar { cursor: pointer; padding: 0; }
+.nav-dropdown {
+    display: none; position: absolute; right: 0; top: calc(100% + 10px);
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; min-width: 185px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.25);
+    overflow: hidden; z-index: 300;
+}
+.nav-dropdown.open { display: block; }
+.nav-dropdown a, .nav-dropdown button {
+    display: flex; align-items: center; gap: 10px;
+    width: 100%; padding: 10px 16px; text-align: left;
+    font-size: 13px; font-weight: 500; color: var(--text);
+    background: none; border: none; text-decoration: none;
+    cursor: pointer; transition: background 0.15s;
+    font-family: 'Inter', sans-serif; box-sizing: border-box;
+}
+.nav-dropdown a:hover, .nav-dropdown button:hover { background: rgba(255,255,255,0.06); }
+[data-theme="light"] .nav-dropdown a:hover,
+[data-theme="light"] .nav-dropdown button:hover { background: rgba(0,0,0,0.05); }
+.nd-divider { height: 1px; background: var(--border); margin: 4px 0; }
+.nd-logout { color: #fca5a5 !important; }
+.nd-logout:hover { background: rgba(239,68,68,0.08) !important; }
+
+/* ===== DASHBOARD LAYOUT ===== */
+body.dashboard-body { background:var(--bg) !important; color:var(--text); font-family:'DM Sans',sans-serif; }
+.dashboard-container { position:relative; z-index:1; }
+.btn-back {
+    background:var(--input-bg) !important; border:1px solid var(--border) !important;
+    color:var(--text-2) !important; border-radius:9px !important; font-size:13px !important;
+    font-weight:600 !important; padding:8px 16px !important; margin-bottom:20px;
+    display:inline-flex; align-items:center; gap:6px; cursor:pointer; transition:all 0.2s;
+}
+.btn-back:hover { border-color:var(--border-h) !important; color:var(--text) !important; }
+.section-card {
+    background:var(--surface) !important; border:1px solid var(--border) !important;
+    border-radius:16px !important; box-shadow:none !important;
+}
+
+/* ===== PAGE HEADER ===== */
+.sb-header {
+    display:flex; align-items:center; justify-content:space-between;
+    gap:16px; margin-bottom:24px; flex-wrap:wrap;
+}
+.sb-header-left { display:flex; align-items:center; gap:16px; }
+.sb-header-icon {
+    width:52px; height:52px; border-radius:14px; flex-shrink:0;
+    background:#0A66C2;
+    display:flex; align-items:center; justify-content:center;
+    font-size:24px; color:white;
+}
+.sb-header-title {
+    font-family:'Sora',sans-serif; font-size:22px; font-weight:800;
+    color:#ffffff; letter-spacing:-0.3px; margin:0 0 4px;
+}
+.sb-header-sub { font-size:13px; color:rgba(255,255,255,0.7); margin:0; }
+[data-theme="light"] .sb-header-title { color: #ffffff; }
+[data-theme="light"] .sb-header-sub   { color: rgba(255,255,255,0.75); }
+[data-theme="dark"]  .sb-header-title { color: #ffffff; }
+[data-theme="dark"]  .sb-header-sub   { color: rgba(255,255,255,0.65); }
+
+/* ===== STATS ROW ===== */
+.sb-stats-row {
+    display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+    gap:14px; margin-bottom:24px;
+}
+.sb-stat-card {
+    background:var(--surface); border:1px solid var(--border); border-radius:14px;
+    padding:16px 18px; display:flex; align-items:center; gap:14px;
+    transition:border-color 0.2s, transform 0.2s;
+}
+.sb-stat-card:hover { border-color:var(--border-h); }
+.sb-stat-icon {
+    width:42px; height:42px; border-radius:11px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; font-size:19px;
+}
+.sb-stat-icon-blue   { background:rgba(59,130,246,0.12);  color:#60a5fa; }
+.sb-stat-icon-green  { background:rgba(16,185,129,0.12);  color:#34d399; }
+.sb-stat-icon-purple { background:rgba(139,92,246,0.12);  color:#a78bfa; }
+.sb-stat-icon-amber  { background:rgba(245,158,11,0.12);  color:#fbbf24; }
+.sb-stat-num { font-family:'Sora',sans-serif; font-size:24px; font-weight:800; color:var(--text); line-height:1; margin-bottom:3px; }
+.sb-stat-num-green  { color:#34d399; }
+.sb-stat-num-purple { color:#a78bfa; }
+.sb-stat-num-amber  { color:#fbbf24; }
+.sb-stat-label { font-size:12px; color:var(--text-3); font-weight:500; }
+
+/* ===== VIEW TOGGLE ===== */
+.sb-view-toggle {
+    display:flex; gap:4px; background:var(--input-bg);
+    border:1px solid var(--border); border-radius:12px; padding:4px;
+    margin-bottom:20px; width:fit-content;
+}
+.sb-view-btn {
+    padding:8px 18px; border:none; border-radius:9px; background:transparent;
+    font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600;
+    color:var(--text-3); cursor:pointer; transition:all 0.2s;
+    display:flex; align-items:center; gap:6px;
+}
+.sb-view-btn:hover { color:var(--text-2); }
+.sb-view-btn.active {
+    background:var(--surface); color:var(--primary-l);
+    box-shadow:0 2px 8px rgba(0,0,0,0.12);
+}
+[data-theme="light"] .sb-view-btn.active { color:var(--primary); }
+
+/* ===== SECTION TITLE ===== */
+.db-section-title {
+    font-family:'Sora',sans-serif !important; font-size:15px !important; font-weight:700 !important;
+    color:var(--text) !important; margin-bottom:18px !important;
+    display:flex; align-items:center; gap:8px;
+}
+
+/* ===== GROUP CARDS ===== */
+.sb-group-card {
+    background:var(--card-bg); border:1.5px solid var(--border);
+    border-radius:16px; margin-bottom:12px; overflow:hidden;
+    transition:border-color 0.2s, box-shadow 0.2s;
+}
+.sb-group-card:hover { border-color:var(--border-h); box-shadow:0 4px 18px rgba(10,102,194,0.1); }
+.sb-group-header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:14px 18px; background:var(--input-bg);
+    border-bottom:1.5px solid transparent;
+    flex-wrap:wrap; gap:10px; cursor:pointer; user-select:none; transition:background 0.2s;
+}
+.sb-group-header:hover { background:var(--input-bg-f); }
+.sb-group-card.open .sb-group-header { border-bottom-color:var(--border); }
+.sb-group-header-left { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+.sb-group-num {
+    background:#0A66C2;
+    color:white; font-size:11px; font-weight:800; padding:3px 11px;
+    border-radius:20px; font-family:'Sora',sans-serif; white-space:nowrap;
+}
+.sb-group-name { font-size:14px; font-weight:700; color:var(--text); }
+.sb-group-grade-badge { display:inline-flex; align-items:center; gap:6px; font-size:13px; font-weight:800; }
+.sb-group-grade-badge.graded  { color:#34d399; }
+.sb-group-grade-badge.pending { color:var(--text-3); }
+.sb-group-caret { color:var(--text-3); font-size:15px; transition:transform 0.25s; flex-shrink:0; }
+.sb-group-card.open .sb-group-caret { transform:rotate(180deg); }
+
+.sb-group-body { padding:16px 18px; display:none; }
+.sb-group-body.open { display:block; animation:fadeBodyIn 0.2s ease; }
+@keyframes fadeBodyIn { from { opacity:0; transform:translateY(-6px); } to { opacity:1; transform:none; } }
+
+/* Progress pill */
+.sb-progress-pill {
+    display:inline-flex; align-items:center; gap:6px;
+    background:var(--input-bg); border:1px solid var(--border);
+    border-radius:20px; padding:3px 10px; font-size:11px; font-weight:600;
+    color:var(--text-2); white-space:nowrap;
+}
+.sb-progress-track { width:46px; height:4px; background:var(--border); border-radius:2px; overflow:hidden; }
+.sb-progress-fill { height:100%; border-radius:2px; background:#0A66C2; transition:width 0.3s; }
+.sb-progress-fill.complete { background:#10b981; }
+
+/* Members in group */
+.sb-group-members { display:flex; flex-direction:column; gap:8px; margin-bottom:16px; }
+.sb-group-member-row {
+    display:flex; align-items:center; gap:12px; padding:10px 14px;
+    border-radius:11px; background:var(--input-bg); border:1px solid var(--border);
+    transition:border-color 0.2s; flex-wrap:wrap;
+}
+.sb-group-member-row:hover { border-color:var(--border-h); }
+.sb-group-member-info { flex:1; min-width:120px; }
+.sb-group-member-name { font-size:13px; font-weight:600; color:var(--text); }
+.sb-group-member-meta { font-size:11px; color:var(--text-3); margin-top:2px; }
+.sb-leader-tag {
+    font-size:10px; font-weight:800; color:#34d399;
+    background:rgba(52,211,153,0.12); border:1px solid rgba(52,211,153,0.25);
+    padding:2px 8px; border-radius:20px; white-space:nowrap;
+    display:inline-flex; align-items:center; gap:4px;
+}
+.sb-member-tag {
+    font-size:10px; font-weight:700; color:var(--text-3);
+    background:rgba(156,163,175,0.1); border:1px solid rgba(156,163,175,0.25);
+    padding:2px 8px; border-radius:20px; white-space:nowrap;
+    display:inline-flex; align-items:center; gap:4px;
+}
+.sb-submitted-tag {
+    font-size:10px; font-weight:700; padding:3px 9px; border-radius:20px;
+    display:inline-flex; align-items:center; gap:4px; white-space:nowrap;
+}
+.sb-submitted-tag.yes    { background:rgba(59,130,246,0.1);  color:#60a5fa;  border:1px solid rgba(59,130,246,0.2); }
+.sb-submitted-tag.no     { background:var(--input-bg);        color:var(--text-3); border:1px solid var(--border); }
+.sb-submitted-tag.graded { background:rgba(52,211,153,0.1);  color:#34d399;  border:1px solid rgba(52,211,153,0.2); }
+[data-theme="light"] .sb-submitted-tag.yes    { background:#eff6ff; color:#2563eb; }
+[data-theme="light"] .sb-submitted-tag.graded { background:#d1fae5; color:#059669; }
+
+/* Attendance */
+.sb-att-row { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
+.sb-att-btn {
+    padding:3px 10px; border-radius:6px; font-size:11px; font-weight:700;
+    cursor:pointer; border:1.5px solid; font-family:'DM Sans',sans-serif; transition:all 0.15s;
+    display:inline-flex; align-items:center; gap:4px;
+}
+.sb-att-btn.present         { background:rgba(52,211,153,0.08);  color:#34d399;  border-color:rgba(52,211,153,0.25); }
+.sb-att-btn.present.active  { background:#059669; color:white; border-color:#059669; }
+.sb-att-btn.absent          { background:rgba(239,68,68,0.08);   color:#f87171;  border-color:rgba(239,68,68,0.25); }
+.sb-att-btn.absent.active   { background:#ef4444; color:white; border-color:#ef4444; }
+[data-theme="light"] .sb-att-btn.present        { background:#f0fdf4; color:#059669; border-color:#bbf7d0; }
+[data-theme="light"] .sb-att-btn.absent         { background:#fef2f2; color:#ef4444; border-color:#fecaca; }
+
+/* Group grade form */
+.sb-group-grade-form {
+    background:var(--input-bg); border:1.5px solid var(--border-h);
+    border-radius:14px; padding:16px 18px; margin-top:4px;
+}
+.sb-group-grade-title {
+    font-size:13px; font-weight:700; color:var(--primary-l);
+    display:flex; align-items:center; gap:7px; margin-bottom:12px;
+    font-family:'DM Sans',sans-serif;
+}
+[data-theme="light"] .sb-group-grade-title { color:var(--primary); }
+.sb-group-grade-note {
+    font-size:11px; color:var(--text-3);
+    background:var(--card-bg); border:1px solid var(--border);
+    border-radius:8px; padding:7px 11px; margin-bottom:12px;
+    display:flex; align-items:center; gap:6px;
+}
+.sb-group-no-sub {
+    font-size:12px; color:var(--text-3); padding:10px 0; text-align:center;
+    display:flex; align-items:center; justify-content:center; gap:6px;
+}
+
+/* ===== STATUS BADGES ===== */
+.sb-status-badge {
+    display:inline-flex; align-items:center; gap:5px; padding:4px 10px;
+    border-radius:20px; font-size:11px; font-weight:700; white-space:nowrap;
+}
+.sb-status-graded    { background:rgba(52,211,153,0.12); color:#34d399;  border:1px solid rgba(52,211,153,0.25); }
+.sb-status-submitted { background:rgba(59,130,246,0.12); color:#60a5fa;  border:1px solid rgba(59,130,246,0.2); }
+.sb-status-pending   { background:var(--input-bg);        color:var(--text-3); border:1px solid var(--border); }
+[data-theme="light"] .sb-status-graded    { background:#d1fae5; color:#059669; border-color:#a7f3d0; }
+[data-theme="light"] .sb-status-submitted { background:#eff6ff; color:#2563eb; border-color:#bfdbfe; }
+[data-theme="light"] .sb-status-pending   { background:#f1f5f9; color:#64748b; border-color:#e2e8f0; }
+
+/* ===== SUBMISSION CARD (individual) ===== */
+.sb-submission-card {
+    display:flex; align-items:center; gap:14px; padding:14px 16px;
+    border-radius:12px; background:var(--card-bg); border:1px solid var(--border);
+    margin-bottom:10px; transition:border-color 0.2s, background 0.2s; flex-wrap:wrap;
+}
+.sb-submission-card:hover { border-color:var(--border-h); background:var(--input-bg); }
+.sb-student-name { font-size:14px; font-weight:700; color:var(--text); margin-bottom:4px; }
+.sb-submission-info { flex:1; min-width:160px; }
+.sb-submission-meta { display:flex; gap:12px; flex-wrap:wrap; }
+.sb-submission-meta span { font-size:12px; color:var(--text-3); display:flex; align-items:center; gap:5px; }
+.sb-grade-pill {
+    background:#0A66C2;
+    color:white; padding:5px 14px; border-radius:20px;
+    font-family:'Sora',sans-serif; font-size:14px; font-weight:800;
+    white-space:nowrap; flex-shrink:0;
+}
+.sb-grade-denom { font-size:11px; opacity:0.7; }
+.sb-grade-empty { background:var(--input-bg); color:var(--text-3); border:1px solid var(--border); }
+.sb-btn-view {
+    display:inline-flex; align-items:center; gap:7px;
+    background:var(--input-bg); border:1.5px solid var(--border-h);
+    color:var(--primary-l); padding:8px 16px; border-radius:9px;
+    font-size:13px; font-weight:600; cursor:pointer; font-family:'DM Sans',sans-serif;
+    transition:all 0.2s; flex-shrink:0; white-space:nowrap;
+}
+.sb-btn-view:hover { background:var(--primary); color:white; border-color:var(--primary); }
+[data-theme="light"] .sb-btn-view { color:var(--primary); }
+[data-theme="light"] .sb-btn-view:hover { color:white; }
+
+/* ===== MODAL ===== */
+.modal-overlay {
+    display:none; position:fixed; inset:0; z-index:1000;
+    background:rgba(0,0,0,0.6); backdrop-filter:blur(4px);
+    align-items:center; justify-content:center; padding:20px;
+}
+.modal-overlay.active { display:flex; animation:overlayIn 0.2s ease; }
+@keyframes overlayIn { from { opacity:0; } to { opacity:1; } }
+.sb-modal-box {
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:20px; width:100%; max-width:720px; max-height:88vh;
+    display:flex; flex-direction:column; overflow:hidden;
+    box-shadow:0 24px 80px rgba(0,0,0,0.4);
+    animation:modalIn 0.25s cubic-bezier(0.22,1,0.36,1);
+}
+@keyframes modalIn { from { transform:translateY(20px) scale(0.98); opacity:0; } to { transform:none; opacity:1; } }
+.sb-modal-header {
+    display:flex; align-items:center; justify-content:space-between;
+    padding:18px 22px; border-bottom:1px solid var(--border);
+    background:var(--input-bg); flex-shrink:0;
+}
+.sb-modal-header-left { display:flex; align-items:center; gap:14px; }
+.sb-modal-avatar { flex-shrink:0; }
+.sb-modal-header h3 { font-family:'Sora',sans-serif; font-size:16px; font-weight:700; color:var(--text); margin:0 0 3px; }
+.sb-modal-meta { font-size:12px; color:var(--text-3); margin:0; }
+.sb-modal-close {
+    width:34px; height:34px; border-radius:9px; background:var(--input-bg-f);
+    border:1px solid var(--border); color:var(--text-3); font-size:15px;
+    cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all 0.2s;
+}
+.sb-modal-close:hover { background:rgba(239,68,68,0.1); color:#fca5a5; border-color:rgba(239,68,68,0.3); }
+.sb-modal-body { flex:1; overflow-y:auto; padding:22px; }
+.sb-modal-body::-webkit-scrollbar { width:6px; }
+.sb-modal-body::-webkit-scrollbar-thumb { background:var(--border-h); border-radius:3px; }
+
+/* Detail sections inside modal */
+.sb-detail-section { margin-bottom:24px; }
+.sb-detail-title {
+    font-size:13px; font-weight:700; color:var(--primary-l);
+    margin-bottom:12px; display:flex; align-items:center; gap:7px;
+    text-transform:uppercase; letter-spacing:0.4px;
+}
+[data-theme="light"] .sb-detail-title { color:var(--primary); }
+.sb-info-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(160px,1fr)); gap:10px; }
+.sb-info-item {
+    background:var(--input-bg); border:1px solid var(--border);
+    border-radius:10px; padding:10px 14px;
+}
+.sb-info-label { font-size:11px; color:var(--text-3); font-weight:600; text-transform:uppercase; letter-spacing:0.4px; margin-bottom:4px; }
+.sb-info-value { font-size:13px; font-weight:600; color:var(--text); }
+
+/* Materials */
+.sb-materials-list { display:flex; flex-direction:column; gap:6px; }
+.sb-material-item {
+    display:flex; align-items:center; gap:10px; padding:8px 12px;
+    border-radius:9px; background:var(--input-bg); border:1px solid var(--border);
+    font-size:13px; color:var(--text-2); transition:border-color 0.2s;
+}
+.sb-material-item.sb-checked { border-color:rgba(52,211,153,0.3); }
+[data-theme="light"] .sb-material-item.sb-checked { border-color:#a7f3d0; }
+[data-theme="dark"] .sb-material-item { background:var(--input-bg); color:var(--text-2); }
+[data-theme="dark"] .sb-material-item.sb-checked { background:rgba(16,185,129,0.1); color:var(--text-2); }
+
+/* Table */
+.sb-table-wrap { overflow-x:auto; margin-bottom:10px; border-radius:10px; box-shadow:0 0 0 1px var(--border); }
+.sb-table { width:100%; border-collapse:collapse; min-width:280px; font-size:13px; }
+.sb-table th {
+    background:#0A66C2;
+    color:white; padding:10px 14px; text-align:left; font-weight:600; font-size:12px;
+}
+.sb-table td { padding:9px 14px; border-bottom:1px solid var(--border); color:var(--text-2); }
+.sb-table tr:last-child td { border-bottom:none; }
+.sb-table tr:nth-child(even) td { background:var(--input-bg); }
+.sb-notes-box {
+    background:var(--input-bg); border:1px solid var(--border);
+    border-radius:9px; padding:10px 14px; font-size:12px; color:var(--text-2); margin-top:8px;
+}
+
+/* Q&A */
+.sb-answer-item { margin-bottom:14px; background:var(--input-bg); border:1px solid var(--border); border-radius:10px; padding:12px 14px; }
+.sb-answer-q {
+    font-size:13px; font-weight:600; color:var(--text);
+    margin-bottom:7px; line-height:1.6;
+}
+.sb-answer-text {
+    background:var(--input-bg); border:1px solid var(--border);
+    border-radius:10px; padding:12px 14px; font-size:13px; color:var(--text-2); line-height:1.7;
+}
+.sb-answer-empty { font-size:12px; color:var(--text-3); font-style:italic; padding:4px 0; }
+
+/* File link */
+.sb-file-link {
+    display:inline-flex; align-items:center; gap:8px;
+    background:#0A66C2;
+    color:white; padding:10px 20px; border-radius:10px;
+    font-size:13px; font-weight:600; text-decoration:none; transition:opacity 0.2s;
+}
+.sb-file-link:hover { opacity:0.88; }
+
+/* Grade form (inside modal) */
+.sb-grade-form {
+    background:var(--input-bg); border:1.5px solid var(--border-h);
+    border-radius:14px; padding:18px 20px;
+}
+.sb-grade-form-title {
+    font-size:14px; font-weight:700; color:var(--primary-l);
+    display:flex; align-items:center; gap:7px; margin-bottom:16px;
+    font-family:'Sora',sans-serif;
+}
+[data-theme="light"] .sb-grade-form-title { color:var(--primary); }
+.sb-grade-row { display:flex; align-items:center; gap:12px; margin-bottom:14px; flex-wrap:wrap; }
+.sb-grade-row-label { font-size:13px; font-weight:600; color:var(--text-2); white-space:nowrap; }
+.sb-grade-input {
+    width:70px; padding:8px 12px;
+    background:var(--surface); border:1.5px solid var(--border);
+    border-radius:9px; font-size:16px; font-weight:700; color:var(--text);
+    text-align:center; outline:none; transition:border-color 0.2s; font-family:'Sora',sans-serif;
+}
+.sb-grade-input:focus { border-color:var(--primary); }
+.sb-grade-denom-label { font-size:13px; color:var(--text-3); font-weight:600; }
+.sb-grade-slider { flex:1; min-width:120px; accent-color:var(--primary); cursor:pointer; height:4px; }
+.sb-quick-wrap { display:flex; align-items:center; gap:10px; margin-bottom:14px; flex-wrap:wrap; }
+.sb-quick-label { font-size:12px; color:var(--text-3); font-weight:600; white-space:nowrap; }
+.sb-quick-grades { display:flex; gap:6px; flex-wrap:wrap; }
+.sb-quick-btn {
+    padding:4px 10px; border-radius:7px; font-size:12px; font-weight:700; cursor:pointer;
+    background:var(--input-bg-f); border:1px solid var(--border); color:var(--text-2);
+    font-family:'DM Sans',sans-serif; transition:all 0.15s;
+}
+.sb-quick-btn:hover { background:var(--primary); color:white; border-color:var(--primary); }
+.sb-feedback-label { font-size:12px; color:var(--text-3); font-weight:600; display:block; margin-bottom:7px; }
+.sb-feedback-input {
+    width:100%; padding:11px 14px; border-radius:10px;
+    background:var(--surface); border:1.5px solid var(--border);
+    color:var(--text); font-size:13px; font-family:'DM Sans',sans-serif;
+    resize:vertical; outline:none; transition:border-color 0.2s; box-sizing:border-box;
+    min-height:80px;
+}
+.sb-feedback-input::placeholder { color:var(--placeholder); }
+.sb-feedback-input:focus { border-color:var(--primary); }
+.sb-grade-actions { display:flex; align-items:center; gap:12px; margin-top:14px; flex-wrap:wrap; }
+.sb-btn-save-grade {
+    display:inline-flex; align-items:center; gap:7px;
+    background:#0A66C2; color:white;
+    border:none; padding:10px 22px; border-radius:10px;
+    font-size:13px; font-weight:700; cursor:pointer; font-family:'DM Sans',sans-serif;
+    transition:opacity 0.2s, transform 0.2s; box-shadow:0 4px 16px rgba(10,102,194,0.35);
+}
+.sb-btn-save-grade:hover { opacity:0.9; }
+.sb-btn-save-grade:disabled { opacity:0.35; cursor:not-allowed; transform:none; }
+.sb-grade-saved-msg {
+    display:none; align-items:center; gap:6px;
+    color:#34d399; font-size:13px; font-weight:700;
+    animation:savedPop 0.3s ease;
+}
+@keyframes savedPop { from { transform:scale(0.85); opacity:0; } to { transform:none; opacity:1; } }
+@keyframes pulse { 0%,100% { box-shadow:0 0 0 0 rgba(10,102,194,0.5); } 50% { box-shadow:0 0 0 8px rgba(10,102,194,0); } }
+
+/* Empty state */
+.db-empty-state { text-align:center; padding:48px 24px; }
+.db-empty-icon { font-size:44px; margin-bottom:12px; opacity:0.3; color:var(--text-3); }
+.db-empty-title { font-family:'Sora',sans-serif; font-size:15px; font-weight:700; color:var(--text-2); margin-bottom:4px; }
+.db-empty-sub { font-size:13px; color:var(--text-3); }
+
+    </style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="particles" id="particles"></div>
+
+<nav class="navbar">
+    <div class="nav-left">
+        <a class="nav-brand" href="/dashboard_professor">
+            <div class="brand-icon"><img src="static/logo.svg" alt="PHYSLAB Logo"></div>
+            PHYSLAB
+        </a>
+    </div>
+    <div class="nav-user">
+        <div class="nav-avatar-wrap">
+            <button class="nav-avatar" id="navAvatar" onclick="toggleNavDropdown()" title="Menu">
+                <span class="nav-av-initial"></span><img alt="avatar">
+            </button>
+            <div class="nav-dropdown" id="navDropdown"></div>
+        </div>
+    </div>
+</nav>
+
+<div class="dashboard-container">
+    <div style="display:flex;align-items:center;gap:10px;margin-bottom:20px;">
+        <button type="button" class="btn-back" style="margin-bottom:0;" onclick="history.back()">
+            <i class="ph-bold ph-arrow-left"></i> Back
+        </button>
+        <button id="newSubBtn" onclick="loadData();this.style.display='none';" style="display:none;
+            align-items:center;gap:7px;padding:8px 16px;border-radius:10px;
+            background:#0A66C2;color:#fff;
+            border:none;font-size:13px;font-weight:700;cursor:pointer;
+            font-family:'Sora',sans-serif;animation:pulse 1.5s infinite;">
+            <i class="ph-bold ph-arrows-clockwise"></i> New submission! Reload
+        </button>
+    </div>
+
+    <div class="sb-page">
+
+        <!-- Page Header -->
+        <div class="sb-header">
+            <div class="sb-header-left">
+                <div class="sb-header-icon">
+                    <i class="ph-bold ph-list-checks"></i>
+                </div>
+                <div>
+                    <h2 class="sb-header-title">Student Submissions</h2>
+                    <p class="sb-header-sub" id="activityTitleDisplay">Loading activity...</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="sb-stats-row">
+            <div class="sb-stat-card">
+                <div class="sb-stat-icon sb-stat-icon-green">
+                    <i class="ph-bold ph-circles-three"></i>
+                </div>
+                <div>
+                    <div class="sb-stat-num sb-stat-num-green" id="statTotal">0</div>
+                    <div class="sb-stat-label">Groups Submitted</div>
+                </div>
+            </div>
+            <div class="sb-stat-card">
+                <div class="sb-stat-icon sb-stat-icon-amber">
+                    <i class="ph-bold ph-clock"></i>
+                </div>
+                <div>
+                    <div class="sb-stat-num sb-stat-num-amber" id="statGroups">0</div>
+                    <div class="sb-stat-label">Pending</div>
+                </div>
+            </div>
+            <div class="sb-stat-card">
+                <div class="sb-stat-icon sb-stat-icon-purple">
+                    <i class="ph-bold ph-check-circle"></i>
+                </div>
+                <div>
+                    <div class="sb-stat-num sb-stat-num-purple" id="statGraded">0</div>
+                    <div class="sb-stat-label">Graded</div>
+                </div>
+            </div>
+            <div class="sb-stat-card">
+                <div class="sb-stat-icon sb-stat-icon-blue">
+                    <i class="ph-bold ph-chart-bar"></i>
+                </div>
+                <div>
+                    <div class="sb-stat-num" id="statAvg">—</div>
+                    <div class="sb-stat-label">Average Grade</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Submission Progress Bar -->
+        <div id="sbProgressWrap" style="display:none;background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px 20px;margin-bottom:20px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                <span style="font-size:12px;font-weight:700;color:var(--text-3);letter-spacing:0.5px;text-transform:uppercase;">Submission Progress</span>
+                <span id="sbProgressLabel" style="font-size:12px;font-weight:700;color:var(--primary-l);">0 / 0 groups</span>
+            </div>
+            <div style="height:8px;background:var(--input-bg);border-radius:8px;overflow:hidden;">
+                <div id="sbProgressFill" style="height:100%;border-radius:8px;background:#0A66C2;transition:width 0.6s cubic-bezier(0.22,1,0.36,1);width:0%;"></div>
+            </div>
+            <div style="display:flex;justify-content:flex-end;margin-top:6px;">
+                <span id="sbProgressPct" style="font-size:11px;color:var(--text-3);font-weight:600;">0%</span>
+            </div>
+        </div>
+
+        <!-- View Toggle -->
+        <div class="sb-view-toggle">
+            <button class="sb-view-btn active" id="btnViewGroups" onclick="switchView('groups')">
+                <i class="ph-bold ph-circles-three"></i> By Group
+            </button>
+            <button class="sb-view-btn" id="btnViewIndividual" onclick="switchView('individual')">
+                <i class="ph-bold ph-users"></i> Individual
+            </button>
+        </div>
+
+        <!-- Group submissions -->
+        <div id="viewGroups">
+            <div class="section-card">
+                <h3 class="db-section-title">
+                    <i class="ph-bold ph-circles-three"></i> Group Submissions
+                </h3>
+                <div id="groupSubmissionsList"></div>
+            </div>
+        </div>
+
+        <!-- Individual submissions -->
+        <div id="viewIndividual" style="display:none;">
+            <div class="section-card">
+                <h3 class="db-section-title">
+                    <i class="ph-bold ph-users"></i> Individual Submissions
+                </h3>
+                <div id="submissionsList"></div>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+<!-- SUBMISSION DETAIL MODAL -->
+<div class="modal-overlay" id="submissionModal">
+    <div class="sb-modal-box">
+        <div class="sb-modal-header">
+            <div class="sb-modal-header-left">
+                <div class="sb-modal-avatar" id="modalAvatar">?</div>
+                <div>
+                    <h3 id="modalStudentName">Student Submission</h3>
+                    <p id="modalSubmitTime" class="sb-modal-meta"></p>
+                </div>
+            </div>
+            <button class="sb-modal-close" onclick="closeModal()">
+                <i class="ph-bold ph-x"></i>
+            </button>
+        </div>
+        <div class="sb-modal-body" id="modalBody"></div>
+    </div>
+</div>
+
+<script src="static/script.js"></script>
+<script src="static/navbar.js"></script>
+<script>
+const token = localStorage.getItem('token');
+if (!token) window.location.href = '/login';
+initSessionGuard();
+const role = localStorage.getItem('role');
+const activityId = new URLSearchParams(window.location.search).get('id');
+
+// ── Grade count-up ──
+function runCountUp(container) {
+    (container || document).querySelectorAll('[data-grade] .sb-grade-num').forEach(el => {
+        const target = parseFloat(el.closest('[data-grade]').dataset.grade);
+        if (isNaN(target)) return;
+        el.textContent = '0';
+        const start = performance.now();
+        const dur = 700;
+        function tick(now) {
+            const p = Math.min((now - start) / dur, 1);
+            const ease = 1 - Math.pow(1 - p, 3);
+            el.textContent = Math.round(target * ease);
+            if (p < 1) requestAnimationFrame(tick);
+            else el.textContent = target;
+        }
+        requestAnimationFrame(tick);
+    });
+}
+
+// Safe JSON — returns null if server sends HTML error instead of JSON
+async function safeJson(res) {
+    const ct = res.headers.get('content-type') || '';
+    if (!ct.includes('application/json')) return null;
+    try { return await res.json(); } catch { return null; }
+}
+
+if (!token || role !== 'professor') window.location.href = '/login';
+
+// userName removed from navbar
+document.body.classList.add('dashboard-body');
+
+// ── Theme ──
+function applyTheme(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    localStorage.setItem('physlab_theme', t);
+}
+applyTheme(localStorage.getItem('physlab_theme') || 'dark');
+
+// ── Particles ──
+(function() {
+    const pw = document.getElementById('particles');
+    if (!pw) return;
+    for (let i = 0; i < 200; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.cssText = `left:${Math.random()*100}%;animation-delay:-${Math.random()*8}s;animation-duration:${6+Math.random()*8}s;--drift:${(Math.random()-.5)*200}px`;
+        pw.appendChild(p);
+    }
+})();
+
+let allSubmissions  = [];
+let allGroups       = [];
+let allGroupDrafts  = {};   // groupId → latest submission/draft (for progress)
+let parsedActivity  = null;
+let currentSubmission = null;
+let currentView = 'groups';
+let _groupAttendance = {}; // groupId → { studentId → 'present'|'absent' }
+
+// ============================================================
+// LOAD DATA
+// ============================================================
+function skeletonRows(n) {
+    return Array.from({length:n}, () => `
+    <div class="skeleton-row" style="margin-bottom:10px;">
+      <div class="skeleton-box sk-avatar"></div>
+      <div class="sk-lines">
+        <div class="skeleton-box sk-line1"></div>
+        <div class="skeleton-box sk-line2"></div>
+      </div>
+    </div>`).join('');
+}
+async function loadData() {
+    document.getElementById('submissionsList').innerHTML = skeletonRows(5);
+    document.getElementById('groupSubmissionsList').innerHTML = skeletonRows(3);
+    try {
+        const classId = new URLSearchParams(window.location.search).get('class_id');
+
+        const fetches = [
+            fetch(`http://127.0.0.1:5000/api/submissions/${activityId}/all`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            }),
+            fetch(`http://127.0.0.1:5000/api/activities/${activityId}/parsed`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            })
+        ];
+
+        // Load groups if class_id provided
+        if (classId) {
+            fetches.push(fetch(`http://127.0.0.1:5000/api/classes/${classId}/groups`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            }));
+        }
+
+        const [subRes, parsedRes, grpRes] = await Promise.all(fetches);
+
+        if (subRes.ok)    allSubmissions = await safeJson(subRes)    || [];
+        if (parsedRes.ok) parsedActivity = await safeJson(parsedRes) || null;
+        if (grpRes?.ok)   allGroups      = await safeJson(grpRes)    || [];
+
+        // Fetch latest draft/submission per group for progress indicators
+        if (classId && allGroups.length > 0) {
+            try {
+                const draftRes = await fetch(
+                    `http://127.0.0.1:5000/api/submissions/${activityId}/all-group-drafts?class_id=${classId}`,
+                    { headers: { 'Authorization': `Bearer ${token}` } }
+                );
+                if (draftRes.ok) allGroupDrafts = await safeJson(draftRes) || {};
+            } catch { /* non-critical */ }
+        }
+
+        updateStats();
+        renderGroupSubmissions();
+        renderSubmissions();
+
+        if (parsedActivity) {
+            const titleSection = parsedActivity.sections?.find(s => s.type === 'lab_title');
+            if (titleSection) {
+                document.getElementById('activityTitleDisplay').textContent =
+                    titleSection.title + (titleSection.content?.[0]?.text ? ' — ' + titleSection.content[0].text : '');
+            }
+        }
+    } catch (err) {
+        document.getElementById('groupSubmissionsList').innerHTML =
+            '<p style="color:red;text-align:center;padding:40px;">Cannot load submissions.</p>';
+    }
+}
+
+// ============================================================
+// STATS
+// ============================================================
+function updateStats() {
+    const totalGroups = allGroups.length;
+    const submittedGroups = allGroups.filter(g => {
+        const memberSubs = (g.members || []).map(m => allSubmissions.find(s => s.student_id === m.id));
+        return memberSubs.some(s => s?.status === 'submitted' || s?.status === 'graded');
+    }).length;
+    const pending = totalGroups - submittedGroups;
+    const graded  = allSubmissions.filter(s => s.status === 'graded').length;
+    const grades  = allSubmissions.filter(s => s.grade != null).map(s => s.grade);
+    const avg     = grades.length > 0
+        ? (grades.reduce((a, b) => a + b, 0) / grades.length).toFixed(1) : '—';
+
+    document.getElementById('statTotal').textContent  = totalGroups > 0 ? `${submittedGroups}/${totalGroups}` : '0';
+    document.getElementById('statGroups').textContent = pending;
+    document.getElementById('statGraded').textContent = graded;
+    document.getElementById('statAvg').textContent    = avg;
+
+    // Progress bar
+    const wrap = document.getElementById('sbProgressWrap');
+    const fill = document.getElementById('sbProgressFill');
+    const pct  = totalGroups > 0 ? Math.round((submittedGroups / totalGroups) * 100) : 0;
+    if (wrap && totalGroups > 0) {
+        wrap.style.display = 'block';
+        document.getElementById('sbProgressLabel').textContent = `${submittedGroups} / ${totalGroups} groups`;
+        document.getElementById('sbProgressPct').textContent   = pct + '%';
+        setTimeout(() => { if (fill) fill.style.width = pct + '%'; }, 100);
+    }
+}
+
+// ============================================================
+// VIEW TOGGLE
+// ============================================================
+function switchView(view) {
+    currentView = view;
+    document.getElementById('viewGroups').style.display    = view === 'groups'     ? 'block' : 'none';
+    document.getElementById('viewIndividual').style.display = view === 'individual' ? 'block' : 'none';
+    document.getElementById('btnViewGroups').classList.toggle('active',     view === 'groups');
+    document.getElementById('btnViewIndividual').classList.toggle('active', view === 'individual');
+}
+
+// ============================================================
+// GROUP PROGRESS HELPER
+// ============================================================
+function calcGroupProgress(groupId) {
+    const sub = allGroupDrafts[String(groupId)];
+    if (!sub) return null;
+
+    const questions = parsedActivity?.sections?.find(s => s.type === 'guide_questions');
+    const qItems = (questions?.content || []).filter(q => q.question || q.text);
+    const total = qItems.length;
+    if (total === 0) return null;
+
+    const answers = sub.answers || {};
+    const answered = qItems.filter((_, i) => {
+        const v = answers[String(i)] ?? answers[i];
+        return v && String(v).trim().length > 0;
+    }).length;
+
+    return { answered, total, pct: Math.round((answered / total) * 100), status: sub.status };
+}
+
+function buildProgressPill(groupId) {
+    const p = calcGroupProgress(groupId);
+    if (!p) return '';
+    const cls = p.answered === p.total ? 'complete' : '';
+    return `<span class="sb-progress-pill">
+        <i class="ph-bold ph-check-square"></i> ${p.answered}/${p.total}
+        <span class="sb-progress-track"><span class="sb-progress-fill ${cls}" style="width:${p.pct}%"></span></span>
+    </span>`;
+}
+
+// ============================================================
+// GROUP SUBMISSIONS VIEW
+// ============================================================
+function renderGroupSubmissions() {
+    const container = document.getElementById('groupSubmissionsList');
+    const colors = ['#0A66C2','#004182','#f59e0b','#10b981','#ef4444','#3b82f6','#8b5cf6'];
+
+    if (allGroups.length === 0) {
+        container.innerHTML = `
+            <div class="db-empty-state">
+                <div class="db-empty-icon"><i class="ph-bold ph-circles-three" style="font-size:44px;color:var(--text-3);"></i></div>
+                <p class="db-empty-title">No groups yet</p>
+                <p class="db-empty-sub">The professor hasn't created groups for this class yet.</p>
+            </div>`;
+        return;
+    }
+
+    container.innerHTML = allGroups.map((group, gi) => {
+        const members = group.members || [];
+
+        // Find group submission — prefer leader, fall back to any member
+        const leaderSub = allSubmissions.find(s => s.student_id === group.leader_id)
+            || allSubmissions.find(s => members.some(m => m.id === s.student_id));
+        // Init attendance state
+        if (!_groupAttendance[group.id]) {
+            _groupAttendance[group.id] = {};
+            members.forEach(m => { _groupAttendance[group.id][m.id] = 'present'; });
+        }
+
+        // Group status: graded > submitted > pending
+
+        const membersHtml = members.map((m, mi) => {
+            const color = colors[mi % colors.length];
+            const initial = (m.full_name || '?').charAt(0).toUpperCase();
+            const isLeader = m.is_leader || m.id === group.leader_id;
+            const memberSub    = allSubmissions.find(s => s.student_id === m.id);
+            const memberStatus = memberSub?.status;
+            const mTagCls  = memberStatus === 'graded' ? 'graded' : memberStatus === 'submitted' ? 'yes' : 'no';
+            const mTagIcon = memberStatus === 'graded' ? 'ph-check-circle' : memberStatus === 'submitted' ? 'ph-paper-plane-tilt' : 'ph-minus-circle';
+            const mTagLbl  = memberStatus === 'graded' ? 'Graded' : memberStatus === 'submitted' ? 'Submitted' : 'No submission';
+            const att = _groupAttendance[group.id][m.id] || 'present';
+            const memberAvatarHtml = m.avatar
+                ? makePhotoAvatar(m.avatar, 34, '9px')
+                : makeInitialsAvatar(m.full_name, 34, '9px', 13);
+
+            return `<div class="sb-group-member-row">
+                ${memberAvatarHtml}
+                <div class="sb-group-member-info">
+                    <div class="sb-group-member-name">${m.full_name || '?'}</div>
+                    <div class="sb-group-member-meta">${m.email || ''}</div>
+                </div>
+                ${isLeader
+                    ? '<span class="sb-leader-tag"><i class="ph-bold ph-crown-simple"></i> Leader</span>'
+                    : '<span class="sb-member-tag"><i class="ph-bold ph-user"></i> Member</span>'}
+                <span class="sb-submitted-tag ${mTagCls}">
+                    <i class="ph-bold ${mTagIcon}"></i> ${mTagLbl}
+                </span>
+                <div class="sb-att-row">
+                    <button class="sb-att-btn present ${att === 'present' ? 'active' : ''}"
+                        onclick="setGroupMemberAtt(${group.id}, ${m.id}, 'present', this)">
+                        <i class="ph-bold ph-check"></i> Present
+                    </button>
+                    <button class="sb-att-btn absent ${att === 'absent' ? 'active' : ''}"
+                        onclick="setGroupMemberAtt(${group.id}, ${m.id}, 'absent', this)">
+                        <i class="ph-bold ph-x"></i> Absent
+                    </button>
+                </div>
+            </div>`;
+        }).join('');
+
+        // Group status: graded > submitted > pending
+        const memberSubs   = members.map(m => allSubmissions.find(s => s.student_id === m.id));
+        const anyGraded    = memberSubs.some(s => s?.status === 'graded');
+        const anySubmitted = memberSubs.some(s => s?.status === 'submitted' || s?.status === 'graded');
+        const groupGrade   = memberSubs.find(s => s?.grade != null)?.grade ?? null;
+        const isGraded     = anyGraded;
+        const hasGrade     = groupGrade != null;
+        const gStatusCls   = anyGraded    ? 'sb-status-graded'    : anySubmitted ? 'sb-status-submitted' : 'sb-status-pending';
+        const gStatusIcon  = anyGraded    ? 'ph-check-circle'     : anySubmitted ? 'ph-paper-plane-tilt' : 'ph-clock';
+        const gStatusLbl   = anyGraded    ? 'Graded'              : anySubmitted ? 'Submitted'           : 'Pending';
+
+        const currentFeedback = leaderSub?.feedback || '';
+        const currentGradeVal = groupGrade ?? '';
+
+        return `<div class="sb-group-card" id="sb-group-card-${group.id}">
+            <div class="sb-group-header" onclick="toggleGroupCard(${group.id})">
+                <div class="sb-group-header-left">
+                    <span class="sb-group-name">${group.name || `Group ${gi + 1}`}</span>
+                    <span class="sb-status-badge ${gStatusCls}">
+                        <i class="ph-bold ${gStatusIcon}"></i> ${gStatusLbl}
+                    </span>
+                    ${buildProgressPill(group.id)}
+                    <span style="font-size:12px;color:#9ca3af;font-family:'DM Sans',sans-serif;">${members.length} member${members.length !== 1 ? 's' : ''}</span>
+                </div>
+                <div style="display:flex;align-items:center;gap:12px;flex-shrink:0;">
+                    <div class="sb-group-grade-badge ${isGraded ? 'graded' : 'pending'}">
+                        ${isGraded ? `<i class="ph-bold ph-star"></i> <span data-grade="${groupGrade}"><span class="sb-grade-num">0</span>/100</span>` : '<i class="ph-bold ph-minus"></i> Not graded'}
+                    </div>
+                    <i class="ph-bold ph-caret-down sb-group-caret"></i>
+                </div>
+            </div>
+            <div class="sb-group-body" id="sb-group-body-${group.id}">
+                <div class="sb-group-members">${membersHtml}</div>
+                ${leaderSub ? `<div style="margin-bottom:12px;">
+                    <button class="sb-btn-view" onclick="viewSubmission(${leaderSub.id})" style="width:100%;justify-content:center;">
+                        <i class="ph-bold ph-eye"></i> View Submission
+                    </button>
+                </div>` : `<div class="sb-group-no-sub"><i class="ph-bold ph-warning"></i> No submission yet.</div>`}
+                <div class="sb-group-grade-form">
+                    <div class="sb-group-grade-title"><i class="ph-bold ph-star"></i> Grade This Group</div>
+                    <div class="sb-group-grade-note">
+                        <i class="ph-bold ph-info"></i> Grading applies the same grade to all ${members.length} member(s).
+                    </div>
+                    <div class="sb-grade-row">
+                        <span class="sb-grade-row-label">Score:</span>
+                        <input type="number" class="sb-grade-input" id="gradeInput-${group.id}"
+                               min="0" max="100" value="${currentGradeVal}" placeholder="—"
+                               oninput="syncGroupSlider(${group.id},this.value)">
+                        <span class="sb-grade-denom-label">/100</span>
+                        <input type="range" class="sb-grade-slider" id="gradeSlider-${group.id}"
+                               min="0" max="100" value="${hasGrade ? currentGradeVal : 50}"
+                               oninput="syncGroupInput(${group.id},this.value)">
+                    </div>
+                    <div class="sb-quick-wrap">
+                        <span class="sb-quick-label">Quick:</span>
+                        <div class="sb-quick-grades">
+                            ${[60,65,70,75,80,85,90,95,100].map(g =>
+                                `<button class="sb-quick-btn" onclick="setGroupGradeQuick(${group.id},${g})">${g}</button>`
+                            ).join('')}
+                        </div>
+                    </div>
+                    <label class="sb-feedback-label">Feedback (optional):</label>
+                    <textarea class="sb-feedback-input" id="feedbackInput-${group.id}"
+                        placeholder="Write feedback for this group...">${currentFeedback}</textarea>
+                    <div class="sb-grade-actions">
+                        <button class="sb-btn-save-grade" id="saveGroupGradeBtn-${group.id}"
+                                onclick="submitGroupGrade(${group.id})"
+                                ${hasGrade ? '' : 'disabled'}>
+                            <i class="ph-bold ph-floppy-disk"></i> Save Grade for All Members
+                        </button>
+                        <span class="sb-grade-saved-msg" id="gradeSavedMsg-${group.id}">
+                            <i class="ph-bold ph-check-circle"></i> Grade Saved!
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>`;
+    }).join('');
+    runCountUp(container);
+}
+
+function toggleGroupCard(groupId) {
+    const card = document.getElementById(`sb-group-card-${groupId}`);
+    const body = document.getElementById(`sb-group-body-${groupId}`);
+    if (!card || !body) return;
+    const opening = !body.classList.contains('open');
+    body.classList.toggle('open', opening);
+    card.classList.toggle('open', opening);
+}
+
+function syncGroupSlider(groupId, val) {
+    const slider = document.getElementById(`gradeSlider-${groupId}`);
+    const btn    = document.getElementById(`saveGroupGradeBtn-${groupId}`);
+    if (slider && val !== '') slider.value = val;
+    if (btn) btn.disabled = (val === '');
+}
+
+function syncGroupInput(groupId, val) {
+    const input = document.getElementById(`gradeInput-${groupId}`);
+    const btn   = document.getElementById(`saveGroupGradeBtn-${groupId}`);
+    if (input) input.value = val;
+    if (btn)   btn.disabled = false;
+}
+
+function setGroupMemberAtt(groupId, studentId, status, btn) {
+    if (!_groupAttendance[groupId]) _groupAttendance[groupId] = {};
+    _groupAttendance[groupId][studentId] = status;
+    const row = btn.closest('.sb-att-row');
+    row.querySelectorAll('.sb-att-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+}
+
+function setGroupGradeQuick(groupId, val) {
+    const input  = document.getElementById(`gradeInput-${groupId}`);
+    const slider = document.getElementById(`gradeSlider-${groupId}`);
+    const btn    = document.getElementById(`saveGroupGradeBtn-${groupId}`);
+    if (input)  input.value  = val;
+    if (slider) slider.value = val;
+    if (btn)    btn.disabled = false;
+}
+
+async function submitGroupGrade(groupId) {
+    const grade    = parseFloat(document.getElementById(`gradeInput-${groupId}`).value);
+    const feedback = document.getElementById(`feedbackInput-${groupId}`).value;
+    const classId  = new URLSearchParams(window.location.search).get('class_id');
+
+    if (isNaN(grade) || grade < 0 || grade > 100) {
+        showToast('Please enter a valid grade (0–100)!', 'warning'); return;
+    }
+    if (!classId) {
+        showToast('Missing class_id in URL!', 'error'); return;
+    }
+
+    try {
+        const res = await fetch(
+            `http://127.0.0.1:5000/api/classes/${classId}/groups/${groupId}/grade`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ activity_id: parseInt(activityId), grade, feedback })
+        });
+        const data = await res.json();
+        if (res.ok) {
+            // Update local submissions
+            const group = allGroups.find(g => g.id === groupId);
+            if (group) {
+                group.members.forEach(m => {
+                    const sub = allSubmissions.find(s => s.student_id === m.id);
+                    if (sub) { sub.grade = grade; sub.feedback = feedback; sub.status = 'graded'; }
+                });
+            }
+            updateStats();
+            renderGroupSubmissions();
+            renderSubmissions();
+            const msg = document.getElementById(`gradeSavedMsg-${groupId}`);
+            if (msg) { msg.style.display = 'inline-flex'; setTimeout(() => msg.style.display = 'none', 2500); }
+            showToast(`${data.message}`, 'success');
+        } else {
+            showToast(data.message || 'Cannot save grade!', 'error');
+        }
+    } catch { showToast('Cannot connect to server!', 'error'); }
+}
+
+// ============================================================
+// INDIVIDUAL SUBMISSIONS VIEW (unchanged)
+// ============================================================
+const gradients = [
+    '#0A66C2',
+    '#f59e0b',
+    '#10b981',
+    '#3b82f6',
+    '#ec4899',
+    '#14b8a6',
+    '#f97316',
+];
+function nameToGradient(name) {
+    let hash = 0;
+    for (let i = 0; i < (name||'').length; i++) hash = (hash * 31 + name.charCodeAt(i)) & 0xffffffff;
+    return gradients[Math.abs(hash) % gradients.length];
+}
+function makeInitialsAvatar(name, size, radius, fontSize) {
+    const parts = (name||'?').trim().split(/\s+/);
+    const initials = parts.length >= 2
+        ? (parts[0][0] + parts[parts.length-1][0]).toUpperCase()
+        : (name||'?').charAt(0).toUpperCase();
+    const grad = nameToGradient(name);
+    return `<div style="width:${size}px;height:${size}px;border-radius:${radius};background:${grad};
+        display:flex;align-items:center;justify-content:center;color:white;
+        font-weight:800;font-size:${fontSize}px;letter-spacing:0.5px;flex-shrink:0;
+        box-shadow:0 2px 8px rgba(10,102,194,0.25);">${initials}</div>`;
+}
+function makePhotoAvatar(src, size, radius) {
+    return `<div style="width:${size}px;height:${size}px;border-radius:${radius};overflow:hidden;flex-shrink:0;
+        box-shadow:0 2px 8px rgba(0,0,0,0.12);">
+        <img src="${src}" style="width:100%;height:100%;object-fit:cover;display:block;"></div>`;
+}
+
+function renderSubmissions() {
+    const container = document.getElementById('submissionsList');
+    if (allSubmissions.length === 0) {
+        container.innerHTML = `
+            <div class="db-empty-state">
+                <div class="db-empty-icon"><i class="ph-bold ph-paper-plane-tilt" style="font-size:44px;color:var(--text-3);"></i></div>
+                <p class="db-empty-title">No submissions yet</p>
+                <p class="db-empty-sub">Students haven't submitted this activity yet.</p>
+            </div>`;
+        return;
+    }
+    container.innerHTML = allSubmissions.map((sub, idx) => {
+        const isGraded = sub.status === 'graded';
+        const gradeDisplay = sub.grade != null
+            ? `<div class="sb-grade-pill" data-grade="${sub.grade}"><span class="sb-grade-num">0</span><span class="sb-grade-denom">/100</span></div>`
+            : `<div class="sb-grade-pill sb-grade-empty">—</div>`;
+        const cardAvatarHtml = sub.student_avatar
+            ? makePhotoAvatar(sub.student_avatar, 44, '50%')
+            : makeInitialsAvatar(sub.student_name, 44, '50%', 16);
+        return `<div class="sb-submission-card">
+            ${cardAvatarHtml}
+            <div class="sb-submission-info">
+                <div class="sb-student-name">${sub.student_name}</div>
+                <div class="sb-submission-meta">
+                    <span><i class="ph-bold ph-envelope"></i> ${sub.student_email}</span>
+                    <span><i class="ph-bold ph-clock"></i> ${sub.submitted_at}</span>
+                </div>
+            </div>
+            <span class="sb-status-badge ${isGraded ? 'sb-status-graded' : 'sb-status-pending'}">
+                <i class="ph-bold ${isGraded ? 'ph-check-circle' : 'ph-clock'}"></i>
+                ${isGraded ? 'Graded' : 'Pending'}
+            </span>
+            ${gradeDisplay}
+            <button class="sb-btn-view" onclick="viewSubmission(${sub.id})">
+                <i class="ph-bold ph-eye"></i> View & Grade
+            </button>
+        </div>`;
+    }).join('');
+    runCountUp(container);
+}
+
+function viewSubmission(subId) {
+    currentSubmission = allSubmissions.find(s => s.id === subId);
+    if (!currentSubmission) return;
+    const modalAvatarEl = document.getElementById('modalAvatar');
+    const avatarHtml = currentSubmission.student_avatar
+        ? makePhotoAvatar(currentSubmission.student_avatar, 46, '12px')
+        : makeInitialsAvatar(currentSubmission.student_name, 46, '12px', 17);
+    modalAvatarEl.innerHTML = avatarHtml;
+    modalAvatarEl.style.background = 'none';
+    document.getElementById('modalStudentName').textContent = currentSubmission.student_name;
+    document.getElementById('modalSubmitTime').textContent = 'Submitted: ' + currentSubmission.submitted_at;
+    document.getElementById('modalBody').innerHTML = buildSubmissionDetail(currentSubmission);
+    document.getElementById('submissionModal').classList.add('active');
+    const gradeInput  = document.getElementById('gradeInput');
+    const gradeSlider = document.getElementById('gradeSlider');
+    if (gradeInput && gradeSlider) {
+        gradeInput.addEventListener('input',  () => gradeSlider.value = gradeInput.value);
+        gradeSlider.addEventListener('input', () => gradeInput.value  = gradeSlider.value);
+    }
+}
+
+function closeModal() {
+    document.getElementById('submissionModal').classList.remove('active');
+    currentSubmission = null;
+}
+
+function buildSubmissionDetail(sub) {
+    let html = '';
+    const info = sub.student_info || {};
+    const members = info.members || [];
+    html += `<div class="sb-detail-section">
+        <div class="sb-detail-title"><i class="ph-bold ph-note-pencil"></i> Student Information</div>
+        <div class="sb-info-grid">
+            ${members.map((name, i) => `
+                <div class="sb-info-item">
+                    <div class="sb-info-label">Name ${i + 1}</div>
+                    <div class="sb-info-value">${name || '—'}</div>
+                </div>`).join('')}
+            ${info.group_name ? `<div class="sb-info-item">
+                <div class="sb-info-label">Group</div>
+                <div class="sb-info-value">${info.group_name}</div>
+            </div>` : ''}
+            <div class="sb-info-item">
+                <div class="sb-info-label">Section</div>
+                <div class="sb-info-value">${info.section || '—'}</div>
+            </div>
+            <div class="sb-info-item">
+                <div class="sb-info-label">Date</div>
+                <div class="sb-info-value">${info.date || '—'}</div>
+            </div>
+        </div>
+    </div>`;
+
+    const materials = parsedActivity?.sections?.find(s => s.type === 'materials');
+    const checked = sub.materials_checked || {};
+    if (materials && materials.content.some(c => c.item || c.is_checkbox)) {
+        html += `<div class="sb-detail-section">
+            <div class="sb-detail-title"><i class="ph-bold ph-test-tube"></i> Materials Checklist</div>
+            <div class="sb-materials-list">
+            ${materials.content.map((c, i) => {
+                if (!(c.item || c.is_checkbox)) return '';
+                const isChecked = checked[i];
+                return `<div class="sb-material-item ${isChecked ? 'sb-checked' : ''}">
+                    <i class="ph-bold ${isChecked ? 'ph-check-square' : 'ph-square'}"
+                       style="color:${isChecked ? '#10b981' : '#d1d5db'};font-size:17px;"></i>
+                    <span>${c.item || ''}</span>
+                </div>`;
+            }).join('')}
+            </div>
+        </div>`;
+    }
+
+    const tableData = sub.table_data || {};
+    const tables = parsedActivity?.tables || [];
+    if (tables.length > 0) {
+        html += `<div class="sb-detail-section">
+            <div class="sb-detail-title"><i class="ph-bold ph-table"></i> Data Sheet</div>`;
+        tables.forEach((table, tableIndex) => {
+            // Handle both formats: plain array[][] or {title, rows, notes}
+            const tableRows  = Array.isArray(table) ? table : (table.rows || []);
+            const tableTitle = Array.isArray(table) ? '' : (table.title || '');
+            const tableNotes = Array.isArray(table) ? '' : (table.notes || '');
+            if (tableTitle) html += `<div style="font-weight:700;font-size:13px;color:var(--text-2);margin-bottom:6px;">${tableTitle}</div>`;
+            html += `<div class="sb-table-wrap"><table class="sb-table">`;
+            tableRows.forEach((row, rIndex) => {
+                const cells = Array.isArray(row) ? row : [row];
+                html += '<tr>';
+                cells.forEach((cell, cIndex) => {
+                    const cellText = typeof cell === 'string' ? cell.replace(/<[^>]*>/g,'').trim()
+                                   : (typeof cell === 'object' ? '' : (cell || ''));
+                    if (rIndex === 0) {
+                        html += `<th>${cellText || `Column ${cIndex + 1}`}</th>`;
+                    } else {
+                        // Support new format: tableData[tableIndex][rIndex][cIndex]
+                        // and old format: tableData[rIndex][cIndex]
+                        const tKey = String(tableIndex);
+                        const rKey = String(rIndex);
+                        const cKey = String(cIndex);
+                        const saved = tableData?.[tKey]?.[rKey]?.[cKey]
+                                   ?? tableData?.[rKey]?.[cKey]
+                                   ?? '';
+                        html += `<td>${saved || cellText || '—'}</td>`;
+                    }
+                });
+                html += '</tr>';
+            });
+            html += `</table></div>`;
+            if (tableNotes) html += `<div style="font-size:12px;color:var(--text-3);margin-top:4px;"><strong>Notes:</strong> ${tableNotes}</div>`;
+        });
+        if (tableData.notes) html += `<div class="sb-notes-box"><strong>Notes:</strong><br>${tableData.notes}</div>`;
+        html += `</div>`;
+    }
+
+    const questions = parsedActivity?.sections?.find(s => s.type === 'guide_questions');
+    const answers = sub.answers || {};
+    if (questions && questions.content.length > 0) {
+        html += `<div class="sb-detail-section">
+            <div class="sb-detail-title"><i class="ph-bold ph-question"></i> Guide Questions & Answers</div>
+            ${questions.content.map((q, i) => {
+                const qNum  = q.question_number || (i + 1);
+                const qText = q.question || q.text || '';
+                if (!qText) return '';
+                const answer = answers[String(i)] ?? answers[i] ?? '';
+                return `<div class="sb-answer-item">
+                    <div class="sb-answer-q">${qNum}. ${qText}</div>
+                    ${answer
+                        ? `<div class="sb-answer-text">${answer}</div>`
+                        : `<div class="sb-answer-empty">No answer provided.</div>`}
+                </div>`;
+            }).join('')}
+        </div>`;
+    }
+
+    if (sub.uploaded_file) {
+        html += `<div class="sb-detail-section">
+            <div class="sb-detail-title"><i class="ph-bold ph-paperclip"></i> Uploaded File</div>
+            <a href="http://127.0.0.1:5000/api/submissions/file/${sub.uploaded_file}"
+               target="_blank" class="sb-file-link">
+                <i class="ph-bold ph-file-arrow-down"></i> View Uploaded File
+            </a>
+        </div>`;
+    }
+
+    const currentGrade = sub.grade ?? '';
+    html += `<div class="sb-grade-form">
+        <div class="sb-grade-form-title"><i class="ph-bold ph-star"></i> Grade This Submission</div>
+        <div class="sb-grade-row">
+            <span class="sb-grade-row-label">Score:</span>
+            <input type="number" class="sb-grade-input" id="gradeInput"
+                   min="0" max="100" value="${currentGrade}" placeholder="0">
+            <span class="sb-grade-denom-label">/100</span>
+            <input type="range" class="sb-grade-slider" id="gradeSlider"
+                   min="0" max="100" value="${currentGrade || 0}">
+        </div>
+        <div class="sb-quick-wrap">
+            <span class="sb-quick-label">Quick:</span>
+            <div class="sb-quick-grades">
+                ${[60,65,70,75,80,85,90,95,100].map(g =>
+                    `<button class="sb-quick-btn" onclick="setGrade(${g})">${g}</button>`
+                ).join('')}
+            </div>
+        </div>
+        <label class="sb-feedback-label">Feedback (optional):</label>
+        <textarea class="sb-feedback-input" id="feedbackInput"
+            placeholder="Write your feedback here...">${sub.feedback || ''}</textarea>
+        <div class="sb-grade-actions">
+            <button class="sb-btn-save-grade" onclick="submitGrade(${sub.id})">
+                <i class="ph-bold ph-floppy-disk"></i> Save Grade
+            </button>
+            <span class="sb-grade-saved-msg" id="gradeSavedMsg">
+                <i class="ph-bold ph-check-circle"></i> Grade Saved!
+            </span>
+        </div>
+    </div>`;
+    return html;
+}
+
+function setGrade(val) {
+    const input  = document.getElementById('gradeInput');
+    const slider = document.getElementById('gradeSlider');
+    if (input)  input.value  = val;
+    if (slider) slider.value = val;
+}
+
+async function submitGrade(submissionId) {
+    const grade    = parseFloat(document.getElementById('gradeInput').value);
+    const feedback = document.getElementById('feedbackInput').value;
+    if (isNaN(grade) || grade < 0 || grade > 100) {
+        showToast('Please enter a valid grade (0-100)!', 'warning'); return;
+    }
+    try {
+        const response = await fetch(`http://127.0.0.1:5000/api/submissions/${submissionId}/grade`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ grade, feedback })
+        });
+        await safeJson(response); // consume body safely
+        if (response.ok) {
+            const sub = allSubmissions.find(s => s.id === submissionId);
+            if (sub) { sub.grade = grade; sub.feedback = feedback; sub.status = 'graded'; }
+            updateStats();
+            renderSubmissions();
+            renderGroupSubmissions();
+            const msg = document.getElementById('gradeSavedMsg');
+            if (msg) { msg.style.display = 'inline-flex'; setTimeout(() => msg.style.display = 'none', 2500); }
+            showToast('Grade saved successfully!', 'success');
+        } else {
+            showToast('Cannot save grade!', 'error');
+        }
+    } catch { showToast('Cannot connect to server!', 'error'); }
+}
+
+loadData();
+
+
+// ── SUBMISSIONS POLLING (professor) ──────────────────────────
+// Polls every 4 seconds; re-renders if any submission count or status changed.
+(function startSubmissionsPoll() {
+    const activityId = new URLSearchParams(window.location.search).get('id');
+    if (!activityId) return;
+    let knownCount = null;
+
+    setInterval(async () => {
+        try {
+            const res = await fetch(`http://127.0.0.1:5000/api/submissions/${activityId}/all`,
+                { headers: { 'Authorization': `Bearer ${token}` } });
+            if (!res.ok) return;
+            const fresh = await res.json();
+            if (!Array.isArray(fresh)) return;
+
+            if (knownCount === null) { knownCount = fresh.length; return; }
+
+            if (fresh.length > knownCount) {
+                knownCount = fresh.length;
+                const btn = document.getElementById('newSubBtn');
+                if (btn) btn.style.display = 'inline-flex';
+            }
+        } catch { /* ignore */ }
+    }, 5000);
+})();
+</script>
+</body>
+</html>

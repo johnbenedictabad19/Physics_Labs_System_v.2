@@ -1,0 +1,693 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="/static/favicons/login.svg" type="image/svg+xml">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="PHYSLAB">
+    <link rel="apple-touch-icon" href="/static/logo.svg">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PHYSLAB — Sign In</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Abril+Fatface&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script>
+        (function() {
+            var t = localStorage.getItem('physlab_theme') || 'light';
+            document.documentElement.setAttribute('data-theme', t);
+            var token = localStorage.getItem('token');
+            var role  = localStorage.getItem('role');
+            if (token && role) {
+                if (role === 'admin')          window.location.replace('/admin_dashboard');
+                else if (role === 'professor') window.location.replace('/dashboard_professor');
+                else                           window.location.replace('/dashboard_student');
+            }
+        })();
+    </script>
+    <style>
+        *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+        :root { --primary:#0A66C2; --primary-l:#5b9bd5; --primary-dark:#004182; --primary-dark-l:#a78bfa; }
+        [data-theme="dark"] {
+            --bg:#1B1F23; --surface:rgba(34,39,43,0.72); --border:rgba(255,255,255,0.08);
+            --border-f:rgba(129,140,248,0.5); --text:#fff; --text-2:rgba(255,255,255,0.6);
+            --text-3:rgba(255,255,255,0.3); --input-bg:rgba(255,255,255,0.05);
+            --input-bg-f:rgba(255,255,255,0.09); --placeholder:rgba(255,255,255,0.25);
+            --shadow:0 32px 80px rgba(0,0,0,0.55);
+        }
+        [data-theme="light"] {
+            --bg:#eeeeff; --surface:rgba(255,255,255,0.68); --border:rgba(10,102,194,0.14);
+            --border-f:rgba(10,102,194,0.5); --text:#1B1F23; --text-2:#555555;
+            --text-3:#888888; --input-bg:rgba(255,255,255,0.6); --input-bg-f:rgba(255,255,255,0.9);
+            --placeholder:#AAAAAA; --shadow:0 32px 80px rgba(10,102,194,0.15);
+        }
+        html,body { height:100%; font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); transition:background 0.4s; }
+        body { display:flex; align-items:center; justify-content:center; min-height:100vh; padding:24px; position:relative; overflow:hidden; }
+
+        /* BG */
+        .bg-grid { position:fixed; inset:0; z-index:0; pointer-events:none;
+            
+            background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
+            background-size:60px 60px; }
+        body::before { content:''; position:fixed; top:-250px; left:-250px; width:700px; height:700px;
+            background:transparent; pointer-events:none; z-index:0;
+            animation:driftA 12s ease-in-out infinite alternate; }
+        body::after { content:''; position:fixed; bottom:-200px; right:-200px; width:600px; height:600px;
+            background:transparent; pointer-events:none; z-index:0;
+            animation:driftB 10s ease-in-out infinite alternate; }
+        @keyframes driftA { from{transform:translate(0,0)} to{transform:translate(40px,30px)} }
+        @keyframes driftB { from{transform:translate(0,0)} to{transform:translate(-30px,-40px)} }
+        .particles { position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+        .particle { position:absolute; width:2px; height:2px; border-radius:50%; background:rgba(129,140,248,0.7); animation:floatP linear infinite; }
+        @keyframes floatP {
+            0%{transform:translateY(100vh) translateX(0) scale(0);opacity:0}
+            10%{opacity:1} 90%{opacity:0.5}
+            100%{transform:translateY(-100px) translateX(var(--drift)) scale(1.5);opacity:0}
+        }
+
+        /* CARD */
+        .card { position:relative; z-index:1; width:100%; max-width:420px;
+            background:var(--surface); backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px);
+            border:1px solid var(--border);
+            border-radius:24px; padding:44px 40px 40px;
+            box-shadow:var(--shadow); animation:cardIn 0.6s cubic-bezier(0.22,1,0.36,1) both; }
+        @keyframes cardIn { from{opacity:0;transform:translateY(28px) scale(0.97)} to{opacity:1;transform:none} }
+        .card::before { content:''; position:absolute; top:0; left:16px; right:16px; height:1px;
+            background:rgba(129,140,248,0.5); }
+
+        /* BRAND */
+        .brand { display:flex; align-items:center; justify-content:center; gap:12px; margin-bottom:32px; text-decoration:none; }
+        .brand-icon {
+            width: 44px; height: 44px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 6px 20px rgba(10,102,194,0.45);
+        }
+        .brand-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+        .brand-name { font-family:'Abril Fatface',cursive; font-size:18px; font-weight:400; color:var(--text); letter-spacing:0; }
+
+        .card-title { font-family:'Inter',sans-serif; font-size:20px; font-weight:800; color:var(--text); letter-spacing:-0.5px; margin-bottom:6px; text-align:center; }
+        .card-sub   { font-size:13px; color:var(--text-3); text-align:center; margin-bottom:24px; }
+
+        /* ROLE TABS */
+        .role-tabs { display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-bottom:22px;
+            background:var(--input-bg); border-radius:12px; padding:4px; position:relative;
+            border:1.5px solid var(--border); }
+        .role-tab-ind { position:absolute; top:4px; bottom:4px; left:0; border-radius:9px;
+            background: rgba(10,102,194,0.12);
+            border: 1.5px solid var(--primary);
+            width: calc(50% - 7px);
+            transform: translateX(4px);
+            transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+            pointer-events:none; z-index:0; }
+        .role-tab { padding:9px; border:none; border-radius:9px; background:transparent;
+            color:var(--text-3); font-size:13px; font-weight:600; cursor:pointer;
+            font-family:'Inter',sans-serif; transition:color 0.25s;
+            display:flex; align-items:center; justify-content:center; gap:7px;
+            position:relative; z-index:1; }
+        .role-tab.active { color: var(--primary-l, #5b9bd5); }
+
+        /* ALERT */
+        .alert { width:100%; padding:10px 14px; border-radius:10px; font-size:12px; font-weight:600;
+            margin-bottom:14px; display:none; align-items:center; gap:8px; }
+        .alert-error   { background:rgba(239,68,68,0.1);  border:1px solid rgba(239,68,68,0.25);  color:#fca5a5; }
+        .alert-success { background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.1); color:#6ee7b7; }
+        [data-theme="light"] .alert-error   { background:#fee2e2; color:#dc2626; border-color:#fecaca; }
+        [data-theme="light"] .alert-success { background:#d1fae5; color:#059669; border-color:#a7f3d0; }
+
+        /* INPUT */
+        .input-group { position:relative; margin-bottom:10px; }
+        .input-label { font-size:11px; font-weight:700; color:var(--text-3); letter-spacing:0.4px;
+            text-transform:uppercase; margin-bottom:5px; display:block; }
+        .input-icon  { position:absolute; left:14px; bottom:13px; color:var(--text-3); font-size:16px; pointer-events:none; transition:color 0.25s; }
+        .input-group input {
+            width:100%; padding:12px 16px 12px 42px; background:var(--input-bg);
+            border:1.5px solid var(--border); border-radius:12px; font-size:13px;
+            font-family:'Inter',sans-serif; color:var(--text); outline:none; transition:all 0.25s; }
+        .input-group input::placeholder { color:var(--placeholder); }
+        .input-group input:focus { border-color:var(--border-f); background:var(--input-bg-f); box-shadow:0 0 0 3px rgba(10,102,194,0.12); }
+        .input-group input:focus ~ .input-icon { color:var(--primary-l); }
+        /* autofill fix */
+        .input-group input:-webkit-autofill,
+        .input-group input:-webkit-autofill:hover,
+        .input-group input:-webkit-autofill:focus {
+            -webkit-box-shadow:0 0 0 999px var(--input-bg-f) inset !important;
+            -webkit-text-fill-color:var(--text) !important;
+            transition:background-color 9999s ease-in-out 0s;
+        }
+        [data-theme="dark"] .input-group input:-webkit-autofill,
+        [data-theme="dark"] .input-group input:-webkit-autofill:hover,
+        [data-theme="dark"] .input-group input:-webkit-autofill:focus {
+            -webkit-box-shadow:0 0 0 999px #22272B inset !important;
+            -webkit-text-fill-color:#fff !important;
+        }
+        [data-theme="light"] .input-group input:-webkit-autofill,
+        [data-theme="light"] .input-group input:-webkit-autofill:hover,
+        [data-theme="light"] .input-group input:-webkit-autofill:focus {
+            -webkit-box-shadow:0 0 0 999px #F0F0F0 inset !important;
+            -webkit-text-fill-color:#1B1F23 !important;
+        }
+        .toggle-pw { position:absolute; right:14px; bottom:13px; cursor:pointer; color:var(--text-3); font-size:16px; transition:color 0.2s; }
+        .toggle-pw:hover { color:var(--primary-l); }
+
+        /* BTN */
+        .btn-submit {
+            -moz-appearance: none; -webkit-appearance: none; appearance: none;
+            border: none; background: none; color: #fff;
+            cursor: pointer; position: relative;
+            padding: 8px; margin-top: 10px; width: 100%;
+            font-weight: 700; font-size: 13px;
+            font-family: 'DM Sans', sans-serif;
+            letter-spacing: 0.4px; text-transform: uppercase;
+            transition: all .15s ease;
+        }
+        .btn-submit::before,
+        .btn-submit::after {
+            content: ''; display: block; position: absolute;
+            right: 0; left: 0;
+            height: calc(50% - 5px);
+            border: 1px solid rgba(10,102,194,0.5);
+            transition: all .15s ease;
+        }
+        .btn-submit::before { top: 0; border-bottom-width: 0; }
+        .btn-submit::after  { bottom: 0; border-top-width: 0; }
+        .btn-submit:focus { outline: none; }
+        .btn-submit:active::before, .btn-submit:active::after { right: 3px; left: 3px; }
+        .btn-submit:active::before { top: 3px; }
+        .btn-submit:active::after  { bottom: 3px; }
+        .btn-submit:disabled { opacity: 0.55; cursor: not-allowed; pointer-events: none; }
+
+        .button_lg {
+            position: relative; display: flex;
+            align-items: center; justify-content: center; gap: 8px;
+            padding: 12px 20px;
+            color: #fff; background-color: #0A66C2;
+            overflow: hidden;
+        }
+        .button_lg::before {
+            content: ''; display: block; position: absolute;
+            top: 0; left: 0; width: 2px; height: 2px;
+            background-color: #0A66C2;
+        }
+        .button_lg::after {
+            content: ''; display: block; position: absolute;
+            right: 0; bottom: 0; width: 4px; height: 4px;
+            background-color: #0A66C2;
+            transition: all .2s ease;
+        }
+        .button_sl {
+            display: block; position: absolute;
+            top: 0; bottom: -1px; left: -8px;
+            width: 0; background-color: #004182;
+            transform: skew(-15deg); transition: all .2s ease;
+        }
+        .button_text {
+            position: relative; display: flex;
+            align-items: center; gap: 8px;
+        }
+        .btn-submit:hover:not(:disabled) .button_sl { width: calc(100% + 15px); }
+        .btn-submit:hover:not(:disabled) .button_lg::after { background-color: #fff; }
+
+        /* DIVIDER & LINKS */
+        .divider { display:flex; align-items:center; gap:12px; margin:18px 0; color:var(--text-3); font-size:12px; }
+        .divider::before,.divider::after { content:''; flex:1; height:1px; background:var(--border); }
+        .switch-link { text-align:center; font-size:13px; color:var(--text-3); }
+        .switch-link a { color:var(--primary-l); font-weight:700; text-decoration:none; transition:color 0.2s; }
+        .switch-link a:hover { color:var(--primary-dark-l); text-decoration:underline; }
+        [data-theme="light"] .switch-link a { color:var(--primary); }
+        .forgot-link { text-align:right; margin-top:-4px; margin-bottom:6px; }
+        .forgot-link a { font-size:12px; color:var(--text-3); text-decoration:none; transition:color 0.2s; }
+        .forgot-link a:hover { color:var(--primary-l); }
+
+        /* FORM PANELS */
+        .form-panel { display:none; }
+        .form-panel.active { display:block; }
+
+        /* CORNER BTNS */
+        .corner-btn { position:fixed; z-index:100; display:flex; align-items:center; gap:8px;
+            padding:9px 16px; border-radius:10px; background:var(--surface);
+            backdrop-filter:blur(16px); border:1px solid var(--border);
+            color:var(--text-2); font-size:13px; font-weight:600;
+            cursor:pointer; text-decoration:none; transition:all 0.25s;
+            box-shadow:0 4px 16px rgba(0,0,0,0.12); }
+        .corner-btn:hover { border-color:var(--border-f); color:var(--text); }
+        .corner-btn.top-left  { top:20px; left:20px; }
+
+        /* ── PWA Install Banner ── */
+        #pwa-banner {
+            display: none;
+            position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+            z-index: 9999; width: calc(100% - 32px); max-width: 420px;
+            background: #22272B;
+            border: 1px solid rgba(10,102,194,0.35);
+            border-radius: 18px; padding: 16px 18px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            animation: slideUp 0.4s cubic-bezier(.34,1.56,.64,1);
+        }
+        @keyframes slideUp { from { opacity:0; transform:translateX(-50%) translateY(30px); } to { opacity:1; transform:translateX(-50%) translateY(0); } }
+        #pwa-banner.show { display: flex; align-items: center; gap: 14px; }
+        .pwa-banner-icon { width:48px; height:48px; border-radius:12px; flex-shrink:0; overflow:hidden; background:#0A66C2; display:flex; align-items:center; justify-content:center; }
+        .pwa-banner-icon img { width:100%; height:100%; object-fit:cover; }
+        .pwa-banner-body { flex:1; min-width:0; }
+        .pwa-banner-title { font-size:14px; font-weight:800; color:#fff; font-family:'Inter',sans-serif; }
+        .pwa-banner-sub { font-size:12px; color:rgba(255,255,255,0.55); margin-top:2px; }
+        .pwa-banner-actions { display:flex; gap:8px; flex-shrink:0; }
+        .pwa-btn-install { background:#0A66C2; color:#fff; border:none; border-radius:10px; padding:8px 16px; font-size:13px; font-weight:700; cursor:pointer; font-family:'Inter',sans-serif; white-space:nowrap; }
+        .pwa-btn-dismiss { background:transparent; color:rgba(255,255,255,0.4); border:none; padding:8px; cursor:pointer; font-size:18px; line-height:1; }
+        .pwa-btn-install:hover { opacity:0.9; }
+
+        /* ── PWA Install button (login card) ── */
+        #pwa-login-btn {
+            display: none;
+            width: 100%; margin-top: 10px; padding: 11px;
+            background: transparent; border: 1.5px solid rgba(10,102,194,0.35);
+            border-radius: 12px; color: rgba(255,255,255,0.6);
+            font-size: 13px; font-weight: 600; cursor: pointer;
+            font-family: 'DM Sans', sans-serif;
+            transition: all 0.2s; gap: 8px;
+            align-items: center; justify-content: center;
+        }
+        /* Professor recovery note */
+        .prof-recovery { margin-top: 8px; text-align: center; font-size: 12px; color: var(--text-3); line-height: 1.5; }
+        #pwa-login-btn:hover { border-color: #0A66C2; color: #5b9bd5; background: rgba(10,102,194,0.07); }
+        #pwa-login-btn i { font-size: 16px; }
+
+        /* Sun/Moon Toggle */
+        .corner-theme-wrap { position:fixed; top:20px; right:20px; z-index:300; }
+        .switch { font-size:17px; position:relative; display:inline-block; width:46px; height:24px; }
+        .switch .input { opacity:0; width:0; height:0; }
+        .switch .slider { position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#73C0FC; transition:.4s; border-radius:30px; }
+        .switch .slider:before { position:absolute; content:""; height:20px; width:20px; border-radius:20px; left:2px; bottom:2px; z-index:2; background-color:#e8e8e8; transition:.4s; }
+        .switch .sun svg { position:absolute; top:4px; left:25px; z-index:1; width:16px; height:16px; animation:rotate 15s linear infinite; }
+        .switch .moon svg { fill:#73C0FC; position:absolute; top:4px; left:4px; z-index:1; width:16px; height:16px; animation:tilt 5s linear infinite; }
+        @keyframes rotate { 0%{transform:rotate(0)} 100%{transform:rotate(360deg)} }
+        @keyframes tilt { 0%{transform:rotate(0deg)} 25%{transform:rotate(-10deg)} 75%{transform:rotate(10deg)} 100%{transform:rotate(0deg)} }
+        .switch .input:checked + .slider { background-color:#183153; }
+        .switch .input:focus  + .slider { box-shadow:0 0 1px #183153; }
+        .switch .input:checked + .slider:before { transform:translateX(22px); }
+        .switch .input:checked ~ .moon svg { fill:#183153; }
+
+        /* Home Button */
+        .btn-home {
+            position:fixed; top:20px; left:20px; z-index:300;
+            overflow:hidden; height:36px; min-width:90px; padding:0 18px;
+            display:inline-flex; align-items:center; justify-content:center;
+            background:transparent; border:1px solid rgba(91,155,213,0.3); border-radius:3px;
+            font-size:11px; letter-spacing:1px; font-weight:600;
+            text-transform:uppercase; font-family:'Inter',sans-serif;
+            color:rgba(255,255,255,0.85); text-decoration:none; cursor:pointer;
+        }
+        .btn-home::before, .btn-home::after { content:""; position:absolute; width:0; height:2px; background-color:var(--primary); transition:all 0.5s cubic-bezier(0.35,0.1,0.25,1); }
+        .btn-home::before { right:0; top:0; }
+        .btn-home::after  { left:0; bottom:0; transition:all 0.3s cubic-bezier(0.35,0.1,0.25,1); }
+        .btn-home > span { width:100%; height:100%; position:absolute; left:0; top:0; z-index:1; }
+        .btn-home > span::before, .btn-home > span::after { content:""; position:absolute; width:2px; height:0; background-color:var(--primary); transition:all 0.3s cubic-bezier(0.35,0.1,0.25,1); }
+        .btn-home > span::before { right:0; top:0; transition:all 0.5s cubic-bezier(0.35,0.1,0.25,1); }
+        .btn-home > span::after  { left:0; bottom:0; }
+        .btn-home-inner { position:absolute; inset:0; z-index:2; }
+        .btn-home-default, .btn-home-hover { position:absolute; width:100%; display:flex; align-items:center; justify-content:center; gap:7px; transition:all 0.4s cubic-bezier(0.35,0.1,0.25,1); }
+        .btn-home-default { top:50%; transform:translateY(-50%); color:rgba(255,255,255,0.85); }
+        .btn-home-hover   { top:150%; color:var(--primary-l); }
+        .btn-home:hover::before, .btn-home:hover::after { width:100%; }
+        .btn-home:hover > span::before, .btn-home:hover > span::after { height:100%; }
+        .btn-home:hover .btn-home-default { top:-50%; transform:translateY(0) rotate(5deg); }
+        .btn-home:hover .btn-home-hover   { top:50%; transform:translateY(-50%); }
+        [data-theme="light"] .btn-home { color:#1C1C1C; border-color:rgba(10,102,194,0.25); }
+        [data-theme="light"] .btn-home-default { color:#1C1C1C; }
+        [data-theme="light"] .btn-home-hover { color:var(--primary); }
+    </style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="particles" id="particles"></div>
+
+<a class="btn-home" href="/">
+    <span></span>
+    <div class="btn-home-inner">
+        <div class="btn-home-default"><i class="ph-bold ph-arrow-left"></i> Home</div>
+        <div class="btn-home-hover"><i class="ph-bold ph-arrow-left"></i> Home</div>
+    </div>
+</a>
+<div class="corner-theme-wrap">
+    <label class="switch" title="Toggle theme">
+        <span class="sun"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="#ffd43b"><circle r="5" cy="12" cx="12"></circle><path d="m21 13h-1a1 1 0 0 1 0-2h1a1 1 0 0 1 0 2zm-17 0h-1a1 1 0 0 1 0-2h1a1 1 0 0 1 0 2zm13.66-5.66a1 1 0 0 1 -.66-.29 1 1 0 0 1 0-1.41l.71-.71a1 1 0 1 1 1.41 1.41l-.71.71a1 1 0 0 1 -.75.29zm-12.02 12.02a1 1 0 0 1 -.71-.29 1 1 0 0 1 0-1.41l.71-.66a1 1 0 0 1 1.41 1.41l-.71.71a1 1 0 0 1 -.7.24zm6.36-14.36a1 1 0 0 1 -1-1v-1a1 1 0 0 1 2 0v1a1 1 0 0 1 -1 1zm0 17a1 1 0 0 1 -1-1v-1a1 1 0 0 1 2 0v1a1 1 0 0 1 -1 1zm-5.66-14.66a1 1 0 0 1 -.7-.29l-.71-.71a1 1 0 0 1 1.41-1.41l.71.71a1 1 0 0 1 0 1.41 1 1 0 0 1 -.71.29zm12.02 12.02a1 1 0 0 1 -.7-.29l-.66-.71a1 1 0 0 1 1.36-1.36l.71.71a1 1 0 0 1 0 1.41 1 1 0 0 1 -.71.24z"></path></g></svg></span>
+        <span class="moon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path d="m223.5 32c-123.5 0-223.5 100.3-223.5 224s100 224 223.5 224c60.6 0 115.5-24.2 155.8-63.4 5-4.9 6.3-12.5 3.1-18.7s-10.1-9.7-17-8.5c-9.8 1.7-19.8 2.6-30.1 2.6-96.9 0-175.5-78.8-175.5-176 0-65.8 36-123.1 89.3-153.3 6.1-3.5 9.2-10.5 7.7-17.3s-7.3-11.9-14.3-12.5c-6.3-.5-12.6-.8-19-.8z"></path></svg></span>
+        <input type="checkbox" class="input" id="themeToggle" onchange="toggleTheme()">
+        <span class="slider"></span>
+    </label>
+</div>
+
+<div class="card">
+    <a class="brand" href="/">
+        <div class="brand-icon"><img src="static/logo.svg" alt="PHYSLAB Logo"></div>
+        <span class="brand-name">PHYSLAB</span>
+    </a>
+
+    <h1 class="card-title">Welcome Back!</h1>
+    <p class="card-sub">Sign in to your account</p>
+
+    <!-- Role tabs -->
+    <div class="role-tabs" id="roleTabsBar">
+        <div class="role-tab-ind" id="roleTabInd"></div>
+        <button class="role-tab active" id="tab-student" onclick="switchTab('student')">
+            <i class="ph-bold ph-student"></i> Student
+        </button>
+        <button class="role-tab" id="tab-professor" onclick="switchTab('professor')">
+            <i class="ph-bold ph-chalkboard-teacher"></i> Professor
+        </button>
+    </div>
+
+    <div class="alert alert-error"   id="loginError"></div>
+    <div class="alert alert-success" id="loginSuccess"></div>
+
+    <!-- STUDENT LOGIN -->
+    <div class="form-panel active" id="panel-student">
+        <form onsubmit="handleLogin(event, 'student')">
+            <div class="input-group">
+                <label class="input-label">Student Number</label>
+                <input type="text" id="s_student_number" placeholder="e.g. 234-XXXXXM" required autocomplete="username">
+                <i class="ph-bold ph-identification-card input-icon"></i>
+            </div>
+            <div class="input-group">
+                <label class="input-label">Password</label>
+                <input type="password" id="s_password" placeholder="Enter your password" required autocomplete="current-password">
+                <i class="ph-bold ph-lock input-icon"></i>
+                <i class="ph-bold ph-eye toggle-pw" onclick="togglePw('s_password', this)"></i>
+            </div>
+            <div class="forgot-link"><a href="#" onclick="showForgot()">Forgot password?</a></div>
+            <button type="submit" class="btn-submit">
+                <span class="button_lg">
+                    <span class="button_sl"></span>
+                    <span class="button_text"><i class="ph-bold ph-sign-in"></i> Sign In</span>
+                </span>
+            </button>
+        </form>
+    </div>
+
+    <!-- PROFESSOR LOGIN -->
+    <div class="form-panel" id="panel-professor">
+        <form onsubmit="handleLogin(event, 'professor')">
+            <div class="input-group">
+                <label class="input-label">Email Address</label>
+                <input type="email" id="p_email" placeholder="Enter your email" required autocomplete="email">
+                <i class="ph-bold ph-envelope input-icon"></i>
+            </div>
+            <div class="input-group">
+                <label class="input-label">Password</label>
+                <input type="password" id="p_password" placeholder="Enter your password" required autocomplete="current-password">
+                <i class="ph-bold ph-lock input-icon"></i>
+                <i class="ph-bold ph-eye toggle-pw" onclick="togglePw('p_password', this)"></i>
+            </div>
+            <p class="prof-recovery"><i class="ph-bold ph-lock-key"></i> Forgot your password? Contact your admin for a reset.</p>
+            <button type="submit" class="btn-submit">
+                <span class="button_lg">
+                    <span class="button_sl"></span>
+                    <span class="button_text"><i class="ph-bold ph-sign-in"></i> Sign In</span>
+                </span>
+            </button>
+        </form>
+    </div>
+
+    <!-- PWA Install button (shown when installable) -->
+    <button id="pwa-login-btn" onclick="pwaTriggerInstall()">
+        <i class="ph-bold ph-device-mobile"></i> Add PHYSLAB to Home Screen
+    </button>
+
+    <!-- FORGOT PASSWORD (students only) -->
+    <div class="form-panel" id="panel-forgot">
+        <p style="font-size:12px;color:var(--text-3);margin-bottom:16px;line-height:1.6;">
+            Enter your student number and birthday to reset your password.
+        </p>
+        <form onsubmit="handleForgot(event)">
+            <div class="input-group">
+                <label class="input-label">Student Number</label>
+                <input type="text" id="f_student_number" placeholder="e.g. 234-03631M" required>
+                <i class="ph-bold ph-identification-card input-icon"></i>
+            </div>
+            <div class="input-group">
+                <label class="input-label">Birthday</label>
+                <input type="date" id="f_birthday" required>
+                <i class="ph-bold ph-cake input-icon"></i>
+            </div>
+            <div class="input-group">
+                <label class="input-label">New Password</label>
+                <input type="password" id="f_new_password" placeholder="Min. 6 characters" required>
+                <i class="ph-bold ph-lock input-icon"></i>
+                <i class="ph-bold ph-eye toggle-pw" onclick="togglePw('f_new_password', this)"></i>
+            </div>
+            <button type="submit" class="btn-submit">
+                <span class="button_lg">
+                    <span class="button_sl"></span>
+                    <span class="button_text"><i class="ph-bold ph-key"></i> Reset Password</span>
+                </span>
+            </button>
+        </form>
+        <div style="text-align:center;margin-top:14px;">
+            <a href="#" onclick="showLogin()" style="font-size:12px;color:var(--text-3);text-decoration:none;">
+                <i class="ph-bold ph-arrow-left"></i> Back to Sign In
+            </a>
+        </div>
+    </div>
+
+    <div class="divider" id="switchDivider">or</div>
+    <div class="switch-link" id="switchText">Don't have an account? <a href="/register">Create one</a></div>
+</div>
+
+<script>
+// Particles
+(function() {
+    const pw = document.getElementById('particles');
+    for (let i = 0; i < 30; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.cssText = `left:${Math.random()*100}%;animation-delay:-${Math.random()*8}s;animation-duration:${6+Math.random()*8}s;--drift:${(Math.random()-.5)*200}px`;
+        pw.appendChild(p);
+    }
+})();
+
+// Theme
+function applyTheme(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    localStorage.setItem('physlab_theme', t);
+    const cb = document.getElementById('themeToggle');
+    if (cb) cb.checked = (t === 'dark');
+}
+function toggleTheme() { applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'); }
+applyTheme(localStorage.getItem('physlab_theme') || 'light');
+
+// Tab switch
+let currentTab = 'student';
+function moveRoleInd(el) {
+    const ind = document.getElementById('roleTabInd');
+    if (!ind || !el) return;
+    if (!el.offsetWidth) { setTimeout(() => moveRoleInd(el), 30); return; }
+    ind.style.transform = `translateX(${el.offsetLeft}px)`;
+    ind.style.width = el.offsetWidth + 'px';
+}
+function switchTab(role) {
+    currentTab = role;
+    document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
+    const activeBtn = document.getElementById('tab-' + role);
+    activeBtn.classList.add('active');
+    moveRoleInd(activeBtn);
+    document.querySelectorAll('.form-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-' + role).classList.add('active');
+    document.getElementById('switchDivider').style.display = '';
+    document.getElementById('switchText').style.display = '';
+    clearAlerts();
+}
+
+function showForgot() {
+    document.querySelectorAll('.form-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-forgot').classList.add('active');
+    document.getElementById('switchDivider').style.display = 'none';
+    document.getElementById('switchText').style.display = 'none';
+    clearAlerts();
+}
+
+function showLogin() {
+    switchTab(currentTab);
+    setTimeout(() => moveRoleInd(document.querySelector('.role-tab.active')), 50);
+}
+
+// Utils
+function togglePw(id, el) {
+    const input = document.getElementById(id);
+    input.type = input.type === 'password' ? 'text' : 'password';
+    el.className = (input.type === 'password' ? 'ph-bold ph-eye' : 'ph-bold ph-eye-slash') + ' toggle-pw';
+}
+function showAlert(id, msg, type) {
+    const el = document.getElementById(id);
+    el.className = `alert alert-${type}`;
+    el.textContent = msg;
+    el.style.display = 'flex';
+    if (type === 'success') setTimeout(() => el.style.display = 'none', 3000);
+}
+function clearAlerts() {
+    document.getElementById('loginError').style.display   = 'none';
+    document.getElementById('loginSuccess').style.display = 'none';
+}
+
+// Login
+async function handleLogin(e, role) {
+    e.preventDefault();
+    clearAlerts();
+
+    const body = role === 'student'
+        ? { student_number: document.getElementById('s_student_number').value.trim(),
+            password: document.getElementById('s_password').value }
+        : { email: document.getElementById('p_email').value.trim(),
+            password: document.getElementById('p_password').value };
+
+    const btn = e.target.querySelector('.btn-submit');
+    btn.querySelector('.button_text').innerHTML = '<i class="ph-bold ph-spinner"></i> Signing in...';
+    btn.disabled = true;
+
+    try {
+        const res  = await fetch('http://127.0.0.1:5000/api/auth/login', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify(body)
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+            localStorage.setItem('token',          data.token);
+            localStorage.setItem('user_id',        data.id);
+            localStorage.setItem('role',           data.role);
+            localStorage.setItem('full_name',      data.full_name);
+            localStorage.setItem('first_name',     data.first_name);
+            localStorage.setItem('last_name',      data.last_name);
+            localStorage.setItem('middle_initial', data.middle_initial || '');
+            localStorage.setItem('email',          data.email || '');
+            localStorage.setItem('student_number', data.student_number || '');
+            localStorage.setItem('joined_at',      data.joined_at || '');
+            if (data.avatar) localStorage.setItem('profile_avatar_' + data.id, data.avatar);
+
+            showAlert('loginSuccess', 'Login successful! Redirecting...', 'success');
+            setTimeout(() => {
+                if (data.role === 'admin')          window.location.href = '/admin_dashboard';
+                else if (data.role === 'professor') window.location.href = '/dashboard_professor';
+                else                                window.location.href = '/dashboard_student';
+            }, 800);
+        } else {
+            showAlert('loginError', data.message || 'Invalid credentials!', 'error');
+            btn.querySelector('.button_text').innerHTML = '<i class="ph-bold ph-sign-in"></i> Sign In';
+            btn.disabled = false;
+        }
+    } catch {
+        showAlert('loginError', 'Cannot connect to server!', 'error');
+        btn.querySelector('.button_text').innerHTML = '<i class="ph-bold ph-sign-in"></i> Sign In';
+        btn.disabled = false;
+    }
+}
+
+// Forgot Password
+async function handleForgot(e) {
+    e.preventDefault();
+    clearAlerts();
+
+    const student_number = document.getElementById('f_student_number').value.trim();
+    const birthday       = document.getElementById('f_birthday').value;
+    const new_password   = document.getElementById('f_new_password').value;
+
+    const btn = e.target.querySelector('.btn-submit');
+    btn.querySelector('.button_text').innerHTML = '<i class="ph-bold ph-spinner"></i> Resetting...';
+    btn.disabled = true;
+
+    try {
+        const res  = await fetch('http://127.0.0.1:5000/api/auth/forgot-password', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify({ student_number, birthday, new_password })
+        });
+        const data = await res.json();
+
+        if (res.ok) {
+            showAlert('loginSuccess', '✅ Password reset! You can now sign in.', 'success');
+            setTimeout(() => showLogin(), 2000);
+        } else {
+            showAlert('loginError', data.message || 'Reset failed!', 'error');
+        }
+    } catch {
+        showAlert('loginError', 'Cannot connect to server!', 'error');
+    } finally {
+        btn.querySelector('.button_text').innerHTML = '<i class="ph-bold ph-key"></i> Reset Password';
+        btn.disabled = false;
+    }
+}
+</script>
+
+<!-- ── PWA INSTALL BANNER ── -->
+<div id="pwa-banner">
+    <div class="pwa-banner-icon">
+        <img src="/static/logo.svg" alt="PHYSLAB">
+    </div>
+    <div class="pwa-banner-body">
+        <div class="pwa-banner-title">Install PHYSLAB</div>
+        <div class="pwa-banner-sub">Add to Home Screen for app-like experience</div>
+    </div>
+    <div class="pwa-banner-actions">
+        <button class="pwa-btn-install" onclick="pwaTriggerInstall()">Install</button>
+        <button class="pwa-btn-dismiss" onclick="pwaDismiss()" title="Dismiss">✕</button>
+    </div>
+</div>
+
+<script>
+// ── PWA: Service Worker + Install Prompt ──────────────────────
+let _pwaPrompt = null;
+
+// Unregister any existing service workers
+if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(regs => {
+        regs.forEach(r => r.unregister());
+    });
+    caches.keys().then(keys => keys.forEach(k => caches.delete(k)));
+}
+
+window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    _pwaPrompt = e;
+    // Show both the banner and the button inside the card
+    const banner = document.getElementById('pwa-banner');
+    const btn    = document.getElementById('pwa-login-btn');
+    if (banner) banner.classList.add('show');
+    if (btn)    btn.style.display = 'flex';
+});
+
+function pwaTriggerInstall() {
+    if (!_pwaPrompt) return;
+    _pwaPrompt.prompt();
+    _pwaPrompt.userChoice.then(r => {
+        if (r.outcome === 'accepted') pwaDismiss();
+        _pwaPrompt = null;
+    });
+}
+
+// Show session expired message if redirected after token expiry
+if (localStorage.getItem('session_expired')) {
+    localStorage.removeItem('session_expired');
+    showAlert('loginSuccess', 'Session expired. Please log in again.', 'error');
+}
+
+function pwaDismiss() {
+    const banner = document.getElementById('pwa-banner');
+    const btn    = document.getElementById('pwa-login-btn');
+    if (banner) banner.classList.remove('show');
+    if (btn)    btn.style.display = 'none';
+    _pwaPrompt = null;
+}
+
+// Hide install UI if already installed (standalone mode)
+if (window.matchMedia('(display-mode: standalone)').matches) {
+    document.getElementById('pwa-banner')?.classList.remove('show');
+    document.getElementById('pwa-login-btn') && (document.getElementById('pwa-login-btn').style.display = 'none');
+}
+</script>
+</body>
+</html>

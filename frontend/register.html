@@ -1,0 +1,910 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <link rel="icon" href="/static/favicons/register.svg" type="image/svg+xml">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="PHYSLAB">
+    <link rel="apple-touch-icon" href="/static/logo.svg">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PHYSLAB — Create Account</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Abril+Fatface&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    <script>
+        (function() {
+            var t = localStorage.getItem('physlab_theme') || 'light';
+            document.documentElement.setAttribute('data-theme', t);
+        })();
+    </script>
+    <style>
+        *, *::before, *::after { box-sizing:border-box; margin:0; padding:0; }
+        :root { --primary:#0A66C2; --primary-l:#5b9bd5; --primary-dark:#004182; --primary-dark-l:#a78bfa; }
+        [data-theme="dark"] {
+            --bg:#1B1F23; --surface:rgba(34,39,43,0.72); --border:rgba(255,255,255,0.08);
+            --border-f:rgba(129,140,248,0.5); --text:#fff; --text-2:rgba(255,255,255,0.6);
+            --text-3:rgba(255,255,255,0.3); --input-bg:rgba(255,255,255,0.05);
+            --input-bg-f:rgba(255,255,255,0.09); --placeholder:rgba(255,255,255,0.25);
+            --shadow:0 32px 80px rgba(0,0,0,0.55);
+        }
+        [data-theme="light"] {
+            --bg:#eeeeff; --surface:rgba(255,255,255,0.68); --border:rgba(10,102,194,0.14);
+            --border-f:rgba(10,102,194,0.5); --text:#1B1F23; --text-2:#555555;
+            --text-3:#888888; --input-bg:rgba(255,255,255,0.6); --input-bg-f:rgba(255,255,255,0.9);
+            --placeholder:#AAAAAA; --shadow:0 32px 80px rgba(10,102,194,0.15);
+        }
+        html,body { height:100%; font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); transition:background 0.4s; }
+        body { display:flex; align-items:center; justify-content:center; min-height:100vh; padding:80px 24px 40px; position:relative; overflow-x:hidden; }
+
+        /* BG */
+        .bg-grid { position:fixed; inset:0; z-index:0; pointer-events:none;
+            background-image: linear-gradient(var(--border) 1px, transparent 1px), linear-gradient(90deg, var(--border) 1px, transparent 1px);
+            background-size:60px 60px; }
+        .particles { position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; }
+        .particle  { position:absolute; width:2px; height:2px; border-radius:50%; background:rgba(129,140,248,0.7); animation:floatP linear infinite; }
+        @keyframes floatP {
+            0%{transform:translateY(100vh) translateX(0) scale(0);opacity:0}
+            10%{opacity:1} 90%{opacity:.5}
+            100%{transform:translateY(-100px) translateX(var(--drift)) scale(1.5);opacity:0}
+        }
+
+        /* CARD */
+        .card { position:relative; z-index:1; width:100%; max-width:500px;
+            background:var(--surface); backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px);
+            border:1px solid var(--border); border-radius:24px; padding:36px 40px 32px;
+            box-shadow:var(--shadow); animation:cardIn 0.6s cubic-bezier(0.22,1,0.36,1) both; }
+        @keyframes cardIn { from{opacity:0;transform:translateY(28px) scale(0.97)} to{opacity:1;transform:none} }
+        .card::before { content:''; position:absolute; top:0; left:16px; right:16px; height:1px;
+            background:rgba(129,140,248,0.5); }
+
+        /* BRAND */
+        .brand { display:flex; align-items:center; justify-content:center; gap:12px; margin-bottom:24px; text-decoration:none; }
+        .brand-icon { width:38px; height:38px; display:flex; align-items:center; justify-content:center; border-radius:10px; overflow:hidden; box-shadow:0 6px 20px rgba(10,102,194,0.45); }
+        .brand-icon img { width:100%; height:100%; object-fit:contain; }
+        .brand-name { font-family:'Abril Fatface',cursive; font-size:16px; font-weight:400; color:var(--text); }
+
+        /* ── STEP INDICATOR ── */
+        .step-indicator { display:flex; align-items:center; justify-content:center; margin-bottom:28px; gap:0; }
+        .step-item { display:flex; flex-direction:column; align-items:center; gap:5px; position:relative; }
+        .step-circle {
+            width:34px; height:34px; border-radius:50%;
+            display:flex; align-items:center; justify-content:center;
+            font-size:13px; font-weight:700; transition:all 0.35s ease;
+            border:2px solid var(--border); background:var(--input-bg); color:var(--text-3);
+            z-index:1; position:relative;
+        }
+        .step-label { font-size:10px; font-weight:600; color:var(--text-3); letter-spacing:0.3px; transition:color 0.35s; white-space:nowrap; }
+        .step-line { flex:1; height:2px; background:var(--border); min-width:28px; max-width:48px; transition:background 0.35s; margin-bottom:19px; }
+
+        .step-item.active   .step-circle { border-color:var(--primary); background:rgba(10,102,194,0.12); color:var(--primary); }
+        .step-item.active   .step-label  { color:var(--primary); }
+        .step-item.done     .step-circle { border-color:var(--primary); background:var(--primary); color:#fff; }
+        .step-item.done     .step-label  { color:var(--primary-l); }
+        .step-line.done     { background:var(--primary); }
+
+        /* ── STEP PANELS ── */
+        .steps-wrap { overflow:hidden; position:relative; }
+        .step-panel { display:none; animation:stepIn 0.32s cubic-bezier(0.22,1,0.36,1) both; }
+        .step-panel.active { display:block; }
+        @keyframes stepIn  { from{opacity:0;transform:translateX(30px)}  to{opacity:1;transform:none} }
+        @keyframes stepOut { from{opacity:0;transform:translateX(-30px)} to{opacity:1;transform:none} }
+        .step-panel.back { animation:stepOut 0.32s cubic-bezier(0.22,1,0.36,1) both; }
+
+        .step-title { font-size:17px; font-weight:800; color:var(--text); letter-spacing:-0.4px; margin-bottom:4px; }
+        .step-sub   { font-size:12px; color:var(--text-3); margin-bottom:20px; }
+
+        /* ── ROLE CARDS ── */
+        .role-cards { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:8px; }
+        .role-card {
+            padding:20px 16px; border-radius:16px; border:2px solid var(--border);
+            background:var(--input-bg); cursor:pointer; text-align:center;
+            transition:all 0.25s ease; display:flex; flex-direction:column; align-items:center; gap:10px;
+        }
+        .role-card:hover { border-color:var(--primary-l); background:var(--input-bg-f); }
+        .role-card.selected { border-color:var(--primary); background:rgba(10,102,194,0.08); }
+        .role-card-icon {
+            width:52px; height:52px; border-radius:14px;
+            background:rgba(10,102,194,0.1); border:1px solid rgba(10,102,194,0.2);
+            display:flex; align-items:center; justify-content:center;
+            font-size:24px; color:var(--text-3); transition:all 0.25s;
+        }
+        .role-card.selected .role-card-icon { background:rgba(10,102,194,0.18); color:var(--primary); }
+        .role-card-title { font-size:14px; font-weight:700; color:var(--text); }
+        .role-card-desc  { font-size:11px; color:var(--text-3); line-height:1.5; }
+        .role-card.selected .role-card-title { color:var(--primary); }
+
+        /* ── INPUTS ── */
+        .input-row { display:grid; gap:10px; margin-bottom:12px; }
+        .input-row.cols-3 { grid-template-columns:1fr 1fr 80px; }
+        .input-row.cols-2 { grid-template-columns:1fr 1fr; }
+        .input-group { position:relative; }
+        .input-label { font-size:11px; font-weight:700; color:var(--text-3); letter-spacing:0.4px; text-transform:uppercase; margin-bottom:5px; display:block; }
+        .optional-tag { font-size:9px; color:var(--text-3); font-weight:500; letter-spacing:0; text-transform:none; margin-left:4px; }
+        .input-icon  { position:absolute; left:13px; bottom:12px; color:var(--text-3); font-size:15px; pointer-events:none; transition:color 0.25s; }
+        .input-group input {
+            width:100%; padding:11px 14px 11px 38px;
+            background:var(--input-bg); border:1.5px solid var(--border);
+            border-radius:12px; font-size:13px; font-family:'Inter',sans-serif;
+            color:var(--text); outline:none; transition:all 0.25s; }
+        .input-group.no-icon input { padding-left:14px; }
+        .input-group input::placeholder { color:var(--placeholder); }
+        .input-group input:focus { border-color:var(--border-f); background:var(--input-bg-f); box-shadow:0 0 0 3px rgba(10,102,194,0.12); }
+        .input-group input:focus ~ .input-icon { color:var(--primary-l); }
+        .input-group input:-webkit-autofill,
+        .input-group input:-webkit-autofill:hover,
+        .input-group input:-webkit-autofill:focus {
+            -webkit-box-shadow:0 0 0 999px var(--input-bg-f) inset !important;
+            -webkit-text-fill-color:var(--text) !important;
+            transition:background-color 9999s ease-in-out 0s; }
+        [data-theme="dark"] .input-group input:-webkit-autofill { -webkit-box-shadow:0 0 0 999px #22272B inset !important; -webkit-text-fill-color:#fff !important; }
+        [data-theme="light"] .input-group input:-webkit-autofill { -webkit-box-shadow:0 0 0 999px #F0F0F0 inset !important; -webkit-text-fill-color:#1B1F23 !important; }
+        .toggle-pw { position:absolute; right:12px; bottom:12px; cursor:pointer; color:var(--text-3); font-size:15px; transition:color 0.2s; }
+        .toggle-pw:hover { color:var(--primary-l); }
+        .field-hint { font-size:11px; color:var(--text-3); margin-top:4px; line-height:1.5; }
+
+        /* ── ALERT ── */
+        .alert { width:100%; padding:10px 14px; border-radius:10px; font-size:12px; font-weight:600;
+            margin-bottom:14px; display:none; align-items:center; gap:8px; }
+        .alert-error   { background:rgba(239,68,68,0.1);  border:1px solid rgba(239,68,68,0.25);  color:#fca5a5; }
+        .alert-success { background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.1); color:#6ee7b7; }
+        [data-theme="light"] .alert-error   { background:#fee2e2; color:#dc2626; border-color:#fecaca; }
+        [data-theme="light"] .alert-success { background:#d1fae5; color:#059669; border-color:#a7f3d0; }
+
+        /* ── PENDING NOTICE ── */
+        .pending-notice { background:rgba(245,158,11,0.08); border:1px solid rgba(245,158,11,0.25);
+            border-radius:10px; padding:10px 14px; font-size:12px; color:#fcd34d;
+            margin-bottom:14px; line-height:1.6; display:flex; align-items:flex-start; gap:8px; }
+        [data-theme="light"] .pending-notice { background:#fffbeb; color:#92400e; border-color:#fde68a; }
+
+        /* ── REVIEW SUMMARY ── */
+        .review-box { background:var(--input-bg); border:1px solid var(--border); border-radius:14px; padding:16px; margin-bottom:16px; }
+        .review-row { display:flex; justify-content:space-between; align-items:center; padding:6px 0; border-bottom:1px solid var(--border); gap:12px; }
+        .review-row:last-child { border-bottom:none; padding-bottom:0; }
+        .review-key   { font-size:11px; font-weight:700; color:var(--text-3); text-transform:uppercase; letter-spacing:0.4px; white-space:nowrap; }
+        .review-val   { font-size:13px; font-weight:600; color:var(--text); text-align:right; }
+        .review-badge { display:inline-flex; align-items:center; gap:5px; padding:3px 10px; border-radius:20px; font-size:11px; font-weight:700; }
+        .badge-student  { background:rgba(10,102,194,0.12); color:var(--primary); border:1px solid rgba(10,102,194,0.2); }
+        .badge-professor{ background:rgba(139,92,246,0.12); color:#a78bfa;         border:1px solid rgba(139,92,246,0.2); }
+
+        /* ── TERMS CHECKBOXES ── */
+        .terms-list { display:flex; flex-direction:column; gap:10px; margin-bottom:16px; }
+        .term-item {
+            display:flex; align-items:flex-start; gap:12px;
+            padding:12px 14px; border-radius:12px; border:1.5px solid var(--border);
+            background:var(--input-bg); cursor:pointer; transition:border-color 0.25s;
+        }
+        .term-item:has(.term-check:checked) { border-color:var(--primary); background:rgba(10,102,194,0.05); }
+        .term-check { width:18px; height:18px; accent-color:var(--primary); cursor:pointer; flex-shrink:0; margin-top:1px; }
+        .term-body  { flex:1; }
+        .term-title { font-size:12px; font-weight:700; color:var(--text); margin-bottom:2px; }
+        .term-desc  { font-size:11px; color:var(--text-3); line-height:1.5; }
+        .term-read-more { font-size:11px; color:var(--primary-l); font-weight:600; cursor:pointer; text-decoration:none; display:inline-flex; align-items:center; gap:4px; margin-top:4px; background:none; border:none; padding:0; font-family:'Inter',sans-serif; }
+        .term-read-more:hover { text-decoration:underline; }
+        [data-theme="light"] .term-read-more { color:var(--primary); }
+
+        /* ── NAV BUTTONS ── */
+        .btn-nav { display:flex; gap:10px; margin-top:20px; align-items:center; }
+        .btn-back {
+            -moz-appearance:none; -webkit-appearance:none; appearance:none;
+            border:1.5px solid var(--border); background:transparent; color:var(--text-2);
+            cursor:pointer; padding:11px 20px; border-radius:12px;
+            font-size:13px; font-weight:600; font-family:'Inter',sans-serif;
+            display:flex; align-items:center; gap:7px; transition:all 0.2s; white-space:nowrap;
+        }
+        .btn-back:hover { border-color:var(--border-f); color:var(--text); }
+
+        /* Slide Fill Next/Submit */
+        .btn-next {
+            -moz-appearance:none; -webkit-appearance:none; appearance:none;
+            border:none; background:none; color:#fff;
+            cursor:pointer; position:relative; padding:8px; flex:1;
+            font-weight:700; font-size:13px; font-family:'Inter',sans-serif;
+            letter-spacing:0.4px; text-transform:uppercase; transition:all .15s ease;
+        }
+        .btn-next::before, .btn-next::after {
+            content:''; display:block; position:absolute; right:0; left:0;
+            height:calc(50% - 5px); border:1px solid rgba(10,102,194,0.5); transition:all .15s ease; }
+        .btn-next::before { top:0; border-bottom-width:0; }
+        .btn-next::after  { bottom:0; border-top-width:0; }
+        .btn-next:active::before, .btn-next:active::after { right:3px; left:3px; }
+        .btn-next:active::before { top:3px; }
+        .btn-next:active::after  { bottom:3px; }
+        .btn-next:disabled { opacity:0.45; cursor:not-allowed; pointer-events:none; }
+        .button_lg { position:relative; display:flex; align-items:center; justify-content:center; gap:8px; padding:12px 20px; color:#fff; background-color:#0A66C2; overflow:hidden; }
+        .button_lg::before { content:''; display:block; position:absolute; top:0; left:0; width:2px; height:2px; background-color:#0A66C2; }
+        .button_lg::after  { content:''; display:block; position:absolute; right:0; bottom:0; width:4px; height:4px; background-color:#0A66C2; transition:all .2s ease; }
+        .button_sl { display:block; position:absolute; top:0; bottom:-1px; left:-8px; width:0; background-color:#004182; transform:skew(-15deg); transition:all .2s ease; }
+        .button_text { position:relative; display:flex; align-items:center; gap:8px; }
+        .btn-next:hover:not(:disabled) .button_sl { width:calc(100% + 15px); }
+        .btn-next:hover:not(:disabled) .button_lg::after { background-color:#fff; }
+
+        /* ── MODAL ── */
+        .modal-overlay { display:none; position:fixed; inset:0; z-index:9000; background:rgba(0,0,0,0.55); backdrop-filter:blur(4px); align-items:center; justify-content:center; padding:20px; }
+        .modal-overlay.open { display:flex; }
+        .modal-box { background:var(--surface); border:1px solid var(--border); border-radius:20px; padding:28px; max-width:420px; width:100%; box-shadow:0 24px 64px rgba(0,0,0,0.4); max-height:80vh; overflow-y:auto; animation:modalIn 0.3s cubic-bezier(0.22,1,0.36,1) both; }
+        @keyframes modalIn { from{opacity:0;transform:scale(0.95) translateY(12px)} to{opacity:1;transform:none} }
+        .modal-header { display:flex; align-items:center; gap:12px; margin-bottom:16px; }
+        .modal-icon { width:40px; height:40px; border-radius:11px; background:rgba(10,102,194,0.12); border:1px solid rgba(10,102,194,0.2); display:flex; align-items:center; justify-content:center; font-size:18px; color:var(--primary); flex-shrink:0; }
+        .modal-title { font-size:15px; font-weight:800; color:var(--text); }
+        .modal-sub   { font-size:11px; color:var(--text-3); margin-top:2px; }
+        .modal-body  { font-size:12px; color:var(--text-2); line-height:1.8; }
+        .modal-body h4 { font-size:12px; font-weight:700; color:var(--text); margin:12px 0 4px; }
+        .modal-body ul { padding-left:16px; }
+        .modal-body ul li { margin-bottom:4px; }
+        .modal-close { margin-top:20px; width:100%; padding:11px; border-radius:12px; border:1.5px solid var(--border); background:transparent; color:var(--text-2); font-size:13px; font-weight:600; cursor:pointer; font-family:'Inter',sans-serif; transition:all 0.2s; }
+        .modal-close:hover { border-color:var(--primary); color:var(--primary); }
+
+        /* DIVIDER & LINKS */
+        .divider { display:flex; align-items:center; gap:12px; margin:18px 0 14px; color:var(--text-3); font-size:12px; }
+        .divider::before,.divider::after { content:''; flex:1; height:1px; background:var(--border); }
+        .switch-link { text-align:center; font-size:13px; color:var(--text-3); }
+        .switch-link a { color:var(--primary-l); font-weight:700; text-decoration:none; transition:color 0.2s; }
+        .switch-link a:hover { color:var(--primary-dark-l); text-decoration:underline; }
+        [data-theme="light"] .switch-link a { color:var(--primary); }
+
+        /* CORNER BTNS */
+        .corner-theme-wrap { position:fixed; top:20px; right:20px; z-index:300; }
+        .switch { font-size:17px; position:relative; display:inline-block; width:46px; height:24px; }
+        .switch .input { opacity:0; width:0; height:0; }
+        .switch .slider { position:absolute; cursor:pointer; top:0; left:0; right:0; bottom:0; background-color:#73C0FC; transition:.4s; border-radius:30px; }
+        .switch .slider:before { position:absolute; content:""; height:20px; width:20px; border-radius:20px; left:2px; bottom:2px; z-index:2; background-color:#e8e8e8; transition:.4s; }
+        .switch .sun svg { position:absolute; top:4px; left:25px; z-index:1; width:16px; height:16px; animation:rotate 15s linear infinite; }
+        .switch .moon svg { fill:#73C0FC; position:absolute; top:4px; left:4px; z-index:1; width:16px; height:16px; animation:tilt 5s linear infinite; }
+        @keyframes rotate { 0%{transform:rotate(0)} 100%{transform:rotate(360deg)} }
+        @keyframes tilt { 0%{transform:rotate(0deg)} 25%{transform:rotate(-10deg)} 75%{transform:rotate(10deg)} 100%{transform:rotate(0deg)} }
+        .switch .input:checked + .slider { background-color:#183153; }
+        .switch .input:focus  + .slider { box-shadow:0 0 1px #183153; }
+        .switch .input:checked + .slider:before { transform:translateX(22px); }
+        .switch .input:checked ~ .moon svg { fill:#183153; }
+
+        .btn-home { position:fixed; top:20px; left:20px; z-index:300; overflow:hidden; height:36px; min-width:90px; padding:0 18px; display:inline-flex; align-items:center; justify-content:center; background:transparent; border:1px solid rgba(91,155,213,0.3); border-radius:3px; font-size:11px; letter-spacing:1px; font-weight:600; text-transform:uppercase; font-family:'Inter',sans-serif; color:rgba(255,255,255,0.85); text-decoration:none; cursor:pointer; }
+        .btn-home::before, .btn-home::after { content:""; position:absolute; width:0; height:2px; background-color:var(--primary); transition:all 0.5s cubic-bezier(0.35,0.1,0.25,1); }
+        .btn-home::before { right:0; top:0; }
+        .btn-home::after  { left:0; bottom:0; transition:all 0.3s cubic-bezier(0.35,0.1,0.25,1); }
+        .btn-home > span { width:100%; height:100%; position:absolute; left:0; top:0; z-index:1; }
+        .btn-home > span::before, .btn-home > span::after { content:""; position:absolute; width:2px; height:0; background-color:var(--primary); transition:all 0.3s cubic-bezier(0.35,0.1,0.25,1); }
+        .btn-home > span::before { right:0; top:0; transition:all 0.5s cubic-bezier(0.35,0.1,0.25,1); }
+        .btn-home > span::after  { left:0; bottom:0; }
+        .btn-home-inner { position:absolute; inset:0; z-index:2; }
+        .btn-home-default, .btn-home-hover { position:absolute; width:100%; display:flex; align-items:center; justify-content:center; gap:7px; transition:all 0.4s cubic-bezier(0.35,0.1,0.25,1); }
+        .btn-home-default { top:50%; transform:translateY(-50%); color:rgba(255,255,255,0.85); }
+        .btn-home-hover   { top:150%; color:var(--primary-l); }
+        .btn-home:hover::before, .btn-home:hover::after { width:100%; }
+        .btn-home:hover > span::before, .btn-home:hover > span::after { height:100%; }
+        .btn-home:hover .btn-home-default { top:-50%; transform:translateY(0) rotate(5deg); }
+        .btn-home:hover .btn-home-hover   { top:50%; transform:translateY(-50%); }
+        [data-theme="light"] .btn-home { color:#1C1C1C; border-color:rgba(10,102,194,0.25); }
+        [data-theme="light"] .btn-home-default { color:#1C1C1C; }
+        [data-theme="light"] .btn-home-hover { color:var(--primary); }
+
+        @media (max-width:520px) {
+            .input-row.cols-3 { grid-template-columns:1fr 1fr; }
+            .input-row.cols-3 .input-group:last-child { grid-column:span 2; max-width:120px; }
+            .card { padding:28px 20px 24px; }
+            .role-cards { grid-template-columns:1fr 1fr; }
+            .step-label { display:none; }
+            .step-line { min-width:16px; }
+        }
+    </style>
+</head>
+<body>
+<div class="bg-grid"></div>
+<div class="particles" id="particles"></div>
+
+<a class="btn-home" href="/">
+    <span></span>
+    <div class="btn-home-inner">
+        <div class="btn-home-default"><i class="ph-bold ph-arrow-left"></i> Home</div>
+        <div class="btn-home-hover"><i class="ph-bold ph-arrow-left"></i> Home</div>
+    </div>
+</a>
+<div class="corner-theme-wrap">
+    <label class="switch" title="Toggle theme">
+        <span class="sun"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><g fill="#ffd43b"><circle r="5" cy="12" cx="12"></circle><path d="m21 13h-1a1 1 0 0 1 0-2h1a1 1 0 0 1 0 2zm-17 0h-1a1 1 0 0 1 0-2h1a1 1 0 0 1 0 2zm13.66-5.66a1 1 0 0 1 -.66-.29 1 1 0 0 1 0-1.41l.71-.71a1 1 0 1 1 1.41 1.41l-.71.71a1 1 0 0 1 -.75.29zm-12.02 12.02a1 1 0 0 1 -.71-.29 1 1 0 0 1 0-1.41l.71-.66a1 1 0 0 1 1.41 1.41l-.71.71a1 1 0 0 1 -.7.24zm6.36-14.36a1 1 0 0 1 -1-1v-1a1 1 0 0 1 2 0v1a1 1 0 0 1 -1 1zm0 17a1 1 0 0 1 -1-1v-1a1 1 0 0 1 2 0v1a1 1 0 0 1 -1 1zm-5.66-14.66a1 1 0 0 1 -.7-.29l-.71-.71a1 1 0 0 1 1.41-1.41l.71.71a1 1 0 0 1 0 1.41 1 1 0 0 1 -.71.29zm12.02 12.02a1 1 0 0 1 -.7-.29l-.66-.71a1 1 0 0 1 1.36-1.36l.71.71a1 1 0 0 1 0 1.41 1 1 0 0 1 -.71.24z"></path></g></svg></span>
+        <span class="moon"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 384 512"><path d="m223.5 32c-123.5 0-223.5 100.3-223.5 224s100 224 223.5 224c60.6 0 115.5-24.2 155.8-63.4 5-4.9 6.3-12.5 3.1-18.7s-10.1-9.7-17-8.5c-9.8 1.7-19.8 2.6-30.1 2.6-96.9 0-175.5-78.8-175.5-176 0-65.8 36-123.1 89.3-153.3 6.1-3.5 9.2-10.5 7.7-17.3s-7.3-11.9-14.3-12.5c-6.3-.5-12.6-.8-19-.8z"></path></svg></span>
+        <input type="checkbox" class="input" id="themeToggle" onchange="toggleTheme()">
+        <span class="slider"></span>
+    </label>
+</div>
+
+<div class="card">
+    <a class="brand" href="/">
+        <div class="brand-icon"><img src="static/logo.svg" alt="PHYSLAB Logo"></div>
+        <span class="brand-name">PHYSLAB</span>
+    </a>
+
+    <!-- Step Indicator -->
+    <div class="step-indicator" id="stepIndicator">
+        <div class="step-item active" id="si-1">
+            <div class="step-circle">1</div>
+            <span class="step-label">Role</span>
+        </div>
+        <div class="step-line" id="sl-1"></div>
+        <div class="step-item" id="si-2">
+            <div class="step-circle">2</div>
+            <span class="step-label">Name</span>
+        </div>
+        <div class="step-line" id="sl-2"></div>
+        <div class="step-item" id="si-3">
+            <div class="step-circle">3</div>
+            <span class="step-label">Details</span>
+        </div>
+        <div class="step-line" id="sl-3"></div>
+        <div class="step-item" id="si-4">
+            <div class="step-circle">4</div>
+            <span class="step-label">Password</span>
+        </div>
+        <div class="step-line" id="sl-4"></div>
+        <div class="step-item" id="si-5">
+            <div class="step-circle">5</div>
+            <span class="step-label">Review</span>
+        </div>
+    </div>
+
+    <div class="alert alert-error"   id="regError"></div>
+
+    <div class="steps-wrap">
+
+        <!-- ═══ STEP 1: ROLE ═══ -->
+        <div class="step-panel active" id="step-1">
+            <div class="step-title">Choose your role</div>
+            <div class="step-sub">How will you be using PHYSLAB?</div>
+            <div class="role-cards">
+                <div class="role-card" id="role-student" onclick="selectRole('student')">
+                    <div class="role-card-icon"><i class="ph-bold ph-student"></i></div>
+                    <div class="role-card-title">Student</div>
+                    <div class="role-card-desc">Join your class and submit laboratory worksheets</div>
+                </div>
+                <div class="role-card" id="role-professor" onclick="selectRole('professor')">
+                    <div class="role-card-icon"><i class="ph-bold ph-chalkboard-teacher"></i></div>
+                    <div class="role-card-title">Professor</div>
+                    <div class="role-card-desc">Create classes and manage student activities</div>
+                </div>
+            </div>
+            <div class="btn-nav">
+                <button class="btn-next" id="nextBtn1" onclick="goNext(1)" disabled>
+                    <span class="button_lg">
+                        <span class="button_sl"></span>
+                        <span class="button_text">Next <i class="ph-bold ph-arrow-right"></i></span>
+                    </span>
+                </button>
+            </div>
+        </div>
+
+        <!-- ═══ STEP 2: NAME ═══ -->
+        <div class="step-panel" id="step-2">
+            <div class="step-title">Your name</div>
+            <div class="step-sub">Enter your full name as it appears on your school records.</div>
+            <div class="input-row cols-3">
+                <div class="input-group">
+                    <label class="input-label">Last Name</label>
+                    <input type="text" id="last_name" placeholder="Dela Cruz" required autocomplete="family-name">
+                    <i class="ph-bold ph-user input-icon"></i>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">First Name</label>
+                    <input type="text" id="first_name" placeholder="Juan" required autocomplete="given-name">
+                    <i class="ph-bold ph-user input-icon"></i>
+                </div>
+                <div class="input-group no-icon">
+                    <label class="input-label">M.I. <span class="optional-tag">(opt.)</span></label>
+                    <input type="text" id="middle_initial" placeholder="A" maxlength="2" autocomplete="additional-name">
+                </div>
+            </div>
+            <div class="btn-nav">
+                <button class="btn-back" onclick="goBack(2)"><i class="ph-bold ph-arrow-left"></i> Back</button>
+                <button class="btn-next" onclick="goNext(2)">
+                    <span class="button_lg">
+                        <span class="button_sl"></span>
+                        <span class="button_text">Next <i class="ph-bold ph-arrow-right"></i></span>
+                    </span>
+                </button>
+            </div>
+        </div>
+
+        <!-- ═══ STEP 3: DETAILS ═══ -->
+        <div class="step-panel" id="step-3">
+            <div class="step-title">Account details</div>
+            <div class="step-sub" id="step3Sub">Fill in your student information.</div>
+
+            <!-- Student fields -->
+            <div id="fields-student">
+                <div class="input-group" style="margin-bottom:12px;">
+                    <label class="input-label">Student Number</label>
+                    <input type="text" id="student_number" placeholder="e.g. 234-03631M" maxlength="10" autocomplete="off">
+                    <i class="ph-bold ph-identification-card input-icon"></i>
+                </div>
+                <div class="input-group" style="margin-bottom:4px;">
+                    <label class="input-label">Birthday</label>
+                    <input type="date" id="birthday">
+                    <i class="ph-bold ph-cake input-icon"></i>
+                </div>
+                <p class="field-hint"><i class="ph-bold ph-info"></i> Used for password recovery. Make sure this is correct.</p>
+            </div>
+
+            <!-- Professor fields -->
+            <div id="fields-professor" style="display:none;">
+                <div class="pending-notice">
+                    <i class="ph-bold ph-clock" style="flex-shrink:0;margin-top:1px;"></i>
+                    <span><strong>Note:</strong> Professor accounts require admin approval before you can log in.</span>
+                </div>
+                <div class="input-group">
+                    <label class="input-label">Email Address</label>
+                    <input type="email" id="email" placeholder="prof@university.edu.ph" autocomplete="email">
+                    <i class="ph-bold ph-envelope input-icon"></i>
+                </div>
+            </div>
+
+            <div class="btn-nav">
+                <button class="btn-back" onclick="goBack(3)"><i class="ph-bold ph-arrow-left"></i> Back</button>
+                <button class="btn-next" onclick="goNext(3)">
+                    <span class="button_lg">
+                        <span class="button_sl"></span>
+                        <span class="button_text">Next <i class="ph-bold ph-arrow-right"></i></span>
+                    </span>
+                </button>
+            </div>
+        </div>
+
+        <!-- ═══ STEP 4: PASSWORD ═══ -->
+        <div class="step-panel" id="step-4">
+            <div class="step-title">Set your password</div>
+            <div class="step-sub">Choose a strong password for your account.</div>
+            <div class="input-group" style="margin-bottom:4px;">
+                <label class="input-label">Password</label>
+                <input type="password" id="password" placeholder="Min. 6 characters" autocomplete="new-password" oninput="checkPw()">
+                <i class="ph-bold ph-lock input-icon"></i>
+                <i class="ph-bold ph-eye toggle-pw" onclick="togglePw('password', this)"></i>
+            </div>
+            <p class="field-hint" id="pw_hint" style="margin-bottom:12px;"></p>
+            <div class="input-group" style="margin-bottom:4px;">
+                <label class="input-label">Confirm Password</label>
+                <input type="password" id="password2" placeholder="Re-enter password" autocomplete="new-password" oninput="checkPw2()">
+                <i class="ph-bold ph-lock input-icon"></i>
+                <i class="ph-bold ph-eye toggle-pw" onclick="togglePw('password2', this)"></i>
+            </div>
+            <p class="field-hint" id="pw2_hint" style="margin-bottom:4px;"></p>
+            <div class="btn-nav">
+                <button class="btn-back" onclick="goBack(4)"><i class="ph-bold ph-arrow-left"></i> Back</button>
+                <button class="btn-next" onclick="goNext(4)">
+                    <span class="button_lg">
+                        <span class="button_sl"></span>
+                        <span class="button_text">Next <i class="ph-bold ph-arrow-right"></i></span>
+                    </span>
+                </button>
+            </div>
+        </div>
+
+        <!-- ═══ STEP 5: REVIEW & SUBMIT ═══ -->
+        <div class="step-panel" id="step-5">
+            <div class="step-title">Review & Submit</div>
+            <div class="step-sub">Double-check your information and agree to the terms.</div>
+
+            <div class="review-box" id="reviewBox"></div>
+
+            <div class="terms-list">
+                <label class="term-item">
+                    <input type="checkbox" class="term-check" id="chk1" onchange="updateSubmitBtn()">
+                    <div class="term-body">
+                        <div class="term-title"><i class="ph-bold ph-shield-check"></i> Data Privacy Consent</div>
+                        <div class="term-desc">I consent to the collection and processing of my personal information under RA 10173.</div>
+                        <button class="term-read-more" type="button" onclick="openModal('privacy')"><i class="ph-bold ph-book-open"></i> Read More</button>
+                    </div>
+                </label>
+                <label class="term-item">
+                    <input type="checkbox" class="term-check" id="chk2" onchange="updateSubmitBtn()">
+                    <div class="term-body">
+                        <div class="term-title"><i class="ph-bold ph-check-circle"></i> Accuracy of Information</div>
+                        <div class="term-desc">I confirm that all information I provided is true and accurate.</div>
+                        <button class="term-read-more" type="button" onclick="openModal('accuracy')"><i class="ph-bold ph-book-open"></i> Read More</button>
+                    </div>
+                </label>
+                <label class="term-item">
+                    <input type="checkbox" class="term-check" id="chk3" onchange="updateSubmitBtn()">
+                    <div class="term-body">
+                        <div class="term-title"><i class="ph-bold ph-scroll"></i> Terms of Use</div>
+                        <div class="term-desc">I agree to use PHYSLAB solely for academic purposes in compliance with school policies.</div>
+                        <button class="term-read-more" type="button" onclick="openModal('terms')"><i class="ph-bold ph-book-open"></i> Read More</button>
+                    </div>
+                </label>
+            </div>
+
+            <div class="btn-nav">
+                <button class="btn-back" onclick="goBack(5)"><i class="ph-bold ph-arrow-left"></i> Back</button>
+                <button class="btn-next" id="submitBtn" onclick="handleSubmit()" disabled>
+                    <span class="button_lg">
+                        <span class="button_sl"></span>
+                        <span class="button_text" id="submitBtnText"><i class="ph-bold ph-user-plus"></i> Create Account</span>
+                    </span>
+                </button>
+            </div>
+        </div>
+
+    </div><!-- end steps-wrap -->
+
+    <div class="divider">or</div>
+    <div class="switch-link">Already have an account? <a href="/login">Sign in</a></div>
+</div>
+
+<!-- ═══ MODALS ═══ -->
+
+<!-- Privacy Modal -->
+<div class="modal-overlay" id="modal-privacy">
+    <div class="modal-box">
+        <div class="modal-header">
+            <div class="modal-icon"><i class="ph-bold ph-shield-check"></i></div>
+            <div>
+                <div class="modal-title">Data Privacy Consent</div>
+                <div class="modal-sub">Republic Act No. 10173 — Data Privacy Act of 2012</div>
+            </div>
+        </div>
+        <div class="modal-body">
+            <p>The <strong>Data Privacy Act of 2012 (RA 10173)</strong> protects the fundamental human right to privacy and ensures the responsible handling of personal information.</p>
+            <h4>What data we collect:</h4>
+            <ul>
+                <li>Full name (last, first, middle initial)</li>
+                <li>Student number or email address</li>
+                <li>Birthday (students only, for account recovery)</li>
+                <li>Password (encrypted and never stored in plain text)</li>
+            </ul>
+            <h4>How we use your data:</h4>
+            <ul>
+                <li>To create and manage your PHYSLAB account</li>
+                <li>To track your laboratory activity submissions and grades</li>
+                <li>For identity verification and account recovery</li>
+            </ul>
+            <h4>Your rights under RA 10173:</h4>
+            <ul>
+                <li>Right to be informed about data processing</li>
+                <li>Right to access your personal data</li>
+                <li>Right to correct inaccurate data</li>
+                <li>Right to erasure of personal data upon request</li>
+            </ul>
+            <p style="margin-top:10px;">Your data is stored securely and will not be shared with third parties without your explicit consent, except as required by law.</p>
+        </div>
+        <button class="modal-close" onclick="closeModal('privacy')">I Understand</button>
+    </div>
+</div>
+
+<!-- Accuracy Modal -->
+<div class="modal-overlay" id="modal-accuracy">
+    <div class="modal-box">
+        <div class="modal-header">
+            <div class="modal-icon"><i class="ph-bold ph-check-circle"></i></div>
+            <div>
+                <div class="modal-title">Accuracy of Information</div>
+                <div class="modal-sub">Truthfulness and Responsibility</div>
+            </div>
+        </div>
+        <div class="modal-body">
+            <p>By registering on PHYSLAB, you affirm that all information you have provided during the registration process is <strong>true, correct, and accurate</strong> to the best of your knowledge.</p>
+            <h4>This includes:</h4>
+            <ul>
+                <li>Your full legal name as it appears on school records</li>
+                <li>Your official student number (for students)</li>
+                <li>Your correct birthday (used for password recovery)</li>
+                <li>A valid email address (for professors)</li>
+            </ul>
+            <h4>Consequences of false information:</h4>
+            <ul>
+                <li>Account suspension or permanent deactivation</li>
+                <li>Referral to school academic integrity office</li>
+                <li>Inability to recover your account if credentials are lost</li>
+            </ul>
+            <p style="margin-top:10px;">If you need to correct your information after registration, please contact your professor or the system administrator.</p>
+        </div>
+        <button class="modal-close" onclick="closeModal('accuracy')">I Understand</button>
+    </div>
+</div>
+
+<!-- Terms Modal -->
+<div class="modal-overlay" id="modal-terms">
+    <div class="modal-box">
+        <div class="modal-header">
+            <div class="modal-icon"><i class="ph-bold ph-scroll"></i></div>
+            <div>
+                <div class="modal-title">Terms of Use</div>
+                <div class="modal-sub">PHYSLAB Academic System — User Agreement</div>
+            </div>
+        </div>
+        <div class="modal-body">
+            <p>PHYSLAB is an academic laboratory management system developed exclusively for use at <strong>EARIST (Eulogio "Amang" Rodriguez Institute of Science and Technology)</strong>. By creating an account, you agree to the following terms:</p>
+            <h4>Acceptable Use:</h4>
+            <ul>
+                <li>Use PHYSLAB solely for authorized academic laboratory activities</li>
+                <li>Submit only your own original work for laboratory activities</li>
+                <li>Respect the intellectual property of other users</li>
+                <li>Use the system only during your enrolled academic year</li>
+            </ul>
+            <h4>Prohibited Activities:</h4>
+            <ul>
+                <li>Sharing your login credentials with other students</li>
+                <li>Attempting to access another user's account</li>
+                <li>Submitting false or plagiarized laboratory data</li>
+                <li>Using the system for any non-academic purpose</li>
+                <li>Attempting to manipulate grades or system data</li>
+            </ul>
+            <h4>Account Responsibility:</h4>
+            <ul>
+                <li>You are responsible for all activity under your account</li>
+                <li>Report any unauthorized access to your account immediately</li>
+                <li>Keep your password confidential at all times</li>
+            </ul>
+            <p style="margin-top:10px;">Violations of these terms may result in account suspension and referral to the appropriate school authorities in accordance with EARIST's student handbook and academic integrity policies.</p>
+        </div>
+        <button class="modal-close" onclick="closeModal('terms')">I Agree</button>
+    </div>
+</div>
+
+<script>
+// ── Particles ──
+(function() {
+    const pw = document.getElementById('particles');
+    for (let i = 0; i < 30; i++) {
+        const p = document.createElement('div');
+        p.className = 'particle';
+        p.style.cssText = `left:${Math.random()*100}%;animation-delay:-${Math.random()*8}s;animation-duration:${6+Math.random()*8}s;--drift:${(Math.random()-.5)*200}px`;
+        pw.appendChild(p);
+    }
+})();
+
+// ── Theme ──
+function applyTheme(t) {
+    document.documentElement.setAttribute('data-theme', t);
+    localStorage.setItem('physlab_theme', t);
+    const cb = document.getElementById('themeToggle');
+    if (cb) cb.checked = (t === 'dark');
+}
+function toggleTheme() { applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'); }
+applyTheme(localStorage.getItem('physlab_theme') || 'light');
+
+// ── State ──
+let currentStep = 1;
+let selectedRole = '';
+
+// ── Role Selection ──
+function selectRole(role) {
+    selectedRole = role;
+    document.querySelectorAll('.role-card').forEach(c => c.classList.remove('selected'));
+    document.getElementById('role-' + role).classList.add('selected');
+    document.getElementById('nextBtn1').disabled = false;
+}
+
+// ── Step Navigation ──
+function showStep(n, dir) {
+    document.querySelectorAll('.step-panel').forEach(p => p.classList.remove('active','back'));
+    const panel = document.getElementById('step-' + n);
+    if (dir === 'back') panel.classList.add('back');
+    panel.classList.add('active');
+    updateIndicator(n);
+    clearAlert();
+    currentStep = n;
+    // Update step 3 fields based on role
+    if (n === 3) updateStep3Fields();
+    // Build review on step 5
+    if (n === 5) buildReview();
+}
+
+function updateIndicator(n) {
+    for (let i = 1; i <= 5; i++) {
+        const si = document.getElementById('si-' + i);
+        si.classList.remove('active','done');
+        const circle = si.querySelector('.step-circle');
+        if (i < n) {
+            si.classList.add('done');
+            circle.innerHTML = '<i class="ph-bold ph-check" style="font-size:12px;"></i>';
+        } else if (i === n) {
+            si.classList.add('active');
+            circle.textContent = i;
+        } else {
+            circle.textContent = i;
+        }
+    }
+    for (let i = 1; i <= 4; i++) {
+        const sl = document.getElementById('sl-' + i);
+        sl.classList.toggle('done', i < n);
+    }
+}
+
+function goNext(step) {
+    if (!validateStep(step)) return;
+    showStep(step + 1, 'forward');
+}
+
+function goBack(step) {
+    showStep(step - 1, 'back');
+}
+
+// ── Validation ──
+function validateStep(step) {
+    clearAlert();
+    if (step === 1) {
+        if (!selectedRole) { showAlert('Please select a role.'); return false; }
+    }
+    if (step === 2) {
+        const ln = document.getElementById('last_name').value.trim();
+        const fn = document.getElementById('first_name').value.trim();
+        if (!ln || !fn) { showAlert('Please enter your last name and first name.'); return false; }
+    }
+    if (step === 3) {
+        if (selectedRole === 'student') {
+            const sn = document.getElementById('student_number').value.trim();
+            const bd = document.getElementById('birthday').value;
+            if (!sn) { showAlert('Please enter your student number.'); return false; }
+            if (!bd)  { showAlert('Please enter your birthday.'); return false; }
+        } else {
+            const em = document.getElementById('email').value.trim();
+            if (!em || !em.includes('@')) { showAlert('Please enter a valid email address.'); return false; }
+        }
+    }
+    if (step === 4) {
+        const pw  = document.getElementById('password').value;
+        const pw2 = document.getElementById('password2').value;
+        if (pw.length < 6)  { showAlert('Password must be at least 6 characters.'); return false; }
+        if (pw !== pw2)     { showAlert('Passwords do not match.'); return false; }
+    }
+    return true;
+}
+
+// ── Step 3 toggle ──
+function updateStep3Fields() {
+    const isStudent = selectedRole === 'student';
+    document.getElementById('fields-student').style.display   = isStudent ? 'block' : 'none';
+    document.getElementById('fields-professor').style.display = isStudent ? 'none'  : 'block';
+    document.getElementById('step3Sub').textContent = isStudent
+        ? 'Fill in your student information.'
+        : 'Fill in your professor information.';
+}
+
+// ── Password hints ──
+function checkPw() {
+    const val  = document.getElementById('password').value;
+    const hint = document.getElementById('pw_hint');
+    if (!val) { hint.textContent = ''; return; }
+    if (val.length < 6)  { hint.innerHTML = '<i class="ph-bold ph-warning"></i> Too short — minimum 6 characters'; hint.style.color = '#fca5a5'; }
+    else if (val.length < 10) { hint.innerHTML = '<i class="ph-bold ph-check"></i> Good'; hint.style.color = '#fcd34d'; }
+    else                 { hint.innerHTML = '<i class="ph-bold ph-check-circle"></i> Strong'; hint.style.color = '#6ee7b7'; }
+    checkPw2();
+}
+function checkPw2() {
+    const pw  = document.getElementById('password').value;
+    const pw2 = document.getElementById('password2').value;
+    const h   = document.getElementById('pw2_hint');
+    if (!pw2) { h.textContent = ''; return; }
+    if (pw === pw2) { h.innerHTML = '<i class="ph-bold ph-check-circle"></i> Passwords match'; h.style.color = '#6ee7b7'; }
+    else            { h.innerHTML = '<i class="ph-bold ph-x-circle"></i> Passwords do not match'; h.style.color = '#fca5a5'; }
+}
+
+// ── Review Builder ──
+function buildReview() {
+    const ln  = document.getElementById('last_name').value.trim();
+    const fn  = document.getElementById('first_name').value.trim();
+    const mi  = document.getElementById('middle_initial').value.trim();
+    const fullName = `${ln}, ${fn}${mi ? ' ' + mi + '.' : ''}`;
+    const badgeClass = selectedRole === 'professor' ? 'badge-professor' : 'badge-student';
+    const badgeLabel = selectedRole === 'professor' ? '<i class="ph-bold ph-chalkboard-teacher"></i> Professor' : '<i class="ph-bold ph-student"></i> Student';
+
+    let rows = `
+        <div class="review-row">
+            <span class="review-key">Role</span>
+            <span class="review-badge ${badgeClass}">${badgeLabel}</span>
+        </div>
+        <div class="review-row">
+            <span class="review-key">Full Name</span>
+            <span class="review-val">${fullName}</span>
+        </div>`;
+
+    if (selectedRole === 'student') {
+        rows += `
+        <div class="review-row">
+            <span class="review-key">Student No.</span>
+            <span class="review-val">${document.getElementById('student_number').value.trim()}</span>
+        </div>
+        <div class="review-row">
+            <span class="review-key">Birthday</span>
+            <span class="review-val">${document.getElementById('birthday').value}</span>
+        </div>`;
+    } else {
+        rows += `
+        <div class="review-row">
+            <span class="review-key">Email</span>
+            <span class="review-val">${document.getElementById('email').value.trim()}</span>
+        </div>`;
+    }
+    document.getElementById('reviewBox').innerHTML = rows;
+    updateSubmitBtn();
+}
+
+// ── Terms ──
+function updateSubmitBtn() {
+    const allChecked = document.getElementById('chk1').checked &&
+                       document.getElementById('chk2').checked &&
+                       document.getElementById('chk3').checked;
+    document.getElementById('submitBtn').disabled = !allChecked;
+}
+
+// ── Modals ──
+function openModal(id) {
+    document.getElementById('modal-' + id).classList.add('open');
+}
+function closeModal(id) {
+    document.getElementById('modal-' + id).classList.remove('open');
+}
+document.querySelectorAll('.modal-overlay').forEach(m => {
+    m.addEventListener('click', e => { if (e.target === m) m.classList.remove('open'); });
+});
+
+// ── Alert ──
+function showAlert(msg) {
+    const el = document.getElementById('regError');
+    el.innerHTML = '<i class="ph-bold ph-warning"></i> ' + msg;
+    el.style.display = 'flex';
+}
+function clearAlert() {
+    document.getElementById('regError').style.display = 'none';
+}
+
+// ── Submit ──
+async function handleSubmit() {
+    clearAlert();
+    const btn     = document.getElementById('submitBtn');
+    const btnText = document.getElementById('submitBtnText');
+    const orig    = btnText.innerHTML;
+    btn.disabled  = true;
+    btnText.innerHTML = '<i class="ph-bold ph-spinner"></i> Creating account...';
+
+    const body = {
+        role:           selectedRole,
+        last_name:      document.getElementById('last_name').value.trim(),
+        first_name:     document.getElementById('first_name').value.trim(),
+        middle_initial: document.getElementById('middle_initial').value.trim(),
+        password:       document.getElementById('password').value,
+    };
+    if (selectedRole === 'student') {
+        body.student_number = document.getElementById('student_number').value.trim();
+        body.birthday       = document.getElementById('birthday').value;
+    } else {
+        body.email = document.getElementById('email').value.trim();
+    }
+
+    try {
+        const res  = await fetch('/api/auth/register', {
+            method:'POST', headers:{'Content-Type':'application/json'},
+            body: JSON.stringify(body)
+        });
+        const data = await res.json();
+        if (res.ok) {
+            btnText.innerHTML = '<i class="ph-bold ph-check-circle"></i> Success!';
+            if (selectedRole === 'student') {
+                setTimeout(() => window.location.href = '/login', 1500);
+            } else {
+                showAlert('✅ Account requested! Please wait for admin approval.');
+                document.getElementById('regError').className = 'alert alert-success';
+                document.getElementById('regError').style.display = 'flex';
+                btnText.innerHTML = orig;
+                setTimeout(() => updateSubmitBtn(), 100);
+            }
+        } else {
+            showAlert(data.message || 'Registration failed!');
+            btnText.innerHTML = orig;
+            updateSubmitBtn();
+        }
+    } catch {
+        showAlert('Cannot connect to server!');
+        btnText.innerHTML = orig;
+        updateSubmitBtn();
+    }
+}
+
+// ── Utils ──
+function togglePw(id, el) {
+    const input = document.getElementById(id);
+    input.type = input.type === 'password' ? 'text' : 'password';
+    el.className = (input.type === 'password' ? 'ph-bold ph-eye' : 'ph-bold ph-eye-slash') + ' toggle-pw';
+}
+</script>
+</body>
+</html>
