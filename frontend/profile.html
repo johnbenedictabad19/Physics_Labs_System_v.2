@@ -1209,7 +1209,6 @@ function initPage() {
         document.getElementById('avatarImg').style.display  = 'block';
         document.getElementById('avatarInitial').style.display = 'none';
     }
-    initNavAvatar();
 }
 
 // ===== AVATAR =====
@@ -1232,8 +1231,7 @@ function previewAvatar(input) {
             const d = await res.json();
             if (res.ok) {
                 localStorage.setItem('profile_avatar_' + localStorage.getItem('user_id'), dataUrl);
-                initNavAvatar();
-                showToast('Profile picture updated!', 'success');
+                            showToast('Profile picture updated!', 'success');
             } else {
                 showToast(d.message || 'Upload failed!', 'error');
             }

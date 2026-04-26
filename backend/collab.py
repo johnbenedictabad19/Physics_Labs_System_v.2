@@ -45,7 +45,7 @@ def register_collab(socketio):
 
         is_first = room not in _rooms or len(_rooms[room]['users']) == 0
         if room not in _rooms:
-            _rooms[room] = {'users': {}, 'fields': {}}
+            _rooms[room] = {'users': {}, 'fields': {}, 'draft': {}}
 
         taken = {u['color'] for u in _rooms[room]['users'].values()}
         color = next((c for c in COLORS if c not in taken), COLORS[len(_rooms[room]['users']) % len(COLORS)])
@@ -57,6 +57,11 @@ def register_collab(socketio):
             'color': color
         }
         emit('presence_update', _presence(room), to=room)
+
+        # Send current field state to the joining user only
+        current_draft = _rooms[room].get('draft', {})
+        if current_draft:
+            emit('draft_sync', current_draft)
 
         # Feed: emit collab_start only when first member opens the activity
         if is_first:
@@ -77,10 +82,21 @@ def register_collab(socketio):
         room = _rid(d.get('activity_id'), d.get('group_id'))
         if room not in _rooms or request.sid not in _rooms[room]['users']:
             return
+        field_type = d.get('field_type')
+        field_id   = str(d.get('field_id', ''))
+        value      = d.get('value', '')
+
+        # Store in room draft state for late joiners / reconnects
+        _rooms[room]['draft'][f'{field_type}_{field_id}'] = {
+            'field_type': field_type,
+            'field_id':   field_id,
+            'value':      value
+        }
+
         emit('field_updated', {
-            'field_type': d.get('field_type'),
-            'field_id':   str(d.get('field_id', '')),
-            'value':      d.get('value', ''),
+            'field_type': field_type,
+            'field_id':   field_id,
+            'value':      value,
             'user':       _rooms[room]['users'][request.sid]
         }, to=room, include_self=False)
 

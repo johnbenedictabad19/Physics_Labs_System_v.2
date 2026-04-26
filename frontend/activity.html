@@ -1990,7 +1990,6 @@ async function loadActivity() {
         if (role === 'student' && !existingSubmission) {
             const bg = document.getElementById('av-btn-group');
             if (bg) bg.style.display = 'flex';
-            restoreDraft();
             _setProgressBtnLocked();
             if (myGroup) initCollab();
         }
@@ -2037,6 +2036,11 @@ function renderActivity(data) {
 
     // Typeset all LaTeX equations injected by the parser
     typesetMath(container);
+
+    // Restore draft/submission values after all sections are in the DOM
+    if (role === 'student' && !existingSubmission) {
+        restoreDraft();
+    }
 }
 
 // In table cells, display math \[...\] would render as a block element and break the
@@ -2308,7 +2312,7 @@ function buildSectionWrapper(section, tables, idx) {
     viewDiv.id = `view-${uid}`;
     viewDiv.className = sType === 'introduction' ? 'intro-preview-wrap' : 'av-view-content';
     // procedures/guide_questions always rebuilt from structured data so equations render via _snapTable.
-    const useSnapshot = section.view_html && !['procedures','guide_questions','introduction'].includes(sType);
+    const useSnapshot = section.view_html && !['procedures','guide_questions','introduction','data_sheet'].includes(sType);
     if (useSnapshot) {
         viewDiv.innerHTML = _applyKatexToHtml(section.view_html);
         // data_sheet snapshot doesn't include the student notes textarea — append it here
@@ -2327,6 +2331,7 @@ function buildSectionWrapper(section, tables, idx) {
     } else {
         const _sc = buildSectionContent(section, tables);
         viewDiv.innerHTML = sType === 'introduction' ? _sc : _applyKatexToHtml(_sc);
+        _applySnapshotInteractivity(viewDiv, sType);
     }
 
     // Editor area (professor only)
@@ -2796,7 +2801,7 @@ function _applySnapshotInteractivity(el, sectionType) {
         const idx = ta.dataset.index;
         const saved = existingSubmission?.answers?.[String(idx)]
                    ?? existingSubmission?.answers?.[idx] ?? '';
-        if (saved) ta.value = saved;
+        ta.value = saved;
         if (isDisabled) ta.disabled = true;
     });
 
@@ -2816,7 +2821,7 @@ function _applySnapshotInteractivity(el, sectionType) {
         const col = inp.dataset.col;
         const saved = existingSubmission?.table_data?.[String(tbl)]?.[String(row)]?.[String(col)]
                    ?? existingSubmission?.table_data?.[row]?.[col] ?? '';
-        if (saved) inp.value = saved;
+        inp.value = saved;
         if (isDisabled) inp.disabled = true;
     });
 }
@@ -3531,22 +3536,25 @@ function applyDraftData(data) {
     if (data.answers) {
         Object.entries(data.answers).forEach(([idx, val]) => {
             const ta = document.querySelector(`.answer-textarea[data-index="${idx}"]`);
-            if (ta && !ta.disabled) ta.value = val;
+            if (ta) ta.value = val;
         });
     }
 
     // Table cells
     if (data.table_data) {
-        Object.entries(data.table_data).forEach(([r, cols]) => {
-            if (typeof cols !== 'object' || r === 'notes') return;
-            Object.entries(cols).forEach(([c, val]) => {
-                const inp = document.querySelector(`.data-table-input[data-row="${r}"][data-col="${c}"]`);
-                if (inp && !inp.disabled) inp.value = val;
+        Object.entries(data.table_data).forEach(([t, rows]) => {
+            if (typeof rows !== 'object' || t === 'notes') return;
+            Object.entries(rows).forEach(([r, cols]) => {
+                if (typeof cols !== 'object') return;
+                Object.entries(cols).forEach(([c, val]) => {
+                    const inp = document.querySelector(`.data-table-input[data-tbl="${t}"][data-row="${r}"][data-col="${c}"]`);
+                    if (inp) inp.value = val;
+                });
             });
         });
         if (data.table_data.notes) {
             const noteArea = document.querySelector('.av-table-notes-area');
-            if (noteArea && !noteArea.disabled) noteArea.value = data.table_data.notes;
+            if (noteArea) noteArea.value = data.table_data.notes;
         }
     }
 
@@ -4095,10 +4103,11 @@ function collectSubmissionData() {
     });
     const tableData = {};
     document.querySelectorAll('.data-table-input').forEach(inp => {
-        const r = inp.dataset.row, c = inp.dataset.col;
-        if (r !== undefined && c !== undefined) {
-            if (!tableData[r]) tableData[r] = {};
-            tableData[r][c] = inp.value;
+        const t = inp.dataset.tbl, r = inp.dataset.row, c = inp.dataset.col;
+        if (t !== undefined && r !== undefined && c !== undefined) {
+            if (!tableData[t]) tableData[t] = {};
+            if (!tableData[t][r]) tableData[t][r] = {};
+            tableData[t][r][c] = inp.value;
         }
     });
     const noteArea = document.querySelector('.av-table-notes-area');
@@ -4397,12 +4406,13 @@ function initCollab() {
     collabSocket.on('connect', () => {
         collabSocket.emit('join_collab', { token, ...(_collabRoom) });
     });
-    collabSocket.on('presence_update', _onPresenceUpdate);
-    collabSocket.on('field_updated',   _onFieldUpdated);
-    collabSocket.on('field_focused',   _onFieldFocused);
-    collabSocket.on('field_blurred',   _onFieldBlurred);
+    collabSocket.on('presence_update',   _onPresenceUpdate);
+    collabSocket.on('field_updated',     _onFieldUpdated);
+    collabSocket.on('field_focused',     _onFieldFocused);
+    collabSocket.on('field_blurred',     _onFieldBlurred);
     collabSocket.on('group_submitted',   _onGroupSubmitted);
     collabSocket.on('group_unsubmitted', _onGroupUnsubmitted);
+    collabSocket.on('draft_sync',        _onDraftSync);
 
     // Emit focus/blur/input/change via event delegation on the activity content
     const content = document.getElementById('activityContent');
@@ -4431,7 +4441,7 @@ function _collabFieldOf(el) {
     if (el.classList.contains('answer-textarea'))
         return { field_type: 'answer', field_id: el.dataset.index };
     if (el.classList.contains('data-table-input'))
-        return { field_type: 'table', field_id: `${el.dataset.row}_${el.dataset.col}` };
+        return { field_type: 'table', field_id: `${el.dataset.tbl}_${el.dataset.row}_${el.dataset.col}` };
     if (el.classList.contains('av-table-notes-area'))
         return { field_type: 'notes', field_id: 'notes' };
     if (el.classList.contains('material-checkbox'))
@@ -4447,8 +4457,8 @@ function _collabEl(field_type, field_id) {
     if (field_type === 'answer')
         return document.querySelector(`.answer-textarea[data-index="${field_id}"]`);
     if (field_type === 'table') {
-        const [r, c] = String(field_id).split('_');
-        return document.querySelector(`.data-table-input[data-row="${r}"][data-col="${c}"]`);
+        const [t, r, c] = String(field_id).split('_');
+        return document.querySelector(`.data-table-input[data-tbl="${t}"][data-row="${r}"][data-col="${c}"]`);
     }
     if (field_type === 'notes')
         return document.querySelector('.av-table-notes-area');
@@ -4497,7 +4507,7 @@ function _onFieldUpdated(data) {
         return;
     }
     const el = _collabEl(data.field_type, data.field_id);
-    if (!el || document.activeElement === el) return;
+    if (!el) return;
     _restoringDraft = true;
     if (data.field_type === 'material') {
         el.checked = (data.value === true || data.value === 'true');
@@ -4507,6 +4517,22 @@ function _onFieldUpdated(data) {
     _restoringDraft = false;
     el.classList.add('collab-flash');
     setTimeout(() => el.classList.remove('collab-flash'), 600);
+}
+
+function _onDraftSync(fields) {
+    // Apply all current field values from the room — used on join and reconnect
+    if (!fields || typeof fields !== 'object') return;
+    _restoringDraft = true;
+    Object.values(fields).forEach(f => {
+        const el = _collabEl(f.field_type, f.field_id);
+        if (!el) return;
+        if (f.field_type === 'material') {
+            el.checked = (f.value === true || f.value === 'true');
+        } else {
+            el.value = f.value;
+        }
+    });
+    _restoringDraft = false;
 }
 
 function _onFieldFocused(data) {
