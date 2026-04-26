@@ -147,7 +147,8 @@ if __name__ == '__main__':
         db.create_all()
         seed_admin(app)
         print("Database ready!")
-    socketio.run(app, host='0.0.0.0', port=5000, debug=False)
+    port = int(os.environ.get('PORT', 5000))
+    socketio.run(app, host='0.0.0.0', port=port, debug=False)
 
     # ── Live reload: watch frontend files and emit dev_reload via SocketIO ──
     try:
