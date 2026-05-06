@@ -1019,7 +1019,7 @@ input[type="file"]#avatarInput { display:none; }
                     </div>
                 </div>
                 <label class="pf-toggle">
-                    <input type="checkbox" id="notifToggle" checked>
+                    <input type="checkbox" id="notifToggle" checked onchange="saveNotifPref(this.checked)">
                     <span class="pf-tog-sl"></span>
                 </label>
             </div>
@@ -1139,6 +1139,8 @@ async function loadProfileFromAPI() {
             localStorage.setItem('student_number', d.student_number || '');
             localStorage.setItem('joined_at',      d.joined_at      || '');
             if (d.avatar) localStorage.setItem('profile_avatar_' + localStorage.getItem('user_id'), d.avatar);
+            const tog = document.getElementById('notifToggle');
+            if (tog) tog.checked = d.notifications_enabled !== false;
         }
     } catch {}
     initPage();
@@ -1342,6 +1344,26 @@ function toggleEye(inputId, btn) {
 
 // ===== DARK MODE ===== (handled by applyTheme above)
 function toggleDark(on) { handleThemeToggle(on); }
+
+// ===== NOTIFICATIONS PREFERENCE =====
+async function saveNotifPref(enabled) {
+    try {
+        const res = await fetch('/api/auth/preferences', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+            body: JSON.stringify({ notifications_enabled: enabled })
+        });
+        if (res.ok) {
+            showToast(enabled ? 'Notifications enabled' : 'Notifications disabled', 'info');
+        } else {
+            showToast('Failed to save preference', 'error');
+            document.getElementById('notifToggle').checked = !enabled;
+        }
+    } catch {
+        showToast('Cannot connect to server!', 'error');
+        document.getElementById('notifToggle').checked = !enabled;
+    }
+}
 
 // ===== CONFIRM MODAL =====
 function doConfirm(icon, title, msg, fn) {

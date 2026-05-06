@@ -1,14 +1,71 @@
-from flask import Blueprint, request, jsonify
+from flask import Blueprint, request, jsonify, send_file
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from database import db
 from models import Submission, User, Activity, Class, ClassMember
 import json
 import os
-from datetime import datetime
+import time
+from datetime import datetime, timedelta
+
+_PH = timedelta(hours=8)
+def _ph(dt):
+    if not dt: return ''
+    return (dt + _PH).strftime('%b %d, %Y %I:%M %p')
 
 submissions = Blueprint('submissions', __name__)
 
 UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'uploads')
+
+
+def _migrate_uploaded_files_column():
+    """Add uploaded_files column if missing (safe to call every startup)."""
+    try:
+        from sqlalchemy import text
+        with db.engine.connect() as conn:
+            result = conn.execute(text(
+                "SELECT column_name FROM information_schema.columns "
+                "WHERE table_name='submissions' AND column_name='uploaded_files'"
+            ))
+            if result.fetchone() is None:
+                conn.execute(text("ALTER TABLE submissions ADD COLUMN IF NOT EXISTS uploaded_files JSON"))
+                conn.commit()
+    except Exception as e:
+        print(f'[migration] uploaded_files column: {e}')
+
+
+# ===== IMMEDIATE ATTACH (data sheet inline images) =====
+@submissions.route('/<int:activity_id>/attach', methods=['POST'])
+@jwt_required()
+def attach_image(activity_id):
+    user_id = int(get_jwt_identity())
+    ALLOWED = {'png', 'jpg', 'jpeg', 'webp', 'gif', 'pdf'}
+    MAX_SIZE = 12 * 1024 * 1024
+    file = request.files.get('file')
+    if not file or not file.filename:
+        return jsonify({'message': 'No file provided'}), 400
+    ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
+    if ext not in ALLOWED:
+        return jsonify({'message': f'File type .{ext} not allowed'}), 400
+    file.stream.seek(0, 2)
+    size = file.stream.tell()
+    file.stream.seek(0)
+    if size > MAX_SIZE:
+        return jsonify({'message': 'File exceeds 12 MB limit'}), 400
+    safe_name = f"dsattach_{activity_id}_{user_id}_{int(time.time())}.{ext}"
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    file.save(os.path.join(UPLOAD_FOLDER, safe_name))
+    return jsonify({'filename': safe_name}), 200
+
+
+# ===== SERVE UPLOADED FILE =====
+@submissions.route('/file/<filename>', methods=['GET'])
+def serve_uploaded_file(filename):
+    if '/' in filename or '\\' in filename or '..' in filename:
+        return jsonify({'message': 'Invalid filename'}), 400
+    filepath = os.path.join(UPLOAD_FOLDER, filename)
+    if not os.path.exists(filepath):
+        return jsonify({'message': 'File not found'}), 404
+    return send_file(filepath)
 
 
 # ===== SUBMIT ACTIVITY =====
@@ -33,7 +90,7 @@ def submit_activity(activity_id):
             'message': 'Already submitted.',
             'id': existing.id,
             'status': existing.status,
-            'submitted_at': existing.submitted_at.strftime('%b %d, %Y %I:%M %p') if existing.submitted_at else ''
+            'submitted_at': _ph(existing.submitted_at)
         }), 200
 
     def _parse_form_json(val, default):
@@ -52,18 +109,54 @@ def submit_activity(activity_id):
     student_info      = _parse_form_json(request.form.get('student_info', '{}'), {})
     print(f'[submit] activity={activity_id} user={user_id}')
 
-    ALLOWED_EXTENSIONS = {'pdf', 'docx', 'png', 'jpg', 'jpeg'}
-    uploaded_filename = None
-    if 'file' in request.files:
-        file = request.files['file']
-        if file.filename:
-            ext = file.filename.rsplit('.', 1)[-1].lower()
-            if ext not in ALLOWED_EXTENSIONS:
-                return jsonify({'message': f'File type .{ext} is not allowed. Allowed: {", ".join(ALLOWED_EXTENSIONS)}'}), 400
-            safe_name = f"submission_{activity_id}_{user_id}_{int(__import__('time').time())}.{ext}"
-            os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-            file.save(os.path.join(UPLOAD_FOLDER, safe_name))
-            uploaded_filename = safe_name
+    ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'webp', 'gif'}
+    MAX_FILES = 5
+    MAX_FILE_SIZE = 12 * 1024 * 1024  # 12 MB
+    uploaded_file_list = []  # [{file, name}, ...]
+
+    # Re-attach previously uploaded files sent by the frontend as 'retained_file' fields.
+    # Look up the proper display name from the existing draft's uploaded_files column.
+    retained_names = request.form.getlist('retained_file')
+    if retained_names:
+        existing_draft = Submission.query.filter_by(
+            activity_id=activity_id, student_id=user_id
+        ).filter(Submission.status.in_(['draft', 'submitted'])).first()
+        existing_files = []
+        if existing_draft and existing_draft.uploaded_files:
+            raw = existing_draft.uploaded_files
+            if isinstance(raw, list):
+                existing_files = raw
+            else:
+                try:
+                    existing_files = json.loads(raw)
+                except Exception:
+                    existing_files = []
+        # Build lookup: safe_filename → original display name
+        name_lookup = {f['file']: f.get('name', f['file']) for f in existing_files if isinstance(f, dict)}
+        for safe_name in retained_names:
+            # Security: reject any path traversal attempts
+            if '/' in safe_name or '\\' in safe_name or '..' in safe_name:
+                continue
+            filepath = os.path.join(UPLOAD_FOLDER, safe_name)
+            if os.path.exists(filepath):
+                disp = name_lookup.get(safe_name, safe_name)
+                uploaded_file_list.append({'file': safe_name, 'name': disp})
+
+    for idx, file in enumerate(request.files.getlist('file')[:MAX_FILES]):
+        if not file.filename:
+            continue
+        ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
+        if ext not in ALLOWED_EXTENSIONS:
+            return jsonify({'message': f'File type .{ext} not allowed. Allowed: {", ".join(ALLOWED_EXTENSIONS)}'}), 400
+        file.stream.seek(0, 2)
+        size = file.stream.tell()
+        file.stream.seek(0)
+        if size > MAX_FILE_SIZE:
+            return jsonify({'message': f'"{file.filename}" exceeds 12 MB limit.'}), 400
+        safe_name = f"sub_{activity_id}_{user_id}_{int(time.time())}_{idx}.{ext}"
+        os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+        file.save(os.path.join(UPLOAD_FOLDER, safe_name))
+        uploaded_file_list.append({'file': safe_name, 'name': file.filename})
 
     _group_id = None
     try:
@@ -89,7 +182,8 @@ def submit_activity(activity_id):
         draft.status            = 'submitted'
         draft.submitted_at      = submitted_at
         if _group_id: draft.group_id = _group_id
-        if uploaded_filename: draft.uploaded_file = uploaded_filename
+        # Always update uploaded_files: retained + new (overwrite with the full combined list)
+        draft.uploaded_files = uploaded_file_list if uploaded_file_list else draft.uploaded_files
         db.session.commit()
         sub_id = draft.id
     else:
@@ -100,7 +194,7 @@ def submit_activity(activity_id):
             table_data=table_data,
             materials_checked=materials_checked,
             student_info=student_info,
-            uploaded_file=uploaded_filename,
+            uploaded_files=uploaded_file_list if uploaded_file_list else None,
             status='submitted',
             submitted_at=submitted_at,
             group_id=_group_id
@@ -162,7 +256,8 @@ def submit_activity(activity_id):
     except Exception:
         pass
 
-    return jsonify({'message': 'Submitted successfully!', 'id': sub_id}), 200 if draft else 201
+    return jsonify({'message': 'Submitted successfully!', 'id': sub_id,
+                    'uploaded_files': uploaded_file_list}), 200 if draft else 201
 
 
 # ===== CANCEL / UNSUBMIT (student, only if not yet graded) =====
@@ -225,7 +320,10 @@ def unsubmit_activity(activity_id):
     except Exception:
         pass
 
-    return jsonify({'message': 'Submission retracted. You can now edit and resubmit.'}), 200
+    return jsonify({
+        'message': 'Submission retracted. You can now edit and resubmit.',
+        'submission': format_submission(sub)
+    }), 200
 
 
 
@@ -234,11 +332,22 @@ def unsubmit_activity(activity_id):
 @jwt_required()
 def get_my_submission(activity_id):
     user_id = int(get_jwt_identity())
-    # Only return submissions that are actually submitted or graded (not drafts)
-    sub = Submission.query.filter_by(
+    # Prefer final states (submitted/graded); if none exists, fall back to latest draft.
+    base_query = Submission.query.filter_by(
         activity_id=activity_id,
         student_id=user_id
-    ).filter(Submission.status.in_(['submitted', 'graded'])).first()
+    )
+
+    sub = (base_query
+           .filter(Submission.status.in_(['submitted', 'graded']))
+           .order_by(Submission.submitted_at.desc(), Submission.id.desc())
+           .first())
+
+    if not sub:
+        sub = (base_query
+               .filter(Submission.status == 'draft')
+               .order_by(Submission.submitted_at.desc(), Submission.id.desc())
+               .first())
 
     if not sub:
         return jsonify(None), 200
@@ -255,7 +364,7 @@ def get_my_submission(activity_id):
             'status': sub.status or 'submitted',
             'grade': sub.grade,
             'feedback': sub.feedback or '',
-            'submitted_at': sub.submitted_at.strftime('%b %d, %Y %I:%M %p') if sub.submitted_at else '',
+            'submitted_at': _ph(sub.submitted_at),
             'answers': {}, 'table_data': {}, 'materials_checked': {},
             'student_info': {}, 'uploaded_file': None,
             'group_id': None, 'attendance_status': None,
@@ -288,7 +397,7 @@ def get_all_submissions(activity_id):
                 'id': s.id, 'activity_id': s.activity_id,
                 'student_id': s.student_id, 'status': s.status,
                 'grade': s.grade, 'feedback': s.feedback or '',
-                'submitted_at': s.submitted_at.strftime('%b %d, %Y %I:%M %p') if s.submitted_at else '',
+                'submitted_at': _ph(s.submitted_at),
                 'answers': {}, 'table_data': {}, 'materials_checked': {},
                 'student_info': {}, 'uploaded_file': None,
                 'group_id': None, 'attendance_status': None,
@@ -312,34 +421,56 @@ def grade_submission(submission_id):
         return jsonify({'message': 'Submission not found!'}), 404
 
     data = request.get_json()
-    sub.grade = data.get('grade')
-    sub.feedback = data.get('feedback', '')
-    sub.graded_by = user_id
-    sub.graded_at = datetime.utcnow()
-    sub.status = 'graded'
+    grade    = data.get('grade')
+    feedback = data.get('feedback', '')
+    now      = datetime.utcnow()
+
+    sub.grade      = grade
+    sub.feedback   = feedback
+    sub.graded_by  = user_id
+    sub.graded_at  = now
+    sub.status     = 'graded'
+
+    # Cascade grade to all group members' submissions for the same activity
+    graded_students = [sub.student_id]
+    if sub.group_id:
+        siblings = Submission.query.filter(
+            Submission.activity_id == sub.activity_id,
+            Submission.group_id    == sub.group_id,
+            Submission.id          != sub.id
+        ).all()
+        for s in siblings:
+            s.grade     = grade
+            s.feedback  = feedback
+            s.graded_by = user_id
+            s.graded_at = now
+            s.status    = 'graded'
+            graded_students.append(s.student_id)
 
     db.session.commit()
-    # Push real-time grade update to student
+
+    # Push real-time grade update to all affected students
     try:
         from extensions import socketio as _sio
-        _sio.emit('submission_graded', {
-            'student_id':  sub.student_id,
-            'activity_id': sub.activity_id,
-            'grade':       sub.grade,
-            'feedback':    sub.feedback or '',
-        }, namespace='/')
+        act = Activity.query.get(sub.activity_id)
+        for sid in graded_students:
+            _sio.emit('submission_graded', {
+                'student_id':  sid,
+                'activity_id': sub.activity_id,
+                'grade':       grade,
+                'feedback':    feedback or '',
+            }, namespace='/')
+            try:
+                from notifications import notify
+                if act:
+                    notify(sid,
+                           f'Your submission for "{act.title}" has been graded',
+                           f'/activity?id={act.id}', 'grade')
+            except Exception as e:
+                print(f'[grade notify] error: {e}')
     except Exception as e:
         print(f'[grade emit] error: {e}')
-    # Notify student
-    try:
-        from notifications import notify
-        act = Activity.query.get(sub.activity_id)
-        if act:
-            notify(sub.student_id,
-                   f'Your submission for "{act.title}" has been graded',
-                   f'/activity?id={act.id}', 'grade')
-    except Exception as e:
-        print(f'[grade notify] error: {e}')
+
     return jsonify({'message': 'Graded successfully!'}), 200
 
 
@@ -367,6 +498,7 @@ def save_draft(activity_id):
     materials_checked = data.get('materials_checked', {})
     student_info      = data.get('student_info', {})
     group_id          = data.get('group_id') or (student_info or {}).get('group_id') or None
+    uploaded_files    = data.get('uploaded_files', None)  # [{file, name}, ...] from upload section
 
     # Upsert: update existing draft or create new one
     draft = Submission.query.filter_by(
@@ -381,6 +513,7 @@ def save_draft(activity_id):
         draft.materials_checked = materials_checked
         draft.student_info      = student_info
         if group_id: draft.group_id = group_id
+        if uploaded_files is not None: draft.uploaded_files = uploaded_files
         draft.submitted_at      = datetime.utcnow()   # use as "last_saved"
     else:
         draft = Submission(
@@ -390,13 +523,14 @@ def save_draft(activity_id):
             table_data=table_data,
             materials_checked=materials_checked,
             student_info=student_info,
+            uploaded_files=uploaded_files or [],
             status='draft',
             group_id=group_id
         )
         db.session.add(draft)
 
     db.session.commit()
-    return jsonify({'message': 'Draft saved!', 'saved_at': draft.submitted_at.strftime('%I:%M %p')}), 200
+    return jsonify({'message': 'Draft saved!', 'saved_at': (draft.submitted_at + _PH).strftime('%I:%M %p') if draft.submitted_at else ''}), 200
 
 
 # ===== GET GROUP DRAFT (collaborative — load latest draft from any group member) =====
@@ -476,7 +610,7 @@ def _notify_group_submitted(activity_id, group_id, submitted_by, submitted_at):
     try:
         from extensions import socketio as _sio
         room = f'a{activity_id}g{group_id}'
-        at_str = submitted_at.strftime('%b %d, %Y %I:%M %p') if submitted_at else ''
+        at_str = _ph(submitted_at)
         _sio.emit('group_submitted', {
             'submitted_by': submitted_by,
             'submitted_at': at_str,
@@ -561,17 +695,20 @@ def format_submission(sub):
         'activity_id': sub.activity_id,
         'student_id': sub.student_id,
         'student_name': student.full_name if student else 'Unknown',
-        'student_email': student.email if student else '',
-        'student_avatar': student.avatar or '' if student else '',
+        'student_number': (student.student_number or '') if student else '',
+        'student_email': (student.email or '') if student else '',
+        'student_avatar': (student.avatar or '') if student else '',
         'answers': answers,
         'table_data': table_data,
         'materials_checked': safe_json(sub.materials_checked, []),
         'student_info': student_info,
         'uploaded_file': sub.uploaded_file,
+        'uploaded_files': (getattr(sub, 'uploaded_files', None) or
+                           ([{'file': sub.uploaded_file, 'name': 'Uploaded File'}] if sub.uploaded_file else [])),
         'grade': sub.grade,
         'feedback': sub.feedback,
         'status': sub.status,
         'group_id': getattr(sub, 'group_id', None),
         'attendance_status': getattr(sub, 'attendance_status', None),
-        'submitted_at': sub.submitted_at.strftime('%b %d, %Y %I:%M %p') if sub.submitted_at else ''
+        'submitted_at': _ph(sub.submitted_at)
     }

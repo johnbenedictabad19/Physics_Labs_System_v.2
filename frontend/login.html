@@ -156,6 +156,14 @@
         }
         .toggle-pw { position:absolute; right:14px; bottom:13px; cursor:pointer; color:var(--text-3); font-size:16px; transition:color 0.2s; }
         .toggle-pw:hover { color:var(--primary-l); }
+        .sn-boxes { display:flex; align-items:center; gap:5px; }
+        .sn-box { width:34px; height:40px; text-align:center; font-size:14px; font-weight:600; padding:0; background:var(--input-bg); border:1.5px solid var(--border); border-radius:8px; color:var(--text); outline:none; transition:border-color 0.2s,box-shadow 0.2s; text-transform:uppercase; }
+        .sn-box:focus { border-color:var(--border-f); background:var(--input-bg-f); box-shadow:0 0 0 3px rgba(10,102,194,0.12); }
+        .sn-box.error { border-color:#ef4444; box-shadow:0 0 0 3px rgba(239,68,68,0.12); }
+        .sn-dash { font-size:16px; font-weight:700; color:var(--text-3); margin:0 2px; }
+        .pw-rule { font-size:12px; color:var(--text-3); margin-bottom:4px; display:flex; align-items:center; gap:6px; transition:color 0.2s; }
+        .pw-rule:last-child { margin-bottom:0; }
+        .pw-rule.met { color:#6ee7b7; }
 
         /* BTN */
         .btn-submit {
@@ -350,62 +358,27 @@
         <span class="brand-name">PHYSLAB</span>
     </a>
 
-    <h1 class="card-title">Welcome Back!</h1>
+    <h1 class="card-title">Welcome!</h1>
     <p class="card-sub">Sign in to your account</p>
-
-    <!-- Role tabs -->
-    <div class="role-tabs" id="roleTabsBar">
-        <div class="role-tab-ind" id="roleTabInd"></div>
-        <button class="role-tab active" id="tab-student" onclick="switchTab('student')">
-            <i class="ph-bold ph-student"></i> Student
-        </button>
-        <button class="role-tab" id="tab-professor" onclick="switchTab('professor')">
-            <i class="ph-bold ph-chalkboard-teacher"></i> Professor
-        </button>
-    </div>
 
     <div class="alert alert-error"   id="loginError"></div>
     <div class="alert alert-success" id="loginSuccess"></div>
 
-    <!-- STUDENT LOGIN -->
-    <div class="form-panel active" id="panel-student">
-        <form onsubmit="handleLogin(event, 'student')">
+    <!-- UNIFIED LOGIN -->
+    <div class="form-panel active" id="panel-login">
+        <form onsubmit="handleLogin(event)">
             <div class="input-group">
-                <label class="input-label">Student Number</label>
-                <input type="text" id="s_student_number" placeholder="e.g. 234-XXXXXM" required autocomplete="username">
-                <i class="ph-bold ph-identification-card input-icon"></i>
+                <label class="input-label">Student number or email</label>
+                <input type="text" id="identifier" placeholder="Student number or email" required autocomplete="username" oninput="updateIdentifierIcon(this)">
+                <i class="ph-bold ph-user input-icon" id="identifier-icon"></i>
             </div>
             <div class="input-group">
                 <label class="input-label">Password</label>
-                <input type="password" id="s_password" placeholder="Enter your password" required autocomplete="current-password">
+                <input type="password" id="login_password" placeholder="Enter your password" required autocomplete="current-password">
                 <i class="ph-bold ph-lock input-icon"></i>
-                <i class="ph-bold ph-eye toggle-pw" onclick="togglePw('s_password', this)"></i>
+                <i class="ph-bold ph-eye toggle-pw" onclick="togglePw('login_password', this)"></i>
             </div>
             <div class="forgot-link"><a href="#" onclick="showForgot()">Forgot password?</a></div>
-            <button type="submit" class="btn-submit">
-                <span class="button_lg">
-                    <span class="button_sl"></span>
-                    <span class="button_text"><i class="ph-bold ph-sign-in"></i> Sign In</span>
-                </span>
-            </button>
-        </form>
-    </div>
-
-    <!-- PROFESSOR LOGIN -->
-    <div class="form-panel" id="panel-professor">
-        <form onsubmit="handleLogin(event, 'professor')">
-            <div class="input-group">
-                <label class="input-label">Email Address</label>
-                <input type="email" id="p_email" placeholder="Enter your email" required autocomplete="email">
-                <i class="ph-bold ph-envelope input-icon"></i>
-            </div>
-            <div class="input-group">
-                <label class="input-label">Password</label>
-                <input type="password" id="p_password" placeholder="Enter your password" required autocomplete="current-password">
-                <i class="ph-bold ph-lock input-icon"></i>
-                <i class="ph-bold ph-eye toggle-pw" onclick="togglePw('p_password', this)"></i>
-            </div>
-            <p class="prof-recovery"><i class="ph-bold ph-lock-key"></i> Forgot your password? Contact your admin for a reset.</p>
             <button type="submit" class="btn-submit">
                 <span class="button_lg">
                     <span class="button_sl"></span>
@@ -422,25 +395,50 @@
 
     <!-- FORGOT PASSWORD (students only) -->
     <div class="form-panel" id="panel-forgot">
-        <p style="font-size:12px;color:var(--text-3);margin-bottom:16px;line-height:1.6;">
+        <p style="font-size:12px;color:var(--text-3);margin-bottom:10px;line-height:1.6;">
             Enter your student number and birthday to reset your password.
         </p>
+        <p style="font-size:12px;color:var(--text-3);margin-bottom:16px;line-height:1.6;background:var(--input-bg);border:1.5px solid var(--border);border-radius:8px;padding:8px 12px;">
+            <i class="ph-bold ph-chalkboard-teacher" style="margin-right:4px;"></i>
+            Professor? Contact your administrator to reset your password.
+        </p>
         <form onsubmit="handleForgot(event)">
-            <div class="input-group">
-                <label class="input-label">Student Number</label>
-                <input type="text" id="f_student_number" placeholder="e.g. 234-03631M" required>
-                <i class="ph-bold ph-identification-card input-icon"></i>
+            <div style="margin-bottom:10px;">
+                <label class="input-label"><i class="ph-bold ph-identification-card" style="margin-right:4px;"></i>Student Number</label>
+                <div class="sn-boxes">
+                    <input class="sn-box" id="f_sn0" maxlength="1" inputmode="numeric" autocomplete="off">
+                    <input class="sn-box" id="f_sn1" maxlength="1" inputmode="numeric" autocomplete="off">
+                    <input class="sn-box" id="f_sn2" maxlength="1" inputmode="numeric" autocomplete="off">
+                    <span class="sn-dash">-</span>
+                    <input class="sn-box" id="f_sn3" maxlength="1" inputmode="numeric" autocomplete="off">
+                    <input class="sn-box" id="f_sn4" maxlength="1" inputmode="numeric" autocomplete="off">
+                    <input class="sn-box" id="f_sn5" maxlength="1" inputmode="numeric" autocomplete="off">
+                    <input class="sn-box" id="f_sn6" maxlength="1" inputmode="numeric" autocomplete="off">
+                    <input class="sn-box" id="f_sn7" maxlength="1" inputmode="numeric" autocomplete="off">
+                    <input class="sn-box" id="f_sn8" maxlength="1" inputmode="alphanumeric" autocomplete="off">
+                </div>
+                <input type="hidden" id="f_student_number">
             </div>
-            <div class="input-group">
+            <div class="input-group" style="margin-bottom:10px;">
                 <label class="input-label">Birthday</label>
-                <input type="date" id="f_birthday" required>
+                <input type="text" id="f_birthday_display" placeholder="mm/dd/yyyy" maxlength="10" autocomplete="off" inputmode="numeric" style="padding-right:42px;">
                 <i class="ph-bold ph-cake input-icon"></i>
+                <i class="ph-bold ph-calendar-blank" style="position:absolute;right:13px;bottom:13px;color:var(--text-3);font-size:17px;cursor:pointer;z-index:1;" onclick="document.getElementById('f_birthday').showPicker()"></i>
+                <input type="date" id="f_birthday" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0;top:0;left:0;">
             </div>
-            <div class="input-group">
+            <div class="input-group" style="margin-bottom:4px;">
                 <label class="input-label">New Password</label>
-                <input type="password" id="f_new_password" placeholder="Min. 6 characters" required>
+                <input type="password" id="f_new_password" placeholder="Min. 8 digits" required oninput="checkForgotPw()" autocomplete="new-password">
                 <i class="ph-bold ph-lock input-icon"></i>
                 <i class="ph-bold ph-eye toggle-pw" onclick="togglePw('f_new_password', this)"></i>
+            </div>
+            <p id="f_pw_hint" style="font-size:12px;margin-bottom:8px;min-height:18px;"></p>
+            <div id="f_pw_checklist" style="display:none;background:var(--input-bg);border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:12px;">
+                <div class="pw-rule" id="f-rule-len">  <i class="ph-bold ph-x-circle"></i> At least 8 digits</div>
+                <div class="pw-rule" id="f-rule-upper"><i class="ph-bold ph-x-circle"></i> One uppercase letter</div>
+                <div class="pw-rule" id="f-rule-lower"><i class="ph-bold ph-x-circle"></i> One lowercase letter</div>
+                <div class="pw-rule" id="f-rule-num">  <i class="ph-bold ph-x-circle"></i> One number</div>
+                <div class="pw-rule" id="f-rule-spec"> <i class="ph-bold ph-x-circle"></i> One special character (!@#$% etc.)</div>
             </div>
             <button type="submit" class="btn-submit">
                 <span class="button_lg">
@@ -482,26 +480,12 @@ function applyTheme(t) {
 function toggleTheme() { applyTheme(document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'); }
 applyTheme(localStorage.getItem('physlab_theme') || 'light');
 
-// Tab switch
-let currentTab = 'student';
-function moveRoleInd(el) {
-    const ind = document.getElementById('roleTabInd');
-    if (!ind || !el) return;
-    if (!el.offsetWidth) { setTimeout(() => moveRoleInd(el), 30); return; }
-    ind.style.transform = `translateX(${el.offsetLeft}px)`;
-    ind.style.width = el.offsetWidth + 'px';
-}
-function switchTab(role) {
-    currentTab = role;
-    document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
-    const activeBtn = document.getElementById('tab-' + role);
-    activeBtn.classList.add('active');
-    moveRoleInd(activeBtn);
-    document.querySelectorAll('.form-panel').forEach(p => p.classList.remove('active'));
-    document.getElementById('panel-' + role).classList.add('active');
-    document.getElementById('switchDivider').style.display = '';
-    document.getElementById('switchText').style.display = '';
-    clearAlerts();
+function updateIdentifierIcon(input) {
+    const icon = document.getElementById('identifier-icon');
+    const v = input.value;
+    if (v.includes('@'))            icon.className = 'ph-bold ph-envelope input-icon';
+    else if (/[\d\-]/.test(v))      icon.className = 'ph-bold ph-identification-card input-icon';
+    else                            icon.className = 'ph-bold ph-user input-icon';
 }
 
 function showForgot() {
@@ -513,8 +497,11 @@ function showForgot() {
 }
 
 function showLogin() {
-    switchTab(currentTab);
-    setTimeout(() => moveRoleInd(document.querySelector('.role-tab.active')), 50);
+    document.querySelectorAll('.form-panel').forEach(p => p.classList.remove('active'));
+    document.getElementById('panel-login').classList.add('active');
+    document.getElementById('switchDivider').style.display = '';
+    document.getElementById('switchText').style.display = '';
+    clearAlerts();
 }
 
 // Utils
@@ -526,7 +513,10 @@ function togglePw(id, el) {
 function showAlert(id, msg, type) {
     const el = document.getElementById(id);
     el.className = `alert alert-${type}`;
-    el.textContent = msg;
+    const icon = type === 'error'
+        ? '<i class="ph-bold ph-x-circle"></i>'
+        : '<i class="ph-bold ph-check-circle"></i>';
+    el.innerHTML = `${icon} ${msg}`;
     el.style.display = 'flex';
     if (type === 'success') setTimeout(() => el.style.display = 'none', 3000);
 }
@@ -536,15 +526,15 @@ function clearAlerts() {
 }
 
 // Login
-async function handleLogin(e, role) {
+async function handleLogin(e) {
     e.preventDefault();
     clearAlerts();
 
-    const body = role === 'student'
-        ? { student_number: document.getElementById('s_student_number').value.trim(),
-            password: document.getElementById('s_password').value }
-        : { email: document.getElementById('p_email').value.trim(),
-            password: document.getElementById('p_password').value };
+    const identifier = document.getElementById('identifier').value.trim();
+    const password   = document.getElementById('login_password').value;
+    const body = identifier.includes('@')
+        ? { email: identifier, password }
+        : { student_number: identifier, password };
 
     const btn = e.target.querySelector('.btn-submit');
     btn.querySelector('.button_text').innerHTML = '<i class="ph-bold ph-spinner"></i> Signing in...';
@@ -588,6 +578,81 @@ async function handleLogin(e, role) {
     }
 }
 
+// ── Forgot: Student number boxes ──
+(function() {
+    const boxes = Array.from({length:9}, (_,i) => document.getElementById('f_sn'+i));
+    const hidden = document.getElementById('f_student_number');
+    if (!boxes[0]) return;
+    function syncHidden() {
+        const v = boxes.map(b => b.value.toUpperCase());
+        hidden.value = v.slice(0,3).join('') + '-' + v.slice(3).join('');
+    }
+    boxes.forEach((box, i) => {
+        box.addEventListener('keydown', e => {
+            if (e.key === 'Backspace' && !box.value && i > 0) { boxes[i-1].focus(); boxes[i-1].value = ''; syncHidden(); }
+        });
+        box.addEventListener('input', () => {
+            let val = box.value.toUpperCase();
+            const valid = i === 8 ? /^[0-9A-Z]$/.test(val) : /^[0-9]$/.test(val);
+            if (!valid) { box.value = ''; box.classList.add('error'); setTimeout(() => box.classList.remove('error'), 800); }
+            else { box.value = val; box.classList.remove('error'); if (i < 8) boxes[i+1].focus(); }
+            syncHidden();
+        });
+        box.addEventListener('paste', e => {
+            e.preventDefault();
+            const raw = (e.clipboardData.getData('text')||'').replace(/-/g,'').toUpperCase().slice(0,9);
+            raw.split('').forEach((ch,j) => { if (j<9 && (j===8?/^[0-9A-Z]$/:/ ^[0-9]$/).test(ch)) boxes[j].value=ch; });
+            syncHidden();
+            const next = boxes.find((b,j) => j >= raw.length && !b.value);
+            if (next) next.focus(); else boxes[8].focus();
+        });
+    });
+})();
+
+// ── Forgot: Birthday mask ──
+(function() {
+    const display = document.getElementById('f_birthday_display');
+    const hidden  = document.getElementById('f_birthday');
+    if (!display) return;
+    display.addEventListener('input', () => {
+        let v = display.value.replace(/\D/g,'').slice(0,8);
+        if (v.length >= 5)      v = v.slice(0,2)+'/'+v.slice(2,4)+'/'+v.slice(4);
+        else if (v.length >= 3) v = v.slice(0,2)+'/'+v.slice(2);
+        display.value = v;
+        const p = display.value.split('/');
+        if (p.length===3 && p[2].length===4) hidden.value = `${p[2]}-${p[0].padStart(2,'0')}-${p[1].padStart(2,'0')}`;
+    });
+    hidden.addEventListener('change', () => {
+        const [y,m,d] = hidden.value.split('-');
+        display.value = `${m}/${d}/${y}`;
+    });
+})();
+
+// ── Forgot: Password checker ──
+function checkForgotPw() {
+    const val  = document.getElementById('f_new_password').value;
+    const hint = document.getElementById('f_pw_hint');
+    const cl   = document.getElementById('f_pw_checklist');
+    if (!val) { hint.textContent=''; cl.style.display='none'; return; }
+    cl.style.display = 'block';
+    const rules = {
+        'f-rule-len':   val.length >= 8,
+        'f-rule-upper': /[A-Z]/.test(val),
+        'f-rule-lower': /[a-z]/.test(val),
+        'f-rule-num':   /[0-9]/.test(val),
+        'f-rule-spec':  /[^A-Za-z0-9]/.test(val),
+    };
+    Object.entries(rules).forEach(([id, met]) => {
+        const el = document.getElementById(id);
+        el.classList.toggle('met', met);
+        el.querySelector('i').className = met ? 'ph-bold ph-check-circle' : 'ph-bold ph-x-circle';
+    });
+    const mc = Object.values(rules).filter(Boolean).length;
+    if (mc <= 2)      { hint.innerHTML='<i class="ph-bold ph-warning"></i> Weak';   hint.style.color='#fca5a5'; }
+    else if (mc <= 4) { hint.innerHTML='<i class="ph-bold ph-check"></i> Good';     hint.style.color='#fcd34d'; }
+    else              { hint.innerHTML='<i class="ph-bold ph-check-circle"></i> Strong'; hint.style.color='#6ee7b7'; }
+}
+
 // Forgot Password
 async function handleForgot(e) {
     e.preventDefault();
@@ -596,6 +661,15 @@ async function handleForgot(e) {
     const student_number = document.getElementById('f_student_number').value.trim();
     const birthday       = document.getElementById('f_birthday').value;
     const new_password   = document.getElementById('f_new_password').value;
+
+    const boxes = Array.from({length:9}, (_,i) => document.getElementById('f_sn'+i));
+    if (boxes.some(b => !b.value)) { showAlert('loginError','Please complete your student number.','error'); boxes.filter(b=>!b.value).forEach(b=>b.classList.add('error')); return; }
+    if (!birthday) { showAlert('loginError','Please enter your birthday.','error'); return; }
+    if (new_password.length < 8)           { showAlert('loginError','Password must be at least 8 digits.','error'); return; }
+    if (!/[A-Z]/.test(new_password))       { showAlert('loginError','Password needs an uppercase letter.','error'); return; }
+    if (!/[a-z]/.test(new_password))       { showAlert('loginError','Password needs a lowercase letter.','error'); return; }
+    if (!/[0-9]/.test(new_password))       { showAlert('loginError','Password needs a number.','error'); return; }
+    if (!/[^A-Za-z0-9]/.test(new_password)){ showAlert('loginError','Password needs a special character.','error'); return; }
 
     const btn = e.target.querySelector('.btn-submit');
     btn.querySelector('.button_text').innerHTML = '<i class="ph-bold ph-spinner"></i> Resetting...';

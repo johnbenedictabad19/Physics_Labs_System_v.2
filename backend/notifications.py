@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from database import db
-from models import Notification
+from models import Notification, User
 
 notifications_bp = Blueprint('notifications', __name__)
 
@@ -9,6 +9,9 @@ notifications_bp = Blueprint('notifications', __name__)
 def notify(user_id, message, link, notif_type):
     """Create a notification and push it in real-time."""
     try:
+        user = User.query.get(user_id)
+        if user and user.notifications_enabled is False:
+            return
         n = Notification(user_id=user_id, message=message, link=link, notif_type=notif_type)
         db.session.add(n)
         db.session.commit()

@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from database import db
-from models import Class, ClassMember, User, Group, GroupMember, ClassSession, SessionAttendance, ClassInvite
+from models import Class, ClassMember, ClassTeacher, User, Group, GroupMember, ClassSession, SessionAttendance, ClassInvite
 from datetime import datetime
 import random
 import string
@@ -142,7 +142,8 @@ def get_my_classes():
                 'class_code': c.class_code,
                 'professor_name': professor.full_name,
                 'theme': c.theme or 0,
-                'banner_image': c.banner_image or ''
+                'banner_image': c.banner_image or '',
+                'enrollment_status': m.enrollment_status or 'approved'
             })
         db.session.commit()
 
@@ -227,26 +228,127 @@ def join_class():
 
     already_joined = ClassMember.query.filter_by(class_id=c.id, student_id=user.id).first()
     if already_joined:
+        if already_joined.enrollment_status == 'pending':
+            return jsonify({'message': 'Your request is still pending approval!'}), 400
+        if already_joined.enrollment_status == 'rejected':
+            return jsonify({'message': 'Your request was declined by the professor.'}), 400
         return jsonify({'message': 'You are already a member of this class!'}), 400
 
-    new_member = ClassMember(class_id=c.id, student_id=user.id)
+    status = 'approved' if c.auto_accept else 'pending'
+    new_member = ClassMember(class_id=c.id, student_id=user.id, enrollment_status=status)
     db.session.add(new_member)
     db.session.commit()
 
     # Notify professor
     try:
         from notifications import notify
-        notify(c.professor_id,
-               f'{user.full_name} joined your class {c.class_name}',
-               f'/class_detail?id={c.id}', 'joined')
+        if status == 'approved':
+            notify(c.professor_id,
+                   f'{user.full_name} joined your class {c.class_name}',
+                   f'/class_detail?id={c.id}', 'joined')
+        else:
+            notify(c.professor_id,
+                   f'{user.full_name} requested to join {c.class_name}',
+                   f'/class_detail?id={c.id}', 'joined')
     except Exception:
         pass
 
+    if status == 'pending':
+        return jsonify({
+            'message': f'Request sent! Waiting for professor\'s approval.',
+            'status': 'pending',
+            'class_name': c.class_name,
+            'subject': c.subject
+        }), 200
+
     return jsonify({
         'message': f'Successfully joined {c.class_name}!',
+        'status': 'approved',
         'class_name': c.class_name,
         'subject': c.subject
     }), 200
+
+
+# ===== PENDING REQUESTS =====
+@classes.route('/<int:class_id>/pending', methods=['GET'])
+@jwt_required()
+def get_pending(class_id):
+    user_id = int(get_jwt_identity())
+    c = Class.query.get(class_id)
+    if not c or not _is_class_prof(c.id, user_id):
+        return jsonify({'message': 'Unauthorized'}), 403
+    pending = ClassMember.query.filter_by(class_id=class_id, enrollment_status='pending').all()
+    result = []
+    for m in pending:
+        s = User.query.get(m.student_id)
+        if s:
+            result.append({
+                'member_id': m.id,
+                'student_id': s.id,
+                'full_name': s.full_name,
+                'student_number': s.student_number or '—',
+                'avatar': s.avatar or None,
+                'requested_at': m.joined_at.isoformat() + 'Z'
+            })
+    return jsonify(result), 200
+
+
+@classes.route('/<int:class_id>/approve/<int:member_id>', methods=['POST'])
+@jwt_required()
+def approve_member(class_id, member_id):
+    user_id = int(get_jwt_identity())
+    c = Class.query.get(class_id)
+    if not c or not _is_class_prof(c.id, user_id):
+        return jsonify({'message': 'Unauthorized'}), 403
+    m = ClassMember.query.filter_by(id=member_id, class_id=class_id).first()
+    if not m:
+        return jsonify({'message': 'Request not found'}), 404
+    m.enrollment_status = 'approved'
+    db.session.commit()
+    try:
+        from notifications import notify
+        student = User.query.get(m.student_id)
+        notify(m.student_id,
+               f'Your request to join {c.class_name} was approved!',
+               f'/class_detail?id={c.id}', 'joined')
+    except Exception:
+        pass
+    return jsonify({'message': 'Student approved!'}), 200
+
+
+@classes.route('/<int:class_id>/reject/<int:member_id>', methods=['POST'])
+@jwt_required()
+def reject_member(class_id, member_id):
+    user_id = int(get_jwt_identity())
+    c = Class.query.get(class_id)
+    if not c or not _is_class_prof(c.id, user_id):
+        return jsonify({'message': 'Unauthorized'}), 403
+    m = ClassMember.query.filter_by(id=member_id, class_id=class_id).first()
+    if not m:
+        return jsonify({'message': 'Request not found'}), 404
+    m.enrollment_status = 'rejected'
+    db.session.commit()
+    try:
+        from notifications import notify
+        notify(m.student_id,
+               f'Your request to join {c.class_name} was declined.',
+               f'/login', 'joined')
+    except Exception:
+        pass
+    return jsonify({'message': 'Student rejected!'}), 200
+
+
+@classes.route('/<int:class_id>/auto-accept', methods=['POST'])
+@jwt_required()
+def toggle_auto_accept(class_id):
+    user_id = int(get_jwt_identity())
+    c = Class.query.get(class_id)
+    if not c or not _is_class_prof(c.id, user_id):
+        return jsonify({'message': 'Unauthorized'}), 403
+    data = request.get_json()
+    c.auto_accept = bool(data.get('auto_accept', True))
+    db.session.commit()
+    return jsonify({'auto_accept': c.auto_accept}), 200
 
 
 # ===== GET CLASS DETAIL =====
@@ -269,7 +371,8 @@ def get_class_detail(class_id):
         'professor_email':  professor.email     if professor else '—',
         'professor_avatar': professor.avatar    if professor else '',
         'theme':        c.theme or 0,
-        'banner_image': c.banner_image or ''
+        'banner_image': c.banner_image or '',
+        'auto_accept':  c.auto_accept if c.auto_accept is not None else True
     }), 200
 
 
@@ -283,7 +386,7 @@ def update_class(class_id):
     c = Class.query.get(class_id)
     if not c:
         return jsonify({'message': 'Class not found!'}), 404
-    if c.professor_id != user.id:
+    if not _is_class_prof(c.id, user.id):
         return jsonify({'message': 'Not authorized!'}), 403
 
     data = request.get_json()
@@ -305,6 +408,8 @@ def get_students(class_id):
     members = ClassMember.query.filter_by(class_id=class_id).order_by(ClassMember.joined_at.asc()).all()
     result = []
     for index, m in enumerate(members):
+        if m.enrollment_status == 'pending':
+            continue
         student = User.query.get(m.student_id)
         result.append({
             'id': student.id,
@@ -314,8 +419,35 @@ def get_students(class_id):
             'role': student.role,
             'joined_at': m.joined_at.strftime('%b %d, %Y'),
             'number': index + 1,
-            'avatar': student.avatar or ''
+            'avatar': student.avatar or '',
+            'enrollment_status': m.enrollment_status
         })
+    return jsonify(result), 200
+
+
+# ===== CO-TEACHERS LIST =====
+@classes.route('/<int:class_id>/teachers', methods=['GET'])
+@jwt_required()
+def get_teachers(class_id):
+    c = Class.query.get(class_id)
+    if not c:
+        return jsonify([]), 200
+    result = []
+    main = User.query.get(c.professor_id)
+    if main:
+        result.append({
+            'id': main.id, 'full_name': main.full_name,
+            'email': main.email or '', 'avatar': main.avatar or '',
+            'is_owner': True
+        })
+    for ct in ClassTeacher.query.filter_by(class_id=class_id).all():
+        t = User.query.get(ct.teacher_id)
+        if t:
+            result.append({
+                'id': t.id, 'full_name': t.full_name,
+                'email': t.email or '', 'avatar': t.avatar or '',
+                'is_owner': False, 'joined_at': ct.joined_at.strftime('%b %d, %Y')
+            })
     return jsonify(result), 200
 
 
@@ -731,6 +863,28 @@ def grade_group_submission(class_id, group_id):
                 graded_count += 1
 
     db.session.commit()
+
+    # Notify all graded members via WebSocket + in-app notification
+    try:
+        from extensions import socketio as _sio
+        from notifications import notify
+        act_title = activity.title if activity else ''
+        for gm in group.members:
+            _sio.emit('submission_graded', {
+                'student_id':  gm.student_id,
+                'activity_id': activity_id,
+                'grade':       float(grade),
+                'feedback':    feedback or '',
+            }, namespace='/')
+            try:
+                notify(gm.student_id,
+                       f'Your submission for "{act_title}" has been graded',
+                       f'/activity?id={activity_id}', 'grade')
+            except Exception as e:
+                print(f'[grade_group notify] {e}')
+    except Exception as e:
+        print(f'[grade_group emit] {e}')
+
     return jsonify({
         'message': f'Graded {graded_count} member(s) in group!',
         'grade': grade,
@@ -790,7 +944,7 @@ def delete_class(class_id):
     c = Class.query.get(class_id)
     if not c:
         return jsonify({'message': 'Class not found!'}), 404
-    if c.professor_id != user.id:
+    if not _is_class_prof(c.id, user.id):
         return jsonify({'message': 'Not authorized!'}), 403
     # Cascade delete all related records
     from models import Activity, Submission, EditedContent, StreamPost, StreamComment, FeedEvent, Group, ClassSession, Announcement
@@ -828,7 +982,7 @@ def archive_class(class_id):
     c = Class.query.get(class_id)
     if not c:
         return jsonify({'message': 'Class not found!'}), 404
-    if c.professor_id != user.id:
+    if not _is_class_prof(c.id, user.id):
         return jsonify({'message': 'Not authorized!'}), 403
     c.is_archived = not c.is_archived
     db.session.commit()
@@ -846,7 +1000,7 @@ def duplicate_class(class_id):
     c = Class.query.get(class_id)
     if not c:
         return jsonify({'message': 'Class not found!'}), 404
-    if c.professor_id != user.id:
+    if not _is_class_prof(c.id, user.id):
         return jsonify({'message': 'Not authorized!'}), 403
     new_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6))
     while Class.query.filter_by(class_code=new_code).first():
@@ -879,6 +1033,21 @@ def unenroll_class(class_id):
     return jsonify({'message': 'Successfully unenrolled!'}), 200
 
 
+# ===== REMOVE STUDENT (professor) =====
+@classes.route('/<int:class_id>/students/<int:student_id>', methods=['DELETE'])
+@jwt_required()
+def remove_student(class_id, student_id):
+    user_id = int(get_jwt_identity())
+    if not _is_class_prof(class_id, user_id):
+        return jsonify({'message': 'Not authorized!'}), 403
+    m = ClassMember.query.filter_by(class_id=class_id, student_id=student_id).first()
+    if not m:
+        return jsonify({'message': 'Student not found in this class!'}), 404
+    db.session.delete(m)
+    db.session.commit()
+    return jsonify({'message': 'Student removed!'}), 200
+
+
 # ============================================================
 # ANALYTICS
 # ============================================================
@@ -908,7 +1077,7 @@ def get_analytics(class_id):
     act_list = [{'id': a.id, 'label': act_labels[a.id], 'title': a.title} for a in activities]
 
     if user.role == 'professor':
-        if c.professor_id != user_id:
+        if not _is_class_prof(class_id, user_id):
             return jsonify({'message': 'Not authorized!'}), 403
 
         members = ClassMember.query.filter_by(class_id=class_id).all()
@@ -1045,6 +1214,13 @@ def get_analytics(class_id):
 # INVITES
 # ============================================================
 
+def _is_class_prof(class_id, user_id):
+    c = Class.query.get(class_id)
+    if c and c.professor_id == user_id:
+        return True
+    return ClassTeacher.query.filter_by(class_id=class_id, teacher_id=user_id).first() is not None
+
+
 # ===== LOOKUP STUDENT (before sending invite) =====
 @classes.route('/<int:class_id>/invite/lookup', methods=['GET'])
 @jwt_required()
@@ -1054,7 +1230,7 @@ def invite_lookup(class_id):
     if user.role != 'professor':
         return jsonify({'message': 'Only professors can invite students!'}), 403
     c = Class.query.get(class_id)
-    if not c or c.professor_id != user.id:
+    if not c or not _is_class_prof(class_id, user.id):
         return jsonify({'message': 'Not authorized!'}), 403
 
     sn = request.args.get('student_number', '').strip()
@@ -1088,7 +1264,7 @@ def send_invite(class_id):
     if user.role != 'professor':
         return jsonify({'message': 'Only professors can invite students!'}), 403
     c = Class.query.get(class_id)
-    if not c or c.professor_id != user.id:
+    if not c or not _is_class_prof(c.id, user.id):
         return jsonify({'message': 'Not authorized!'}), 403
 
     data = request.get_json()
@@ -1130,7 +1306,7 @@ def get_class_invites(class_id):
     if user.role != 'professor':
         return jsonify({'message': 'Not authorized!'}), 403
     c = Class.query.get(class_id)
-    if not c or c.professor_id != user.id:
+    if not c or not _is_class_prof(c.id, user.id):
         return jsonify({'message': 'Not authorized!'}), 403
 
     invites = ClassInvite.query.filter_by(class_id=class_id, status='pending').all()
@@ -1156,7 +1332,7 @@ def cancel_invite(class_id, invite_id):
     user_id = get_jwt_identity()
     user = User.query.get(int(user_id))
     c = Class.query.get(class_id)
-    if not c or c.professor_id != user.id:
+    if not c or not _is_class_prof(c.id, user.id):
         return jsonify({'message': 'Not authorized!'}), 403
 
     invite = ClassInvite.query.filter_by(id=invite_id, class_id=class_id).first()
@@ -1166,6 +1342,92 @@ def cancel_invite(class_id, invite_id):
     db.session.delete(invite)
     db.session.commit()
     return jsonify({'message': 'Invite cancelled!'}), 200
+
+
+# ===== LOOKUP TEACHER (before sending invite) =====
+@classes.route('/<int:class_id>/invite/lookup-teacher', methods=['GET'])
+@jwt_required()
+def invite_lookup_teacher(class_id):
+    user_id = get_jwt_identity()
+    user = User.query.get(int(user_id))
+    if user.role != 'professor':
+        return jsonify({'message': 'Only professors can invite teachers!'}), 403
+    if not _is_class_prof(class_id, user.id):
+        return jsonify({'message': 'Not authorized!'}), 403
+    email = request.args.get('email', '').strip().lower()
+    if not email:
+        return jsonify({'message': 'Email is required!'}), 400
+    teacher = User.query.filter(User.email.ilike(email), User.role == 'professor').first()
+    if not teacher:
+        return jsonify({'message': 'No professor found with that email!'}), 404
+    if teacher.id == user.id:
+        return jsonify({'message': 'You cannot invite yourself!'}), 400
+    c = Class.query.get(class_id)
+    if c and c.professor_id == teacher.id:
+        return jsonify({'message': 'This professor is already the class owner!'}), 400
+    if ClassTeacher.query.filter_by(class_id=class_id, teacher_id=teacher.id).first():
+        return jsonify({'message': 'This professor is already a co-teacher!'}), 400
+    if ClassInvite.query.filter_by(class_id=class_id, student_id=teacher.id, invite_type='teacher', status='pending').first():
+        return jsonify({'message': 'An invite is already pending for this professor!'}), 400
+    return jsonify({'id': teacher.id, 'full_name': teacher.full_name, 'email': teacher.email, 'avatar': teacher.avatar or ''}), 200
+
+
+@classes.route('/<int:class_id>/invite-teacher', methods=['POST'])
+@jwt_required()
+def send_teacher_invite(class_id):
+    user_id = get_jwt_identity()
+    user = User.query.get(int(user_id))
+    if user.role != 'professor':
+        return jsonify({'message': 'Only professors can invite teachers!'}), 403
+    if not _is_class_prof(class_id, user.id):
+        return jsonify({'message': 'Not authorized!'}), 403
+    data = request.get_json()
+    teacher_id = data.get('teacher_id')
+    teacher = User.query.get(teacher_id)
+    if not teacher or teacher.role != 'professor':
+        return jsonify({'message': 'Teacher not found!'}), 404
+    c = Class.query.get(class_id)
+    if not c:
+        return jsonify({'message': 'Class not found!'}), 404
+    if ClassTeacher.query.filter_by(class_id=class_id, teacher_id=teacher.id).first():
+        return jsonify({'message': 'Already a co-teacher!'}), 400
+    if ClassInvite.query.filter_by(class_id=class_id, student_id=teacher.id, invite_type='teacher', status='pending').first():
+        return jsonify({'message': 'Invite already pending!'}), 400
+    invite = ClassInvite(class_id=class_id, student_id=teacher.id, invited_by=user.id, invite_type='teacher')
+    db.session.add(invite)
+    db.session.commit()
+    try:
+        from notifications import notify
+        notify(teacher.id,
+               f'{user.full_name} invited you to co-teach {c.class_name}',
+               f'invite:{invite.id}',
+               'invite')
+    except Exception as e:
+        print(f'[invite-teacher] notify error: {e}')
+    return jsonify({'message': f'Invite sent to {teacher.full_name}!', 'invite_id': invite.id}), 201
+
+
+@classes.route('/<int:class_id>/teacher-invites', methods=['GET'])
+@jwt_required()
+def get_teacher_invites(class_id):
+    user_id = get_jwt_identity()
+    user = User.query.get(int(user_id))
+    if not _is_class_prof(class_id, user.id):
+        return jsonify([]), 200
+    invites = ClassInvite.query.filter_by(class_id=class_id, invite_type='teacher', status='pending').all()
+    result = []
+    for inv in invites:
+        t = User.query.get(inv.student_id)
+        if t:
+            result.append({
+                'invite_id': inv.id,
+                'teacher_id': t.id,
+                'full_name': t.full_name,
+                'email': t.email or '',
+                'avatar': t.avatar or '',
+                'sent_at': inv.created_at.strftime('%b %d, %Y')
+            })
+    return jsonify(result), 200
 
 
 # ===== RESPOND TO INVITE (student: accept/decline) =====
@@ -1191,14 +1453,18 @@ def respond_invite(invite_id):
     invite.status = 'accepted' if action == 'accept' else 'declined'
 
     if action == 'accept':
-        if not ClassMember.query.filter_by(class_id=invite.class_id, student_id=user.id).first():
-            db.session.add(ClassMember(class_id=invite.class_id, student_id=user.id))
         c = Class.query.get(invite.class_id)
+        if invite.invite_type == 'teacher':
+            if not ClassTeacher.query.filter_by(class_id=invite.class_id, teacher_id=user.id).first():
+                db.session.add(ClassTeacher(class_id=invite.class_id, teacher_id=user.id))
+        else:
+            if not ClassMember.query.filter_by(class_id=invite.class_id, student_id=user.id).first():
+                db.session.add(ClassMember(class_id=invite.class_id, student_id=user.id))
         try:
             from notifications import notify
             from extensions import socketio
             notify(c.professor_id,
-                   f'{user.full_name} accepted your invite to {c.class_name}',
+                   f'{user.full_name} accepted your invite to co-teach {c.class_name}' if invite.invite_type == 'teacher' else f'{user.full_name} accepted your invite to {c.class_name}',
                    f'/class_detail?id={c.id}',
                    'joined')
             socketio.emit('student_joined', {'class_id': invite.class_id}, namespace='/')
@@ -1206,7 +1472,6 @@ def respond_invite(invite_id):
             print(f'[invite] accept notify error: {e}')
 
     db.session.commit()
-    c = Class.query.get(invite.class_id)
     return jsonify({
         'message': 'Invite accepted!' if action == 'accept' else 'Invite declined.',
         'class_id': invite.class_id,
@@ -1214,28 +1479,26 @@ def respond_invite(invite_id):
     }), 200
 
 
-# ===== GET PENDING INVITES FOR STUDENT =====
+# ===== GET PENDING INVITES FOR STUDENT/PROFESSOR =====
 @classes.route('/invites/pending', methods=['GET'])
 @jwt_required()
 def get_pending_invites():
     user_id = get_jwt_identity()
     user = User.query.get(int(user_id))
-    if user.role != 'student':
-        return jsonify([]), 200
-
     invites = ClassInvite.query.filter_by(student_id=user.id, status='pending').all()
     result = []
     for inv in invites:
         c = Class.query.get(inv.class_id)
-        prof = User.query.get(inv.invited_by) if c else None
-        if c and prof:
+        inviter = User.query.get(inv.invited_by) if c else None
+        if c and inviter:
             result.append({
-                'invite_id': inv.id,
-                'class_id': c.id,
-                'class_name': c.class_name,
-                'subject': c.subject,
-                'section': c.section,
-                'professor_name': prof.full_name,
-                'sent_at': inv.created_at.strftime('%b %d, %Y')
+                'invite_id':      inv.id,
+                'class_id':       c.id,
+                'class_name':     c.class_name,
+                'subject':        c.subject,
+                'section':        c.section,
+                'professor_name': inviter.full_name,
+                'invite_type':    inv.invite_type or 'student',
+                'sent_at':        inv.created_at.strftime('%b %d, %Y')
             })
     return jsonify(result), 200

@@ -118,7 +118,9 @@ def get_parsed(activity_id):
         }), 404
     try:
         data = json.loads(activity.parsed_content)
-        data['class_id'] = activity.class_id   # inject so frontend can fetch groups without URL param
+        data['class_id'] = activity.class_id
+        data['title']    = activity.title
+        data['file_type'] = activity.file_type
         return jsonify(data), 200
     except (json.JSONDecodeError, TypeError):
         return jsonify({'message': 'Activity data is corrupted. Please re-upload.'}), 500
@@ -282,7 +284,71 @@ def create_manual(class_id):
 
     return jsonify({'message': 'Activity created!', 'id': new_activity.id}), 201
 
+def _is_json_safe_list(value):
+    return isinstance(value, list)
 
+
+def _is_non_empty_list(value):
+    return isinstance(value, list) and len(value) > 0
+
+
+def _safe_merge_docx_sections(activity, docx_sections):
+    """
+    Merge normalized DOCX editor sections into parsed_content without replacing
+    unrelated parser output. Invalid payloads are ignored as a safe fallback.
+    """
+    if not isinstance(docx_sections, dict) or not docx_sections:
+        return False
+    if not activity.parsed_content:
+        return False
+
+    try:
+        parsed = json.loads(activity.parsed_content)
+    except (TypeError, json.JSONDecodeError):
+        return False
+
+    sections = parsed.get('sections')
+    if not isinstance(sections, list):
+        return False
+
+    section_by_type = {}
+    for sec in sections:
+        if isinstance(sec, dict) and sec.get('type'):
+            section_by_type[sec['type']] = sec
+
+    applied = False
+    structured_section_types = ('materials', 'procedures', 'guide_questions')
+    for s_type in structured_section_types:
+        incoming = docx_sections.get(s_type)
+        if not isinstance(incoming, dict):
+            continue
+        existing = section_by_type.get(s_type)
+        content = incoming.get('content')
+        view_html = incoming.get('view_html')
+        # Safe fallback: never replace parsed section with empty extracted payload.
+        if not existing or not _is_non_empty_list(content):
+            continue
+        existing['content'] = content
+        if isinstance(view_html, str) and view_html.strip():
+            existing['view_html'] = view_html
+        applied = True
+
+    ds_incoming = docx_sections.get('data_sheet')
+    ds_existing = section_by_type.get('data_sheet')
+    if isinstance(ds_incoming, dict) and ds_existing:
+        ds_view = ds_incoming.get('view_html')
+        ds_tables = ds_incoming.get('tables')
+        # Data sheet in edit mode can yield empty tables if cells are still in render wrappers.
+        # Ignore empty extraction to preserve original parsed table structure.
+        if _is_non_empty_list(ds_tables):
+            parsed['tables'] = ds_tables
+            if isinstance(ds_view, str) and ds_view.strip():
+                ds_existing['view_html'] = ds_view
+            applied = True
+
+    if applied:
+        activity.parsed_content = json.dumps(parsed)
+    return applied
 
 
 # ===== UPDATE ACTIVITY (Option B — preserve original parsed_content, save text overlays only) =====
@@ -332,9 +398,17 @@ def update_activity(activity_id):
                     content_html=html
                 ))
 
+    # For DOCX activities, merge structured section edits only when payload is valid.
+    if activity.file_type == 'docx':
+        _safe_merge_docx_sections(activity, data.get('docx_sections'))
+
     # For manual activities (no original parsed_content with images) — full update
     if activity.file_type == 'manual':
-        activity_data = data.get('activity_data', {})
+        activity_data = data.get('activity_data')
+        if not isinstance(activity_data, dict) or not activity_data:
+            return jsonify({
+                'message': 'Manual activity updates require non-empty activity_data.'
+            }), 400
         try:
             parsed_content = {
                 'sections': build_sections_from_manual(activity_data),

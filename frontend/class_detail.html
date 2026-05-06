@@ -377,6 +377,34 @@
                 transform: translateX(3px);
             }
             .student-num { font-size: 12px; font-weight: 700; color: var(--text-3); min-width: 22px; text-align: center; }
+            .student-action-wrap { position: relative; flex-shrink: 0; }
+            .student-dots-btn {
+                background: transparent; border: 1px solid transparent; cursor: pointer;
+                color: var(--text-3); width: 32px; height: 32px; border-radius: 8px;
+                display: flex; align-items: center; justify-content: center; font-size: 18px;
+                transition: background 0.18s, border-color 0.18s, color 0.18s;
+            }
+            .student-dots-btn:hover {
+                background: rgba(239,68,68,0.08); border-color: rgba(239,68,68,0.2); color: #ef4444;
+            }
+            .student-action-menu {
+                position: absolute; right: 0; top: 38px; z-index: 200;
+                background: #1e2a38; border: 1px solid var(--border); border-radius: 10px;
+                box-shadow: 0 8px 28px rgba(0,0,0,0.28); min-width: 170px; overflow: hidden;
+                opacity: 0; transform: translateY(-6px) scale(0.97);
+                pointer-events: none; transition: opacity 0.15s ease, transform 0.15s ease;
+            }
+            [data-theme="light"] .student-action-menu { background: #ffffff; }
+            .student-action-menu.open {
+                opacity: 1; transform: translateY(0) scale(1); pointer-events: auto;
+            }
+            .student-action-menu button {
+                display: flex; align-items: center; gap: 9px; width: 100%; padding: 10px 14px;
+                background: transparent; border: none; cursor: pointer; font-size: 13px;
+                font-weight: 600; color: #ef4444; transition: background 0.15s;
+                font-family: inherit;
+            }
+            .student-action-menu button:hover { background: rgba(239,68,68,0.09); }
             .student-avatar-lg {
                 width: 42px; height: 42px;
                 border-radius: 12px;
@@ -1156,7 +1184,8 @@
                 font-size: 11px; font-weight: 700; letter-spacing: 0.2px;
                 font-family: 'Inter', sans-serif; white-space: nowrap; flex-shrink: 0;
             }
-            .cd-status-pill.s-pending   { background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.4); border: 1.5px solid rgba(255,255,255,0.08); }
+            .cd-status-pill.s-pending   { background: rgba(148,163,184,0.12); color: #94a3b8; border: 1.5px solid rgba(148,163,184,0.25); }
+            [data-theme="light"] .cd-status-pill.s-pending { background: rgba(100,116,139,0.08); color: #64748b; border: 1.5px solid rgba(100,116,139,0.25); }
             .cd-status-pill.s-progress  { background: rgba(245,158,11,0.12); color: #fcd34d; border: 1.5px solid rgba(245,158,11,0.25); }
             .cd-status-pill.s-submitted { background: rgba(59,130,246,0.12); color: #93c5fd; border: 1.5px solid rgba(59,130,246,0.25); }
             .cd-status-pill.s-graded    { background: rgba(16,185,129,0.12); color: #6ee7b7; border: 1.5px solid rgba(16,185,129,0.1); }
@@ -1225,8 +1254,29 @@
             .stream-post-avatar.student { background: #10b981; }
             .stream-post-name { font-size: 14px; font-weight: 700; color: var(--text); font-family: 'Inter', sans-serif; }
             .stream-post-meta { font-size: 11px; color: var(--text-3); margin-top: 2px; display: flex; align-items: center; gap: 5px; }
-            .stream-post-delete { background: none; border: none; color: var(--text-3); cursor: pointer; padding: 4px; border-radius: 6px; font-size: 16px; transition: color 0.2s; flex-shrink: 0; }
-            .stream-post-delete:hover { color: #fca5a5; }
+            .stream-post-menu-wrap { position: relative; }
+            .stream-post-menu-btn {
+                background: none; border: none; color: var(--text-3); cursor: pointer;
+                padding: 4px; border-radius: 6px; font-size: 16px; transition: all 0.2s;
+                display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+            }
+            .stream-post-menu-btn:hover { background: var(--input-bg); color: var(--text); }
+            .stream-post-dropdown {
+                display: none; position: absolute; right: 0; top: calc(100% + 6px);
+                background: var(--surface); border: 1.5px solid var(--border);
+                border-radius: 10px; min-width: 140px; z-index: 500;
+                box-shadow: 0 8px 24px rgba(0,0,0,0.18); overflow: hidden;
+            }
+            .stream-post-dropdown.open { display: block; }
+            .stream-post-option {
+                display: flex; align-items: center; gap: 10px;
+                padding: 10px 14px; font-size: 13px; font-weight: 600;
+                color: var(--text-2); cursor: pointer; font-family: 'Inter', sans-serif;
+                transition: background 0.12s; border: none; background: none; width: 100%; text-align: left;
+            }
+            .stream-post-option:hover { background: var(--input-bg); color: var(--text); }
+            .stream-post-option.delete { color: #fca5a5; }
+            .stream-post-option.delete:hover { background: rgba(239,68,68,0.1); color: #f87171; }
             .stream-post-message { padding: 0 18px 14px; font-size: 14px; color: var(--text-2); font-family: 'Inter', sans-serif; line-height: 1.65; white-space: pre-wrap; }
 
             .stream-activity-card {
@@ -1837,11 +1887,43 @@
 
                 <!-- Teachers sub-tab -->
                 <div id="people-teachers" style="display:none;">
+                    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px;">
+                        <h3 class="db-section-title"><i class="ph-bold ph-chalkboard-teacher"></i> Teachers</h3>
+                        <button class="btn-anim" id="btnInviteTeacher" style="display:none;--bsa-color:#8b5cf6;--bsa-border:rgba(139,92,246,0.3);" onclick="openInviteTeacherModal()">
+                            <span class="bsa-span"></span>
+                            <div class="bsa-inner">
+                                <div class="bsa-default"><i class="ph-bold ph-paper-plane-tilt"></i> Invite Teacher</div>
+                                <div class="bsa-hover"><i class="ph-bold ph-paper-plane-tilt"></i> Invite Teacher</div>
+                            </div>
+                            <span class="bsa-sizer"><i class="ph-bold ph-paper-plane-tilt"></i> Invite Teacher</span>
+                        </button>
+                    </div>
                     <div id="teachersList"></div>
+                    <div id="pendingTeacherInvitesList"></div>
                 </div>
 
                 <!-- Students sub-tab -->
                 <div id="people-students">
+                    <!-- Auto-accept toggle (professor only) -->
+                    <div id="autoAcceptBar" style="display:none;align-items:center;justify-content:space-between;background:var(--input-bg);border:1.5px solid var(--border);border-radius:10px;padding:10px 16px;margin-bottom:14px;">
+                        <div>
+                            <div style="font-size:13px;font-weight:600;"><i class="ph-bold ph-toggle-left" style="margin-right:5px;"></i> Enrollment Approval</div>
+                            <div style="font-size:11px;color:var(--text-3);margin-top:2px;" id="autoAcceptDesc">Students are auto-enrolled when they join.</div>
+                        </div>
+                        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:12px;font-weight:600;color:var(--text-3);">
+                            <span id="autoAcceptLabel">Auto</span>
+                            <div style="position:relative;width:40px;height:22px;">
+                                <input type="checkbox" id="autoAcceptToggle" style="opacity:0;width:0;height:0;position:absolute;" onchange="toggleAutoAccept()">
+                                <span id="autoAcceptTrack" style="position:absolute;inset:0;border-radius:999px;background:var(--border);transition:background 0.2s;cursor:pointer;" onclick="document.getElementById('autoAcceptToggle').click()"></span>
+                                <span id="autoAcceptThumb" style="position:absolute;top:3px;left:3px;width:16px;height:16px;border-radius:50%;background:#fff;transition:transform 0.2s;pointer-events:none;"></span>
+                            </div>
+                        </label>
+                    </div>
+                    <!-- Pending requests (professor only) -->
+                    <div id="pendingRequestsSection" style="display:none;margin-bottom:18px;">
+                        <h3 class="db-section-title" style="margin-bottom:10px;"><i class="ph-bold ph-clock"></i> Pending Requests <span id="pendingBadge" style="background:#ef4444;color:#fff;font-size:10px;border-radius:999px;padding:1px 7px;margin-left:6px;vertical-align:middle;"></span></h3>
+                        <div id="pendingRequestsList"></div>
+                    </div>
                     <div class="cd-students-header">
                         <div>
                             <h3 class="db-section-title"><i class="ph-bold ph-users"></i> Enrolled Students</h3>
@@ -2088,6 +2170,35 @@
             <div class="invite-modal-actions">
                 <button class="invite-cancel-btn" onclick="closeInviteStudentModal()">Cancel</button>
                 <button class="invite-send-btn" id="inviteSendBtn" onclick="sendInvite()" disabled>
+                    <i class="ph-bold ph-paper-plane-tilt"></i> Send Invite
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Invite Teacher Modal -->
+    <div class="invite-modal-overlay" id="inviteTeacherOverlay" onclick="if(event.target===this)closeInviteTeacherModal()">
+        <div class="invite-modal">
+            <div class="invite-modal-title"><i class="ph-bold ph-chalkboard-teacher"></i> Invite Co-Teacher</div>
+            <div class="invite-input-row">
+                <input type="email" id="inviteTeacherEmailInput" placeholder="Enter professor's email"
+                    onkeydown="if(event.key==='Enter')searchInviteTeacher()">
+                <button class="invite-search-btn" id="inviteTeacherSearchBtn" onclick="searchInviteTeacher()">
+                    <i class="ph-bold ph-magnifying-glass"></i> Search
+                </button>
+            </div>
+            <div class="invite-hint">Type the professor's email and click Search to preview before sending.</div>
+            <div class="invite-error" id="inviteTeacherError"></div>
+            <div class="invite-preview" id="inviteTeacherPreview">
+                <div class="invite-preview-avatar" id="inviteTeacherPreviewAvatar"></div>
+                <div>
+                    <div class="invite-preview-name" id="inviteTeacherPreviewName"></div>
+                    <div class="invite-preview-sn" id="inviteTeacherPreviewEmail"></div>
+                </div>
+            </div>
+            <div class="invite-modal-actions">
+                <button class="invite-cancel-btn" onclick="closeInviteTeacherModal()">Cancel</button>
+                <button class="invite-send-btn" id="inviteTeacherSendBtn" onclick="sendTeacherInvite()" disabled>
                     <i class="ph-bold ph-paper-plane-tilt"></i> Send Invite
                 </button>
             </div>
@@ -2443,41 +2554,33 @@
 
     async function loadTeachers() {
         const container = document.getElementById('teachersList');
+        if (role === 'professor') {
+            document.getElementById('btnInviteTeacher').style.display = '';
+            loadTeacherInvites();
+        }
         try {
-            // If classInfo already loaded, use it; otherwise fetch fresh
-            let info = window.classInfo;
-            if (!info || !info.professor_name) {
-                const res = await fetch(`/api/classes/${classId}`, {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                info = await res.json();
-                window.classInfo = info;
-            }
-
-            const profName   = info.professor_name   || '—';
-            const profEmail  = info.professor_email  || '—';
-            const profAvatar = info.professor_avatar || '';
-            const initial    = profName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
-            const avatarHtml = profAvatar
-                ? `<div class="student-avatar-lg" style="background:#0A66C2;overflow:hidden;padding:0;"><img src="${profAvatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;"></div>`
-                : `<div class="student-avatar-lg" style="background:#0A66C2;">${initial}</div>`;
-
-            container.innerHTML = `
-                <div class="student-item-detailed">
-                    <div class="student-num">1</div>
+            const res = await fetch(`/api/classes/${classId}/teachers`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const teachers = res.ok ? await res.json() : [];
+            container.innerHTML = teachers.map((t, i) => {
+                const initial = t.full_name.split(' ').map(n=>n[0]).join('').slice(0,2).toUpperCase();
+                const avatarHtml = t.avatar
+                    ? `<div class="student-avatar-lg" style="background:#0A66C2;overflow:hidden;padding:0;"><img src="${t.avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;"></div>`
+                    : `<div class="student-avatar-lg" style="background:#0A66C2;">${initial}</div>`;
+                const badge = t.is_owner
+                    ? `<span style="background:rgba(245,158,11,0.15);color:#f59e0b;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;"><i class="ph-bold ph-crown-simple"></i> Teacher</span>`
+                    : `<span style="background:rgba(139,92,246,0.12);color:#8b5cf6;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;"><i class="ph-bold ph-chalkboard-teacher"></i> Co-Teacher</span>`;
+                return `<div class="student-item-detailed">
+                    <div class="student-num">${i+1}</div>
                     ${avatarHtml}
                     <div class="student-details" style="flex:1;">
-                        <strong>${profName}</strong>
-                        <p style="display:flex;align-items:center;gap:6px;">
-                            <i class="ph-bold ph-envelope"></i> ${profEmail}
-                        </p>
-                        <p style="margin-top:4px;">
-                            <span style="background:rgba(245,158,11,0.15);color:#f59e0b;font-size:10px;font-weight:700;padding:2px 8px;border-radius:20px;">
-                                <i class="ph-bold ph-chalkboard-teacher"></i> Professor
-                            </span>
-                        </p>
+                        <strong>${t.full_name}</strong>
+                        <p style="display:flex;align-items:center;gap:6px;"><i class="ph-bold ph-envelope"></i> ${t.email}</p>
+                        <p style="margin-top:4px;">${badge}</p>
                     </div>
                 </div>`;
+            }).join('') || '<p style="color:var(--text-3);text-align:center;padding:20px;">No teachers found.</p>';
         } catch {
             container.innerHTML = '<p style="color:var(--text-3);text-align:center;padding:20px;">Cannot load teacher info.</p>';
         }
@@ -2485,10 +2588,23 @@
 
     async function loadStudents() {
         try {
-            const response = await fetch(`/api/classes/${classId}/students`, {
-                headers: { 'Authorization': `Bearer ${token}` }
-            });
-            const data = await response.json();
+            const [studRes, classRes] = await Promise.all([
+                fetch(`/api/classes/${classId}/students`, { headers: { 'Authorization': `Bearer ${token}` } }),
+                fetch(`/api/classes/${classId}`,          { headers: { 'Authorization': `Bearer ${token}` } })
+            ]);
+            const data      = await studRes.json();
+            const classData = classRes.ok ? await classRes.json() : {};
+
+            if (role === 'professor') {
+                // Show auto-accept toggle
+                const bar = document.getElementById('autoAcceptBar');
+                bar.style.display = 'flex';
+                const isAuto = classData.auto_accept !== false;
+                _setAutoAcceptUI(isAuto);
+                // Load pending requests
+                loadPendingRequests();
+            }
+
             const container = document.getElementById('studentsList');
             if (data.length === 0) {
                 container.innerHTML = `
@@ -2505,6 +2621,129 @@
         } catch (err) {
             showToast('Cannot load students!', 'error');
         }
+    }
+
+    function _setAutoAcceptUI(isAuto) {
+        const toggle = document.getElementById('autoAcceptToggle');
+        const track  = document.getElementById('autoAcceptTrack');
+        const thumb  = document.getElementById('autoAcceptThumb');
+        const label  = document.getElementById('autoAcceptLabel');
+        const desc   = document.getElementById('autoAcceptDesc');
+        toggle.checked = isAuto;
+        track.style.background  = isAuto ? 'var(--primary)' : 'var(--border)';
+        thumb.style.transform   = isAuto ? 'translateX(18px)' : 'translateX(0)';
+        label.textContent       = isAuto ? 'Auto' : 'Manual';
+        desc.textContent        = isAuto
+            ? 'Students are auto-enrolled when they join.'
+            : 'You must approve each join request manually.';
+    }
+
+    let _autoAcceptBusy = false;
+    async function toggleAutoAccept() {
+        if (_autoAcceptBusy) {
+            // revert the checkbox immediately — don't act on spam clicks
+            const toggle = document.getElementById('autoAcceptToggle');
+            toggle.checked = !toggle.checked;
+            return;
+        }
+        _autoAcceptBusy = true;
+        const toggle = document.getElementById('autoAcceptToggle');
+        toggle.disabled = true;
+        const isAuto = toggle.checked;
+        _setAutoAcceptUI(isAuto);
+        try {
+            const res = await fetch(`/api/classes/${classId}/auto-accept`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ auto_accept: isAuto })
+            });
+            if (res.ok) {
+                showToast(isAuto ? 'Auto-enrollment enabled' : 'Manual approval enabled', 'success');
+            } else {
+                _setAutoAcceptUI(!isAuto);
+                showToast('Failed to update setting', 'error');
+            }
+        } catch {
+            _setAutoAcceptUI(!isAuto);
+            showToast('Failed to update setting', 'error');
+        } finally {
+            toggle.disabled = false;
+            _autoAcceptBusy = false;
+        }
+    }
+
+    async function loadPendingRequests() {
+        try {
+            const res  = await fetch(`/api/classes/${classId}/pending`, { headers: { 'Authorization': `Bearer ${token}` } });
+            const data = res.ok ? await res.json() : [];
+            const sec  = document.getElementById('pendingRequestsSection');
+            const list = document.getElementById('pendingRequestsList');
+            const badge = document.getElementById('pendingBadge');
+            if (!data.length) { sec.style.display = 'none'; return; }
+            sec.style.display = 'block';
+            badge.textContent = data.length;
+            list.innerHTML = data.map(p => {
+                const initials = p.full_name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+                const avHtml = p.avatar
+                    ? `<img src="${p.avatar}" style="width:38px;height:38px;border-radius:50%;object-fit:cover;">`
+                    : `<div style="width:38px;height:38px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;">${initials}</div>`;
+                return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border);">
+                    ${avHtml}
+                    <div style="flex:1;">
+                        <div style="font-weight:600;font-size:13px;">${p.full_name}</div>
+                        <div style="font-size:11px;color:var(--text-3);">${p.student_number}</div>
+                    </div>
+                    <button onclick="approveRequest(${p.member_id})" style="background:rgba(16,185,129,0.12);color:#10b981;border:1px solid rgba(16,185,129,0.3);border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;margin-right:6px;">
+                        <i class="ph-bold ph-check"></i> Accept
+                    </button>
+                    <button onclick="rejectRequest(${p.member_id})" style="background:rgba(239,68,68,0.08);color:#ef4444;border:1px solid rgba(239,68,68,0.25);border-radius:8px;padding:5px 12px;font-size:12px;font-weight:600;cursor:pointer;">
+                        <i class="ph-bold ph-x"></i> Reject
+                    </button>
+                </div>`;
+            }).join('');
+        } catch { }
+    }
+
+    async function approveRequest(memberId) {
+        const res = await fetch(`/api/classes/${classId}/approve/${memberId}`, {
+            method: 'POST', headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) { showToast('Student approved!', 'success'); loadStudents(); }
+        else showToast('Failed to approve', 'error');
+    }
+
+    async function rejectRequest(memberId) {
+        const res = await fetch(`/api/classes/${classId}/reject/${memberId}`, {
+            method: 'POST', headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) { showToast('Request rejected.', 'success'); loadPendingRequests(); }
+        else showToast('Failed to reject', 'error');
+    }
+
+    function toggleStudentMenu(e, studentId) {
+        e.stopPropagation();
+        document.querySelectorAll('.student-action-menu.open').forEach(m => {
+            if (m.id !== `smenu-${studentId}`) m.classList.remove('open');
+        });
+        document.getElementById(`smenu-${studentId}`)?.classList.toggle('open');
+    }
+
+    document.addEventListener('click', () => {
+        document.querySelectorAll('.student-action-menu.open').forEach(m => m.classList.remove('open'));
+    });
+
+    function removeStudent(studentId, studentName) {
+        document.getElementById('confirmRemoveStudentMsg').textContent =
+            `${studentName} will be removed from this class. This cannot be undone.`;
+        document.getElementById('confirmRemoveStudentModal').classList.add('active');
+        document.getElementById('confirmRemoveStudentBtn').onclick = async () => {
+            document.getElementById('confirmRemoveStudentModal').classList.remove('active');
+            const res = await fetch(`/api/classes/${classId}/students/${studentId}`, {
+                method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) { showToast(`${studentName} removed.`, 'success'); loadStudents(); }
+            else showToast('Failed to remove student.', 'error');
+        };
     }
 
     function renderStudents(data) {
@@ -2528,6 +2767,17 @@
             const avatarHtml = s.avatar
                 ? `<div class="student-avatar-lg" style="background:${color};overflow:hidden;padding:0;"><img src="${s.avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;"></div>`
                 : `<div class="student-avatar-lg" style="background:${color};">${initials}</div>`;
+            const dotsBtn = role === 'professor' ? `
+                <div class="student-action-wrap">
+                    <button class="student-dots-btn" onclick="toggleStudentMenu(event, ${s.id})" title="Options">
+                        <i class="ph-bold ph-dots-three-vertical"></i>
+                    </button>
+                    <div class="student-action-menu" id="smenu-${s.id}">
+                        <button onclick="removeStudent(${s.id}, '${s.full_name.replace(/'/g, "\\'")}')">
+                            <i class="ph-bold ph-user-minus"></i> Remove Student
+                        </button>
+                    </div>
+                </div>` : '';
             return `<div class="student-item-detailed">
                 <div class="student-num">${i+1}</div>
                 ${avatarHtml}
@@ -2536,6 +2786,7 @@
                     <p><i class="ph-bold ${s.role === 'professor' ? 'ph-envelope' : 'ph-identification-card'}"></i> ${s.student_number || s.email || '—'}</p>
                     <p style="gap:6px;flex-wrap:wrap;margin-top:4px;">${grpBadge}${roleBadge}</p>
                 </div>
+                ${dotsBtn}
             </div>`;
         }).join('');
     }
@@ -2839,9 +3090,21 @@
         const avatarHtml = p.avatar
             ? `<div class="stream-post-avatar prof" style="overflow:hidden;"><img src="${p.avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;display:block;"></div>`
             : `<div class="stream-post-avatar prof">${initials}</div>`;
-        // Prof can delete any post (including legacy activities); students cannot delete
-        const deleteBtn = role === 'professor'
-            ? `<button class="stream-post-delete" onclick="deletePost('${p.id}')" title="Delete post"><i class="ph-bold ph-trash"></i></button>`
+        // Prof can edit/delete any post (including legacy activities); students cannot delete
+        const postMenuBtn = role === 'professor'
+            ? `<div class="stream-post-menu-wrap" onclick="event.stopPropagation()">
+                <button class="stream-post-menu-btn" onclick="togglePostMenu('post-menu-${p.id}')" title="Options">
+                    <i class="ph-bold ph-dots-three-vertical"></i>
+                </button>
+                <div class="stream-post-dropdown" id="post-menu-${p.id}">
+                    <button class="stream-post-option" onclick="event.stopPropagation();closeAllPostMenus();editPost('${p.id}')">
+                        <i class="ph-bold ph-pencil-simple"></i> Edit
+                    </button>
+                    <button class="stream-post-option delete" onclick="event.stopPropagation();closeAllPostMenus();deletePost('${p.id}')">
+                        <i class="ph-bold ph-trash"></i> Delete
+                    </button>
+                </div>
+            </div>`
             : '';
 
         let activityHtml = '';
@@ -2908,7 +3171,7 @@
                         </div>
                     </div>
                 </div>
-                ${deleteBtn}
+                ${postMenuBtn}
             </div>
             ${msgHtml}
             ${activityHtml}
@@ -3024,6 +3287,7 @@
     }
 
     let _pendingDeletePostId = null;
+    let _pendingEditPostId = null;
 
     function toggleActMenu(id) {
         const menu = document.getElementById(id);
@@ -3035,7 +3299,80 @@
     function closeAllActMenus() {
         document.querySelectorAll('.act-menu-dropdown.open').forEach(m => m.classList.remove('open'));
     }
-    document.addEventListener('click', () => closeAllActMenus());
+       document.addEventListener('click', () => {
+        closeAllActMenus();
+        closeAllPostMenus();
+    });
+ 
+    function togglePostMenu(menuId) {
+        const menu = document.getElementById(menuId);
+        if (!menu) return;
+        const isOpen = menu.classList.contains('open');
+        closeAllPostMenus();
+        if (!isOpen) menu.classList.add('open');
+    }
+    function closeAllPostMenus() {
+        document.querySelectorAll('.stream-post-dropdown.open').forEach(m => m.classList.remove('open'));
+    }
+
+    function editPost(postId) {
+        _pendingEditPostId = postId;
+        // Get current post message
+        const postEl = document.getElementById(`post-${postId}`);
+        const messageEl = postEl?.querySelector('.stream-post-message');
+        const currentMessage = messageEl ? messageEl.textContent.trim() : '';
+ 
+        document.getElementById('editPostMessage').value = currentMessage;
+        document.getElementById('editPostModal').classList.add('active');
+        document.getElementById('editPostMessage').focus();
+    }
+
+        function closeEditPostModal() {
+        document.getElementById('editPostModal').classList.remove('active');
+        _pendingEditPostId = null;
+    }
+ 
+    async function savePostEdit() {
+        const postId = _pendingEditPostId;
+        if (!postId) return;
+ 
+        const newMessage = document.getElementById('editPostMessage').value.trim();
+        const btn = document.getElementById('saveEditPostBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="ph-bold ph-spinner"></i> Saving...';
+ 
+        try {
+            const res = await fetch(`/api/stream/${classId}/stream/${postId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ message: newMessage || null })
+            });
+ 
+            if (res.ok) {
+                // Update the post message in the DOM
+                const postEl = document.getElementById(`post-${postId}`);
+                const messageEl = postEl?.querySelector('.stream-post-message');
+                if (messageEl) {
+                    if (newMessage) {
+                        messageEl.textContent = newMessage;
+                        messageEl.style.display = 'block';
+                    } else {
+                        messageEl.style.display = 'none';
+                    }
+                }
+                closeEditPostModal();
+                showToast('Post updated!', 'success');
+            } else {
+                showToast('Cannot update post!', 'error');
+            }
+        } catch {
+            showToast('Cannot connect!', 'error');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="ph-bold ph-floppy-disk"></i> Save Changes';
+        }
+    }
+
 
     function deletePost(postId) {
         _pendingDeletePostId = postId;
@@ -3791,6 +4128,125 @@
         } catch { showToast('Cannot connect to server!', 'error'); }
     }
 
+    // ── Teacher Invite ──
+    let _invitePreviewTeacherId = null;
+
+    function openInviteTeacherModal() {
+        _invitePreviewTeacherId = null;
+        document.getElementById('inviteTeacherEmailInput').value = '';
+        document.getElementById('inviteTeacherError').style.display = 'none';
+        document.getElementById('inviteTeacherPreview').classList.remove('visible');
+        document.getElementById('inviteTeacherSendBtn').disabled = true;
+        document.getElementById('inviteTeacherOverlay').classList.add('active');
+    }
+
+    function closeInviteTeacherModal() {
+        document.getElementById('inviteTeacherOverlay').classList.remove('active');
+    }
+
+    async function searchInviteTeacher() {
+        const email = document.getElementById('inviteTeacherEmailInput').value.trim();
+        const errEl = document.getElementById('inviteTeacherError');
+        const preview = document.getElementById('inviteTeacherPreview');
+        errEl.style.display = 'none';
+        preview.classList.remove('visible');
+        document.getElementById('inviteTeacherSendBtn').disabled = true;
+        _invitePreviewTeacherId = null;
+        if (!email) { errEl.textContent = 'Please enter an email.'; errEl.style.display = 'block'; return; }
+        const btn = document.getElementById('inviteTeacherSearchBtn');
+        btn.disabled = true;
+        try {
+            const r = await fetch(`/api/classes/${classId}/invite/lookup-teacher?email=${encodeURIComponent(email)}`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const d = await r.json();
+            if (r.ok) {
+                _invitePreviewTeacherId = d.id;
+                const avatarEl = document.getElementById('inviteTeacherPreviewAvatar');
+                avatarEl.innerHTML = d.avatar
+                    ? `<img src="${d.avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:12px;">`
+                    : d.full_name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+                document.getElementById('inviteTeacherPreviewName').textContent = d.full_name;
+                document.getElementById('inviteTeacherPreviewEmail').textContent = d.email;
+                preview.classList.add('visible');
+                document.getElementById('inviteTeacherSendBtn').disabled = false;
+            } else {
+                errEl.textContent = d.message || 'Not found.';
+                errEl.style.display = 'block';
+            }
+        } catch { errEl.textContent = 'Cannot connect to server.'; errEl.style.display = 'block'; }
+        finally { btn.disabled = false; }
+    }
+
+    async function sendTeacherInvite() {
+        if (!_invitePreviewTeacherId) return;
+        const btn = document.getElementById('inviteTeacherSendBtn');
+        btn.disabled = true;
+        try {
+            const r = await fetch(`/api/classes/${classId}/invite-teacher`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({ teacher_id: _invitePreviewTeacherId })
+            });
+            const d = await r.json();
+            if (r.ok) {
+                showToast(d.message, 'success');
+                closeInviteTeacherModal();
+                loadTeacherInvites();
+            } else {
+                showToast(d.message || 'Failed!', 'error');
+                btn.disabled = false;
+            }
+        } catch { showToast('Cannot connect to server!', 'error'); btn.disabled = false; }
+    }
+
+    async function loadTeacherInvites() {
+        if (role !== 'professor') return;
+        const container = document.getElementById('pendingTeacherInvitesList');
+        try {
+            const r = await fetch(`/api/classes/${classId}/teacher-invites`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const data = r.ok ? await r.json() : [];
+            if (!data.length) { container.innerHTML = ''; return; }
+            container.innerHTML = `
+                <div class="pending-invites-section">
+                    <div class="pending-invites-title">
+                        <i class="ph-bold ph-clock" style="color:#8b5cf6;"></i>
+                        Pending Teacher Invites (${data.length})
+                    </div>
+                    ${data.map(inv => {
+                        const initials = inv.full_name.split(' ').map(n=>n[0]).join('').toUpperCase().slice(0,2);
+                        const avatarHtml = inv.avatar
+                            ? `<img src="${inv.avatar}" style="width:100%;height:100%;object-fit:cover;border-radius:9px;">` : initials;
+                        return `<div class="pending-invite-item">
+                            <div class="pending-invite-avatar">${avatarHtml}</div>
+                            <div class="pending-invite-info">
+                                <div class="pending-invite-name">${inv.full_name}</div>
+                                <div class="pending-invite-sn">${inv.email}</div>
+                                <div class="pending-invite-date">Sent ${inv.sent_at}</div>
+                            </div>
+                            <span class="pending-invite-badge" style="background:rgba(139,92,246,0.12);color:#8b5cf6;"><i class="ph-bold ph-clock"></i> Pending</span>
+                            <button class="btn-cancel-invite" onclick="cancelTeacherInvite(${inv.invite_id})">
+                                <i class="ph-bold ph-x"></i> Cancel
+                            </button>
+                        </div>`;
+                    }).join('')}
+                </div>`;
+        } catch { container.innerHTML = ''; }
+    }
+
+    async function cancelTeacherInvite(inviteId) {
+        try {
+            const r = await fetch(`/api/classes/${classId}/invites/${inviteId}`, {
+                method: 'DELETE', headers: { 'Authorization': `Bearer ${token}` }
+            });
+            const d = await r.json();
+            if (r.ok) { showToast(d.message, 'success'); loadTeacherInvites(); }
+            else showToast(d.message || 'Failed!', 'error');
+        } catch { showToast('Cannot connect to server!', 'error'); }
+    }
+
     // ═══ ANALYTICS ═══════════════════════════════════════════════
     let _anCharts = {};
     let _anData   = null;
@@ -3888,18 +4344,32 @@
                     ? `<td class="an-grade-cell td-center ${_gradeClass(g)}">${g}</td>`
                     : `<td class="an-grade-blank td-center">—</td>`;
             }).join('');
-            const avgClass = _gradeClass(s.average);
-            const avgCell = s.average !== null
-                ? `<td class="an-grade-cell td-center an-avg-cell ${avgClass}">${s.average}%</td>`
-                : `<td class="an-grade-blank td-center">—</td>`;
             return `<tr>
                 <td style="color:var(--text-3);text-align:center;">${i+1}</td>
                 <td style="color:var(--text-2);font-size:11px;">${s.student_number || '—'}</td>
                 <td style="font-weight:600;">${s.full_name}</td>
                 ${gradeCells}
-                ${avgCell}
             </tr>`;
         }).join('');
+
+        // Activity average row
+        const actAvgCells = d.activities.map(a => {
+            const scores = d.students
+                .map(s => s.grades[a.id])
+                .filter(g => g !== null && g !== undefined);
+            if (!scores.length) return `<td class="an-grade-blank td-center">—</td>`;
+            const avg = Math.round((scores.reduce((s, v) => s + v, 0) / scores.length) * 10) / 10;
+            const cls = _gradeClass(avg);
+            return `<td class="an-grade-cell td-center ${cls}" style="font-weight:800;">${avg}</td>`;
+        }).join('');
+
+        const avgRow = `<tr style="border-top:2px solid var(--border);">
+            <td colspan="2" style="color:var(--text-3);text-align:center;font-size:11px;">—</td>
+            <td style="font-weight:800;color:var(--text-2);font-size:12px;">
+                <i class="ph-bold ph-chart-bar" style="margin-right:4px;"></i>Activity Average
+            </td>
+            ${actAvgCells}
+        </tr>`;
 
         const table = d.students.length ? `
         <div class="an-table-wrap">
@@ -3922,10 +4392,9 @@
                             <th>Student No.</th>
                             <th>Full Name</th>
                             ${actCols}
-                            <th class="th-center th-avg">Average</th>
                         </tr>
                     </thead>
-                    <tbody>${rows}</tbody>
+                    <tbody>${rows}${avgRow}</tbody>
                 </table>
             </div>
         </div>` : `<div class="an-empty"><i class="ph-bold ph-users"></i><p>No enrolled students yet.</p></div>`;
@@ -4115,7 +4584,7 @@
         const d = _anData;
         const now = new Date().toLocaleDateString('en-PH', { year:'numeric', month:'long', day:'numeric' });
         const nActs = d.activities.length;
-        const totalCols = 3 + nActs + 1; // # | Student No. | Full Name | A1..An | Average
+        const totalCols = 3 + nActs; // # | Student No. | Full Name | A1..An
 
         // ── Style helpers ──
         const _s = (fill, fontOpts, alignOpts) => ({
@@ -4164,8 +4633,7 @@
         sc(r, 0, '#',           sBlueHd);
         sc(r, 1, 'Student No.', sBlueHd);
         sc(r, 2, 'Full Name',   sBlueHdL);
-        d.activities.forEach((a, i) => sc(r, 3 + i, a.label, sBlueHd));
-        sc(r, 3 + nActs, 'Average', sBlueHd);
+        d.activities.forEach((a, i) => sc(r, 3 + i, `${a.label} (out of 100)`, sBlueHd));
         r++;
 
         // ── Data rows ──
@@ -4178,11 +4646,22 @@
                 if (g !== null && g !== undefined) sc(r, 3 + ai, g, sGrade, 'n');
                 else sc(r, 3 + ai, '—', sGrade);
             });
-            if (s.average !== null && s.average !== undefined)
-                sc(r, 3 + nActs, s.average, sAvg, 'n');
-            else
-                sc(r, 3 + nActs, '—', sAvg);
             r++;
+        });
+
+        // ── Activity Average row ──
+        r++; // blank row separator
+        sc(r, 0, '', sNum);
+        sc(r, 1, '', sNum);
+        sc(r, 2, 'Activity Average', sAvg);
+        d.activities.forEach((a, ai) => {
+            const scores = d.students.map(s => s.grades[a.id]).filter(g => g !== null && g !== undefined);
+            if (scores.length) {
+                const avg = Math.round((scores.reduce((a,b) => a+b, 0) / scores.length) * 100) / 100;
+                sc(r, 3 + ai, avg, sAvg, 'n');
+            } else {
+                sc(r, 3 + ai, '—', sAvg);
+            }
         });
 
         // ── Legend ──
@@ -4206,7 +4685,6 @@
             { wch: 14 },                                // Student No.
             { wch: Math.min(maxNameLen + 2, 35) },      // Full Name
             ...d.activities.map(() => ({ wch: 8 })),   // A1..An
-            { wch: 10 }                                 // Average
         ];
         ws['!cols'] = cols;
 
@@ -4252,10 +4730,32 @@
         }
     });
 
-    // ─── STATUS PILL POLLING (student only) ─────────────────────
-    // Every 8 s, refresh statusMap and patch only the pills that changed.
+    // ─── STATUS PILL HELPERS ─────────────────────────────────────
+    function _applyPillStatus(actId, newRaw) {
+        const pillCfgKeys = { draft: 'progress', submitted: 'submitted', graded: 'graded' };
+        const wasGraded = _statusMap[String(actId)] !== 'graded' && newRaw === 'graded';
+        _statusMap[String(actId)] = newRaw;
+        const pill = document.querySelector(`.cd-status-pill[data-act-id="${actId}"]`);
+        if (pill) {
+            const key = pillCfgKeys[newRaw] || 'pending';
+            const cfg = pillCfg[key];
+            pill.className = `cd-status-pill ${cfg.css}`;
+            pill.innerHTML = `<i class="ph-bold ${cfg.icon}"></i> ${cfg.label}`;
+        }
+        if (wasGraded) showToast('One of your activities has been graded!', 'success');
+    }
+
+    // ─── REAL-TIME GRADE UPDATE (student only) ───────────────────
     if (role === 'student') {
-        const _pillCfgKeys = { draft: 'progress', submitted: 'submitted', graded: 'graded' };
+        const _myUserId = String(localStorage.getItem('user_id') || '');
+        _streamSocket.on('submission_graded', ev => {
+            if (String(ev.student_id) !== _myUserId) return;
+            _applyPillStatus(ev.activity_id, 'graded');
+        });
+    }
+
+    // ─── STATUS PILL POLLING (student only, fallback every 8s) ───
+    if (role === 'student') {
         setInterval(async () => {
             try {
                 const res = await fetch(`/api/submissions/my-statuses?class_id=${classId}`,
@@ -4264,19 +4764,10 @@
                 const fresh = await res.json();
                 for (const [actId, newRaw] of Object.entries(fresh)) {
                     if (_statusMap[actId] === newRaw) continue;
-                    const wasGraded = _statusMap[actId] !== 'graded' && newRaw === 'graded';
-                    _statusMap[actId] = newRaw;
-                    const pill = document.querySelector(`.cd-status-pill[data-act-id="${actId}"]`);
-                    if (pill) {
-                        const key = _pillCfgKeys[newRaw] || 'pending';
-                        const cfg = pillCfg[key];
-                        pill.className = `cd-status-pill ${cfg.css}`;
-                        pill.innerHTML = `<i class="ph-bold ${cfg.icon}"></i> ${cfg.label}`;
-                    }
-                    if (wasGraded) showToast('One of your activities has been graded!', 'success');
+                    _applyPillStatus(actId, newRaw);
                 }
             } catch { /* ignore */ }
-        }, 4000);
+        }, 8000);
     }
 
     // Override sidebar bell button — switches to Stream tab on this page
@@ -4337,6 +4828,7 @@
         document.getElementById('caModalTitleSpacer').style.display = '';
         document.getElementById('caDocxArea').style.display = 'none';
         document.getElementById('caDocxLabel').textContent = 'Click to select a .docx file';
+        document.getElementById('caDocxFile').value = '';
         document.getElementById('caTypeManual').classList.add('active');
         document.getElementById('caTypeDocx').classList.remove('active');
         document.getElementById('createActivityModal').classList.add('active');
@@ -4504,6 +4996,31 @@
     </div>
 
 <!-- ===== CONFIRM DELETE MODAL ===== -->
+<div class="modal-overlay" id="confirmRemoveStudentModal">
+    <div class="modal-box" style="width:380px;max-width:95vw;text-align:center;">
+        <div style="width:56px;height:56px;border-radius:50%;background:rgba(239,68,68,0.12);
+            display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:24px;">
+            <i class="ph-bold ph-user-minus" style="color:#f87171;"></i>
+        </div>
+        <h3 style="font-family:'Inter',sans-serif;font-size:17px;font-weight:800;
+            color:var(--text);margin-bottom:8px;">Remove Student?</h3>
+        <p id="confirmRemoveStudentMsg" style="font-size:13px;color:var(--text-3);font-family:'Inter',sans-serif;
+            line-height:1.6;margin-bottom:24px;"></p>
+        <div style="display:flex;gap:10px;justify-content:center;">
+            <button onclick="document.getElementById('confirmRemoveStudentModal').classList.remove('active')" class="btn-modal-cancel">Cancel</button>
+            <button id="confirmRemoveStudentBtn" style="
+                padding:10px 20px;border:none;border-radius:10px;
+                background:#ef4444;color:white;
+                font-size:13px;font-weight:700;cursor:pointer;
+                font-family:'Inter',sans-serif;
+                box-shadow:0 4px 14px rgba(239,68,68,0.35);
+                display:inline-flex;align-items:center;gap:7px;transition:all 0.2s;">
+                <i class="ph-bold ph-user-minus"></i> Remove
+            </button>
+        </div>
+    </div>
+</div>
+
 <div class="modal-overlay" id="confirmDeleteModal">
     <div class="modal-box" style="width:380px;max-width:95vw;text-align:center;">
         <div style="width:56px;height:56px;border-radius:50%;background:rgba(239,68,68,0.12);
@@ -4526,6 +5043,35 @@
                 box-shadow:0 4px 14px rgba(239,68,68,0.35);
                 display:inline-flex;align-items:center;gap:7px;transition:all 0.2s;">
                 <i class="ph-bold ph-trash"></i> Delete
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- ===== EDIT POST MODAL ===== -->
+<div class="modal-overlay" id="editPostModal">
+    <div class="modal-box" style="width:420px;max-width:95vw;">
+        <h3><i class="ph-bold ph-pencil-simple"></i> Edit Post</h3>
+        <div style="margin-bottom:20px;">
+            <label for="editPostMessage" style="display:block;font-size:13px;font-weight:600;color:var(--text);margin-bottom:8px;font-family:'Inter',sans-serif;">
+                Message
+            </label>
+            <textarea id="editPostMessage" placeholder="Write your announcement or message..." 
+                style="width:100%;min-height:100px;padding:12px;border:1.5px solid var(--border);border-radius:10px;
+                font-size:14px;font-family:'Inter',sans-serif;line-height:1.5;resize:vertical;
+                background:var(--surface);color:var(--text);box-sizing:border-box;"
+                onkeydown="if(event.key==='Enter'&&event.ctrlKey){savePostEdit();}"></textarea>
+        </div>
+        <div style="display:flex;gap:10px;justify-content:flex-end;">
+            <button onclick="closeEditPostModal()" class="btn-modal-cancel">Cancel</button>
+            <button id="saveEditPostBtn" onclick="savePostEdit()" style="
+                padding:10px 20px;border:none;border-radius:10px;
+                background:#0A66C2;color:white;
+                font-size:13px;font-weight:700;cursor:pointer;
+                font-family:'Inter',sans-serif;
+                box-shadow:0 4px 14px rgba(10,102,194,0.35);
+                display:inline-flex;align-items:center;gap:7px;transition:all 0.2s;">
+                <i class="ph-bold ph-floppy-disk"></i> Save Changes
             </button>
         </div>
     </div>

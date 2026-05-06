@@ -592,6 +592,9 @@ def _parse_ds_field_para(para):
 # Matches letter-prefix group headers in procedures: "A.", "B.", "C.", "A. Title"
 _PROC_LETTER_HDR_RE = re.compile(r'^[A-Z]\.\s', re.IGNORECASE)
 
+# Matches numbered or lettered headers in data_sheet: "1. Title", "A. Title", "B. Results"
+_DS_HDR_PREFIX_RE = re.compile(r'^([A-Z]|\d+)\.\s+\S', re.IGNORECASE)
+
 # numFmt values that indicate a letter/roman list (→ group header, not a step)
 _HEADER_NUM_FMTS = {'upperLetter', 'lowerLetter', 'upperRoman', 'lowerRoman'}
 
@@ -672,6 +675,8 @@ _SECTION_KEYWORDS = {
     'TARGET OUTCOMES':          'outcomes',
     'DATA AND RESULTS':         'data_sheet',
     'DATA SHEET':               'data_sheet',
+    'DATASHEET':               'data_sheet',
+    'DATASHEETS':               'data_sheet',
     'GUIDE QUESTIONS':          'guide_questions',
     'LABORATORY QUESTIONS':     'guide_questions',
     'INTRODUCTION':             'introduction',
@@ -1306,34 +1311,32 @@ def parse_docx(filepath):
                         p['text'] = render_inline_equations(p['text'])
                 current_content.append({'type': 'ds_field', 'parts': field_parts})
             elif clean:
-                # Short texts (≤60 chars) are treated as table titles — stored as ds_text
-                # so the general table detector above can consume them as table.title
-                _is_tbl_title = len(clean) <= 100
-                if _is_tbl_title:
-                    current_content.append({'type': 'ds_text', 'text': render_inline_equations(clean)})
-                else:
-                    numPr = para._element.find('.//' + qn('w:numPr'))
-                    is_auto_num = numPr is not None
-                    is_header = False
-                    prefix = ''
-                    if is_auto_num:
-                        num_id_el = numPr.find(qn('w:numId'))
-                        ilvl_el   = numPr.find(qn('w:ilvl'))
-                        num_id    = num_id_el.get(qn('w:val')) if num_id_el is not None else '0'
-                        ilvl      = ilvl_el.get(qn('w:val'))   if ilvl_el   is not None else '0'
-                        num_fmt   = _get_num_fmt(doc, num_id, ilvl)
-                        if num_fmt in _HEADER_NUM_FMTS:
-                            hdr_idx = sum(1 for c in current_content if c.get('type') == 'ds_header')
-                            prefix  = _make_hdr_prefix(num_fmt, hdr_idx)
-                            is_header = True
-                    # Bold text matching answer-prompt keywords = ds_text, never ds_header
-                    _is_answer_prompt = bool(_DS_ANSWER_PROMPT_RE.search(clean))
-                    if not is_header and bold and not _is_answer_prompt:
+                numPr = para._element.find('.//' + qn('w:numPr'))
+                is_auto_num = numPr is not None
+                is_header = False
+                prefix = ''
+                if is_auto_num:
+                    num_id_el = numPr.find(qn('w:numId'))
+                    ilvl_el   = numPr.find(qn('w:ilvl'))
+                    num_id    = num_id_el.get(qn('w:val')) if num_id_el is not None else '0'
+                    ilvl      = ilvl_el.get(qn('w:val'))   if ilvl_el   is not None else '0'
+                    num_fmt   = _get_num_fmt(doc, num_id, ilvl)
+                    if num_fmt in _HEADER_NUM_FMTS:
+                        hdr_idx = sum(1 for c in current_content if c.get('type') == 'ds_header')
+                        prefix  = _make_hdr_prefix(num_fmt, hdr_idx)
                         is_header = True
-                    if is_header:
-                        current_content.append({'type': 'ds_header', 'text': render_inline_equations(prefix + clean)})
-                    else:
-                        current_content.append({'type': 'ds_text', 'text': render_inline_equations(clean)})
+                    elif num_fmt == 'decimal':
+                        is_header = True
+                _is_answer_prompt = bool(_DS_ANSWER_PROMPT_RE.search(clean))
+                if not is_header and bold and not _is_answer_prompt:
+                    is_header = True
+                if not is_header and not _is_answer_prompt and _DS_HDR_PREFIX_RE.match(clean):
+                    is_header = True
+                if is_header:
+                    current_content.append({'type': 'ds_header', 'text': render_inline_equations(prefix + clean)})
+                else:
+                    # Non-header short texts are potential table titles (ds_text)
+                    current_content.append({'type': 'ds_text', 'text': render_inline_equations(clean)})
 
         # ── FALLBACK ──
         else:

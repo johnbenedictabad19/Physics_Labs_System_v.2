@@ -129,6 +129,25 @@ def register_collab(socketio):
             'user':       user
         }, to=room, include_self=False)
 
+    @socketio.on('attach_update')
+    def on_attach_update(data):
+        d = data or {}
+        room = _rid(d.get('activity_id'), d.get('group_id'))
+        if room not in _rooms or request.sid not in _rooms[room]['users']:
+            return
+        block_index = str(d.get('block_index', ''))
+        files = d.get('files', [])
+        _rooms[room]['draft'][f'attach_{block_index}'] = {
+            'field_type': 'attach',
+            'block_index': block_index,
+            'files': files
+        }
+        emit('attach_updated', {
+            'block_index': block_index,
+            'files': files,
+            'user': _rooms[room]['users'][request.sid]
+        }, to=room, include_self=False)
+
     @socketio.on('disconnect')
     def on_disconnect():
         for room_id, rd in list(_rooms.items()):

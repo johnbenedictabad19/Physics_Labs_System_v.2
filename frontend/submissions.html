@@ -12,7 +12,10 @@
     <link rel="apple-touch-icon" href="/static/logo.svg">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Submissions — PHYSLAB</title>
-    <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800;900&family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&family=Abril+Fatface&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800;900&family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&family=Merriweather:wght@400;700&family=Abril+Fatface&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/contrib/auto-render.min.js"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <link rel="stylesheet" href="static/style.css">
@@ -178,8 +181,9 @@ body.dashboard-body { background:var(--bg) !important; color:var(--text); font-f
     font-size:24px; color:white;
 }
 .sb-header-title {
-    font-family:'Sora',sans-serif; font-size:22px; font-weight:800;
+    font-family: 'Plus Jakarta Sans', 'Inter', sans-serif; font-size:22px; font-weight:900;
     color:#ffffff; letter-spacing:-0.3px; margin:0 0 4px;
+    font-style: italic; /* italic */
 }
 .sb-header-sub { font-size:13px; color:rgba(255,255,255,0.7); margin:0; }
 [data-theme="light"] .sb-header-title { color: #ffffff; }
@@ -314,20 +318,6 @@ body.dashboard-body { background:var(--bg) !important; color:var(--text); font-f
 [data-theme="light"] .sb-submitted-tag.yes    { background:#eff6ff; color:#2563eb; }
 [data-theme="light"] .sb-submitted-tag.graded { background:#d1fae5; color:#059669; }
 
-/* Attendance */
-.sb-att-row { display:flex; align-items:center; gap:6px; flex-wrap:wrap; }
-.sb-att-btn {
-    padding:3px 10px; border-radius:6px; font-size:11px; font-weight:700;
-    cursor:pointer; border:1.5px solid; font-family:'DM Sans',sans-serif; transition:all 0.15s;
-    display:inline-flex; align-items:center; gap:4px;
-}
-.sb-att-btn.present         { background:rgba(52,211,153,0.08);  color:#34d399;  border-color:rgba(52,211,153,0.25); }
-.sb-att-btn.present.active  { background:#059669; color:white; border-color:#059669; }
-.sb-att-btn.absent          { background:rgba(239,68,68,0.08);   color:#f87171;  border-color:rgba(239,68,68,0.25); }
-.sb-att-btn.absent.active   { background:#ef4444; color:white; border-color:#ef4444; }
-[data-theme="light"] .sb-att-btn.present        { background:#f0fdf4; color:#059669; border-color:#bbf7d0; }
-[data-theme="light"] .sb-att-btn.absent         { background:#fef2f2; color:#ef4444; border-color:#fecaca; }
-
 /* Group grade form */
 .sb-group-grade-form {
     background:var(--input-bg); border:1.5px solid var(--border-h);
@@ -402,7 +392,7 @@ body.dashboard-body { background:var(--bg) !important; color:var(--text); font-f
 @keyframes overlayIn { from { opacity:0; } to { opacity:1; } }
 .sb-modal-box {
     background:var(--surface); border:1px solid var(--border);
-    border-radius:20px; width:100%; max-width:720px; max-height:88vh;
+    border-radius:20px; width:100%; max-width:920px; max-height:92vh;
     display:flex; flex-direction:column; overflow:hidden;
     box-shadow:0 24px 80px rgba(0,0,0,0.4);
     animation:modalIn 0.25s cubic-bezier(0.22,1,0.36,1);
@@ -556,6 +546,99 @@ body.dashboard-body { background:var(--bg) !important; color:var(--text); font-f
 .db-empty-title { font-family:'Sora',sans-serif; font-size:15px; font-weight:700; color:var(--text-2); margin-bottom:4px; }
 .db-empty-sub { font-size:13px; color:var(--text-3); }
 
+/* ===== FULL ACTIVITY VIEW (submission modal) ===== */
+.av-lab-header { background:#0A66C2; border-radius:14px; padding:20px 24px 22px; position:relative; overflow:hidden; text-align:center; }
+.av-lab-header::before { content:''; position:absolute; width:180px; height:180px; border-radius:50%; background:rgba(255,255,255,0.07); top:-80px; right:60px; }
+.av-lab-badge { display:inline-flex; align-items:center; gap:6px; background:rgba(255,255,255,0.15); color:white; border-radius:20px; padding:4px 12px; font-size:11px; font-weight:700; font-family:'DM Sans',sans-serif; letter-spacing:0.5px; margin-bottom:8px; }
+.av-lab-title-text { font-family:'Unbounded',sans-serif; font-size:16px; font-weight:800; color:white; margin:0; line-height:1.4; }
+.av-section-wrapper { background:var(--surface); border:1px solid var(--border); border-radius:14px; margin-bottom:8px; overflow:hidden; transition:border-color 0.2s; }
+.av-section-wrapper:hover { border-color:var(--border-h); }
+.av-section-header { display:flex; align-items:center; justify-content:space-between; padding:12px 16px; cursor:pointer; gap:10px; }
+.av-section-header:hover { background:var(--input-bg); }
+.av-section-header-left { display:flex; align-items:center; gap:10px; }
+.av-section-header-right { display:flex; align-items:center; }
+.av-section-icon { width:34px; height:34px; border-radius:9px; display:flex; align-items:center; justify-content:center; font-size:15px; flex-shrink:0; }
+.av-section-label { font-size:14px; font-weight:700; color:var(--text); font-family:'DM Sans',sans-serif; }
+.av-toggle-icon { color:var(--text-3); font-size:14px; transition:transform 0.25s; }
+.av-toggle-icon.open { transform:rotate(0deg); }
+.av-toggle-icon:not(.open) { transform:rotate(-90deg); }
+.av-section-body { }
+.av-section-body.hidden { display:none; }
+.av-section-body-inner { padding:16px 18px 20px; }
+.av-icon-blue   { background:rgba(59,130,246,0.12);  color:#60a5fa; }
+.av-icon-purple { background:rgba(139,92,246,0.12);  color:#a78bfa; }
+.av-icon-green  { background:rgba(16,185,129,0.12);  color:#34d399; }
+.av-icon-orange { background:rgba(245,158,11,0.12);  color:#fbbf24; }
+.av-icon-indigo { background:rgba(10,102,194,0.15);  color:var(--primary-l); }
+.av-icon-teal   { background:rgba(20,184,166,0.12);  color:#2dd4bf; }
+.av-icon-violet { background:rgba(139,92,246,0.12);  color:#a78bfa; }
+.av-icon-slate  { background:var(--input-bg);        color:var(--text-3); }
+.av-icon-grad   { background:#0A66C2; color:white; }
+[data-theme="light"] .av-icon-purple { background:#EBF3FB; color:#8b5cf6; }
+.av-view-content,.av-text-block,.intro-preview-wrap { font-family:'Merriweather',serif; font-size:14px; line-height:1.85; color:var(--text-2); }
+.av-text-block { text-align:justify; }
+.av-text-block p,.intro-preview-wrap p { margin:0 0 10px; }
+.intro-preview-wrap h3 { margin:14px 0 6px; font-size:14px; font-weight:700; color:var(--text); }
+#submissionModal .katex-display { display:flex !important; justify-content:center !important; margin:14px 0 !important; overflow-x:auto; }
+.av-numbered-list { list-style:none; padding:0; margin:0; display:flex; flex-direction:column; gap:8px; }
+.av-numbered-list li { display:flex; align-items:flex-start; gap:12px; font-size:14px; color:var(--text-2); font-family:'Merriweather',serif; line-height:1.6; }
+.av-materials-list { display:flex; flex-direction:column; gap:6px; }
+.av-material-item { display:flex; align-items:center; gap:10px; padding:8px 12px; border-radius:9px; background:var(--input-bg); border:1.5px solid var(--border); font-size:13px; font-family:'Merriweather',serif; color:var(--text-2); }
+.av-material-check { width:16px; height:16px; flex-shrink:0; accent-color:var(--primary-l); }
+.av-material-note { display:flex; align-items:flex-start; gap:8px; padding:8px 12px; background:rgba(245,158,11,0.08); border-radius:9px; border-left:3px solid #f59e0b; font-size:12px; color:#f59e0b; font-family:'DM Sans',sans-serif; }
+.av-procedures-list { display:flex; flex-direction:column; gap:4px; }
+.av-procedure-step { display:flex; gap:10px; align-items:flex-start; padding:4px 0; }
+.av-step-num { font-weight:700; color:var(--primary-l); min-width:22px; flex-shrink:0; padding-top:3px; font-family:'DM Sans',sans-serif; font-size:13px; }
+.av-step-text { flex:1; font-size:14px; color:var(--text-2); font-family:'Merriweather',serif; line-height:1.6; min-width:0; }
+.av-step-intro { font-size:13px; color:var(--text-3); font-family:'Merriweather',serif; font-style:italic; margin:0; }
+.av-sub-header { font-size:13px; font-weight:700; color:var(--primary-l); font-family:'DM Sans',sans-serif; padding:6px 0 2px; border-bottom:1.5px solid var(--border); margin-bottom:4px; }
+.av-computation-space { margin:8px 0; padding:16px; border:1.5px dashed var(--border); border-radius:10px; background:var(--input-bg); color:var(--text-3); font-size:13px; font-style:italic; font-family:'DM Sans',sans-serif; text-align:center; min-height:60px; display:flex; align-items:center; justify-content:center; gap:8px; }
+.av-graph-attachment { margin:8px 0; padding:14px; border:1.5px dashed var(--primary); border-radius:10px; background:rgba(10,102,194,0.05); color:var(--primary-l); font-size:13px; font-weight:600; font-family:'DM Sans',sans-serif; text-align:center; display:flex; align-items:center; justify-content:center; gap:8px; }
+.av-table-block { margin:10px auto; border:1.5px solid var(--border); border-radius:12px; background:var(--surface); display:block; width:fit-content; max-width:100%; overflow-x:auto; }
+[data-section-type="data_sheet"] .av-table-block { width:100%; }
+.av-table-bar { background:var(--input-bg); padding:6px 12px; }
+.av-table-title-text { font-size:12px; font-weight:600; color:var(--text-2); font-family:'DM Sans',sans-serif; }
+.av-table-scroll { overflow-x:auto; }
+.av-data-table { border-collapse:collapse; width:100; margin:0 auto; }
+.av-data-table th { background:#0A66C2; color:white; font-size:12px; font-weight:700; padding:0; border:1.5px solid #5a6fd6; }
+.av-data-table th .av-tbl-header-text { display:block; padding:7px 10px; min-width:80px; color:white; font-weight:700; font-size:12px; font-family:'DM Sans',sans-serif; text-align:center; }
+.av-data-table th.av-tbl-readonly-cell { background:var(--surface); border-color:var(--border); }
+.av-data-table th.av-tbl-readonly-cell .av-tbl-header-text { color:var(--text); font-weight:400; }
+.av-data-table td { border:1px solid var(--border); background:var(--surface); padding:0; vertical-align:middle; }
+.av-data-table td.av-tbl-label-cell span { display:block; padding:6px 10px; font-size:12px; color:var(--text-2); font-family:'DM Sans',sans-serif; text-align:center; }
+.av-question-item { padding:10px 12px; border-radius:10px; background:var(--input-bg); margin-bottom:8px; }
+.av-question-text { display:flex; gap:8px; font-size:14px; color:var(--text-2); font-family:'Merriweather',serif; line-height:1.6; margin-bottom:8px; }
+.av-q-body { flex:1; }
+.av-fill-blank { display:flex; align-items:center; gap:8px; font-size:13px; color:var(--text-2); font-family:'Merriweather',serif; padding:4px 0; }
+.av-sub-question { display:flex; gap:8px; align-items:flex-start; padding:10px 12px; border-radius:8px; border-left:3px solid var(--primary-l); background:var(--input-bg); font-size:14px; color:var(--text-2); font-family:'Merriweather',serif; margin:4px 0; }
+.av-sub-q-label { font-size:12px; font-weight:700; color:var(--primary-l); min-width:18px; flex-shrink:0; padding-top:3px; font-family:'DM Sans',sans-serif; }
+.av-sub-q-body { flex:1; display:flex; flex-direction:column; gap:8px; min-width:0; }
+.av-references-list { display:flex; flex-direction:column; gap:8px; }
+.av-reference-item { display:flex; align-items:flex-start; gap:10px; font-size:13px; color:var(--text-2); font-family:'DM Sans',sans-serif; line-height:1.5; }
+.av-ref-dot { width:6px; height:6px; border-radius:50%; background:var(--primary-l); flex-shrink:0; margin-top:7px; }
+/* Submission answer display */
+.sb-view-answer { background:rgba(10,102,194,0.06); border:1px solid rgba(10,102,194,0.15); border-left:3px solid var(--primary-l); border-radius:8px; padding:10px 14px; font-size:13px; color:var(--text); font-family:'DM Sans',sans-serif; line-height:1.6; margin-top:6px; white-space:pre-wrap; }
+.sb-no-answer { font-size:12px; color:var(--text-3); font-style:italic; margin-top:6px; font-family:'DM Sans',sans-serif; }
+[data-theme="light"] .sb-view-answer { background:#eff6ff; border-color:#bfdbfe; border-left-color:#3b82f6; }
+/* ===== STUDENT INFO (submission view) ===== */
+.sb-si-group-banner { display:flex; align-items:center; gap:10px; padding:10px 14px; background:var(--input-bg); border:1.5px solid var(--border-h); border-radius:12px; margin-bottom:10px; flex-wrap:wrap; }
+.sb-si-group-badge { display:inline-flex; align-items:center; gap:5px; background:#0A66C2; color:white; font-size:11px; font-weight:800; padding:3px 12px; border-radius:20px; font-family:'Unbounded',sans-serif; }
+.sb-si-group-info { font-size:12px; color:var(--text-3); font-family:'DM Sans',sans-serif; }
+.sb-si-member-grid { display:flex; flex-direction:column; gap:8px; margin-bottom:10px; }
+.sb-si-member-row { display:flex; align-items:center; gap:10px; padding:10px 14px; border-radius:12px; background:var(--input-bg); border:1.5px solid var(--border); }
+.sb-si-member-row.is-leader { background:var(--input-bg-f); border-color:#c4b5fd; }
+.sb-si-member-info { flex:1; min-width:0; }
+.sb-si-member-name { font-size:13px; font-weight:700; color:var(--text); font-family:'DM Sans',sans-serif; line-height:1.3; }
+.sb-si-badges { display:flex; gap:5px; margin-top:4px; flex-wrap:wrap; align-items:center; }
+.sb-si-badge-leader { display:inline-flex; align-items:center; gap:3px; background:rgba(245,158,11,0.15); color:#fcd34d; font-size:10px; font-weight:800; padding:2px 8px; border-radius:20px; font-family:'DM Sans',sans-serif; }
+.sb-si-badge-member { display:inline-flex; align-items:center; gap:3px; background:rgba(10,102,194,0.15); color:var(--primary-l); font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px; font-family:'DM Sans',sans-serif; }
+.sb-si-contrib { display:inline-flex; align-items:center; gap:3px; font-size:10px; font-weight:700; padding:2px 8px; border-radius:20px; font-family:'DM Sans',sans-serif; color:white; }
+.sb-si-contrib.yes { background:#22c55e; }
+.sb-si-contrib.no  { background:#ef4444; }
+.sb-si-meta-row { display:flex; gap:8px; flex-wrap:wrap; }
+.sb-si-meta-chip { display:inline-flex; align-items:center; gap:6px; padding:6px 12px; border-radius:9px; background:var(--input-bg); border:1.5px solid var(--border); font-size:12px; font-family:'DM Sans',sans-serif; color:var(--text-2); }
+.av-ds-attach-label { font-size:13px; font-weight:600; color:var(--text-2); font-family:'DM Sans',sans-serif; }
+
     </style>
 </head>
 <body>
@@ -704,6 +787,7 @@ body.dashboard-body { background:var(--bg) !important; color:var(--text); font-f
                 <div class="sb-modal-avatar" id="modalAvatar">?</div>
                 <div>
                     <h3 id="modalStudentName">Student Submission</h3>
+                    <p id="modalStudentNumber" style="font-size:11px;color:var(--text-3);font-family:'DM Sans',sans-serif;margin:1px 0 2px;"></p>
                     <p id="modalSubmitTime" class="sb-modal-meta"></p>
                 </div>
             </div>
@@ -974,7 +1058,7 @@ function renderGroupSubmissions() {
                 ${memberAvatarHtml}
                 <div class="sb-group-member-info">
                     <div class="sb-group-member-name">${m.full_name || '?'}</div>
-                    <div class="sb-group-member-meta">${m.email || ''}</div>
+                    <div class="sb-group-member-meta">${m.student_number || m.email || ''}</div>
                 </div>
                 ${isLeader
                     ? '<span class="sb-leader-tag"><i class="ph-bold ph-crown-simple"></i> Leader</span>'
@@ -982,16 +1066,6 @@ function renderGroupSubmissions() {
                 <span class="sb-submitted-tag ${mTagCls}">
                     <i class="ph-bold ${mTagIcon}"></i> ${mTagLbl}
                 </span>
-                <div class="sb-att-row">
-                    <button class="sb-att-btn present ${att === 'present' ? 'active' : ''}"
-                        onclick="setGroupMemberAtt(${group.id}, ${m.id}, 'present', this)">
-                        <i class="ph-bold ph-check"></i> Present
-                    </button>
-                    <button class="sb-att-btn absent ${att === 'absent' ? 'active' : ''}"
-                        onclick="setGroupMemberAtt(${group.id}, ${m.id}, 'absent', this)">
-                        <i class="ph-bold ph-x"></i> Absent
-                    </button>
-                </div>
             </div>`;
         }).join('');
 
@@ -1018,6 +1092,7 @@ function renderGroupSubmissions() {
                     </span>
                     ${buildProgressPill(group.id)}
                     <span style="font-size:12px;color:#9ca3af;font-family:'DM Sans',sans-serif;">${members.length} member${members.length !== 1 ? 's' : ''}</span>
+                    ${leaderSub?.submitted_at ? `<span style="font-size:11px;color:var(--text-3);font-family:'DM Sans',sans-serif;display:inline-flex;align-items:center;gap:4px;"><i class="ph-bold ph-clock"></i> ${leaderSub.submitted_at}</span>` : ''}
                 </div>
                 <div style="display:flex;align-items:center;gap:12px;flex-shrink:0;">
                     <div class="sb-group-grade-badge ${isGraded ? 'graded' : 'pending'}">
@@ -1099,13 +1174,6 @@ function syncGroupInput(groupId, val) {
     if (btn)   btn.disabled = false;
 }
 
-function setGroupMemberAtt(groupId, studentId, status, btn) {
-    if (!_groupAttendance[groupId]) _groupAttendance[groupId] = {};
-    _groupAttendance[groupId][studentId] = status;
-    const row = btn.closest('.sb-att-row');
-    row.querySelectorAll('.sb-att-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-}
 
 function setGroupGradeQuick(groupId, val) {
     const input  = document.getElementById(`gradeInput-${groupId}`);
@@ -1214,9 +1282,9 @@ function renderSubmissions() {
             ${cardAvatarHtml}
             <div class="sb-submission-info">
                 <div class="sb-student-name">${sub.student_name}</div>
-                <div class="sb-submission-meta">
-                    <span><i class="ph-bold ph-envelope"></i> ${sub.student_email}</span>
-                    <span><i class="ph-bold ph-clock"></i> ${sub.submitted_at}</span>
+                ${sub.student_number ? `<div style="font-size:11px;color:var(--text-3);font-family:'DM Sans',sans-serif;margin-bottom:2px;">${sub.student_number}</div>` : ''}
+                <div style="font-size:11px;color:var(--text-3);font-family:'DM Sans',sans-serif;display:flex;align-items:center;gap:4px;">
+                    <i class="ph-bold ph-clock"></i> ${sub.submitted_at}
                 </div>
             </div>
             <span class="sb-status-badge ${isGraded ? 'sb-status-graded' : 'sb-status-pending'}">
@@ -1232,6 +1300,500 @@ function renderSubmissions() {
     runCountUp(container);
 }
 
+// ============================================================
+// FULL ACTIVITY VIEW RENDERER
+// ============================================================
+const SB_SECTION_META = {
+    lab_title:       { icon: '<i class="ph-bold ph-flask"></i>',        iconClass: 'av-icon-grad',   label: 'Lab Title' },
+    introduction:    { icon: '<i class="ph-bold ph-book-open"></i>',    iconClass: 'av-icon-purple', label: 'Introduction' },
+    outcomes:        { icon: '<i class="ph-bold ph-target"></i>',       iconClass: 'av-icon-green',  label: 'Learning Outcomes' },
+    materials:       { icon: '<i class="ph-bold ph-test-tube"></i>',    iconClass: 'av-icon-teal',   label: 'Materials' },
+    procedures:      { icon: '<i class="ph-bold ph-list-numbers"></i>', iconClass: 'av-icon-orange', label: 'Procedure' },
+    data_sheet:      { icon: '<i class="ph-bold ph-table"></i>',        iconClass: 'av-icon-indigo', label: 'Data Sheet' },
+    guide_questions: { icon: '<i class="ph-bold ph-question"></i>',     iconClass: 'av-icon-violet', label: 'Guide Questions' },
+    references:      { icon: '<i class="ph-bold ph-books"></i>',        iconClass: 'av-icon-slate',  label: 'References' },
+    student_info:    { icon: '<i class="ph-bold ph-note-pencil"></i>',  iconClass: 'av-icon-violet', label: 'Student Information' },
+};
+const SB_SECTION_ORDER = ['lab_title','introduction','outcomes','materials','procedures','data_sheet','guide_questions','references','student_info'];
+
+function sbKatexBlock(eq) {
+    try { return window.katex ? katex.renderToString(eq.trim(), { displayMode: true,  throwOnError: false }) : `\\[${eq}\\]`; }
+    catch { return `\\[${eq}\\]`; }
+}
+function sbKatexInline(eq) {
+    try { return window.katex ? katex.renderToString(eq.trim(), { displayMode: false, throwOnError: false }) : `\\(${eq}\\)`; }
+    catch { return `\\(${eq}\\)`; }
+}
+function sbApplyKatex(html) {
+    if (!html || !window.katex) return html;
+    html = html.replace(/<p[^>]*>\s*(\\\[[\s\S]*?\\\])\s*<\/p>/g, (_, inner) => {
+        const eq = inner.replace(/^\s*\\\[/,'').replace(/\\\]\s*$/,'').trim();
+        return `<div style="text-align:center;margin:14px 0;">${sbKatexBlock(eq)}</div>`;
+    });
+    html = html.replace(/\\\[([^\]]*(?:\][^\]]*)*?)\\\]/g, (_, eq) =>
+        `<div style="text-align:center;margin:14px 0;">${sbKatexBlock(eq)}</div>`);
+    html = html.replace(/\\\((.+?)\\\)/gs, (_, eq) => sbKatexInline(eq));
+    return html;
+}
+function sbRenderEq(text) {
+    if (!text || !window.katex) return text;
+    const segs = text.split(/(\\\[[\s\S]*?\\\]|\\\([\s\S]*?\\\))/g);
+    return segs.map((seg, i) => {
+        if (i % 2 === 1) {
+            if (seg.startsWith('\\[')) return `<span style="display:block;text-align:center;margin:14px 0;">${sbKatexBlock(seg.slice(2,-2).trim())}</span>`;
+            return sbKatexInline(seg.slice(2,-2).trim());
+        }
+        return seg;
+    }).join('');
+}
+
+function sbSnapTable(tbl, tblIdx, tableData, sectionType) {
+    const rows  = Array.isArray(tbl) ? tbl : (tbl.rows || []);
+    const title = Array.isArray(tbl) ? '' : (tbl.title || '');
+    if (!rows.length) return '';
+    let html = `<div class="av-table-block">
+        ${title ? `<div class="av-table-bar"><span class="av-table-title-text">${title}</span></div>` : ''}
+        <div class="av-table-scroll"><table class="av-data-table">`;
+    rows.forEach((row, rIdx) => {
+        const cells = Array.isArray(row) ? row : [row];
+        html += '<tr>';
+        cells.forEach((cell, cIdx) => {
+            const obj  = (cell && typeof cell === 'object') ? cell : null;
+            const raw  = (obj ? String(obj.value || '') : String(cell || ''));
+            const span = (obj && obj.colspan > 1) ? ` colspan="${obj.colspan}"` : '';
+            const inline = raw.replace(/\\\[([\s\S]*?)\\\]/g,'\\($1\\)');
+            const rendered = (inline.includes('\\(') || inline.includes('\\[')) ? sbRenderEq(inline) : inline;
+            if ((obj && obj.type === 'header') || (rendered !== inline && raw)) {
+                html += `<th${span} class="av-tbl-readonly-cell"><span class="av-tbl-header-text">${rendered}</span></th>`;
+            } else if (obj && obj.type === 'text' && raw) {
+                html += `<td${span} class="av-tbl-label-cell"><span>${rendered}</span></td>`;
+            } else {
+                const sKey = sectionType ? `${sectionType}:${tblIdx}` : String(tblIdx);
+                const saved = tableData?.[sKey]?.[String(rIdx)]?.[String(cIdx)]
+                           ?? tableData?.[String(tblIdx)]?.[String(rIdx)]?.[String(cIdx)]
+                           ?? tableData?.[String(rIdx)]?.[String(cIdx)] ?? '';
+                html += `<td${span}><span style="display:block;padding:6px 10px;font-size:12px;color:var(--text-2);min-width:80px;font-family:'DM Sans',sans-serif;text-align:center;">${saved || '—'}</span></td>`;
+            }
+        });
+        html += '</tr>';
+    });
+    html += `</table></div></div>`;
+    return html;
+}
+
+function sbBuildIntro(content) {
+    if (!content?.length) return '';
+    let html = '', listBuf = [];
+    function flush() {
+        if (!listBuf.length) return;
+        html += listBuf.map(it => {
+            const pad = 1.5 + (it.level||0)*1.8;
+            const lbl = it.label || (it.list_type === 'bullet' ? '•' : '');
+            return `<p style="margin-left:${pad}em;margin-top:2px;margin-bottom:2px;">${lbl?lbl+' ':''}${sbApplyKatex(it.text)}</p>`;
+        }).join('');
+        listBuf = [];
+    }
+    for (const item of content) {
+        if (item.type === 'list_item') { listBuf.push(item); continue; }
+        flush();
+        if (item.type === 'display_equation') {
+            const eq = item.text.replace(/^\s*\\\[/,'').replace(/\\\]\s*$/,'').trim();
+            html += `<div style="text-align:center;margin:14px 0;">${sbKatexBlock(eq)}</div>`;
+        } else if (item.type === 'image' && item.src) {
+            html += `<div style="text-align:center;margin:10px 0;"><img src="${item.src}" style="max-width:100%;border-radius:8px;">${item.caption?`<p style="text-align:center;font-size:12px;color:var(--text-3);margin-top:4px;"><em>${item.caption}</em></p>`:''}</div>`;
+        } else if (item.type === 'spacing') {
+            html += '<p><br></p>';
+        } else if (item.type === 'sub_header') {
+            const al = item.align ? ` style="text-align:${item.align};"` : '';
+            html += `<h3${al}>${item.text}</h3>`;
+        } else if (item.type === 'table') {
+            html += `<div style="display:flex;justify-content:center;">${sbSnapTable(item, 0, {})}</div>`;
+        } else if (item.text) {
+            if (item.text.trim().startsWith('<')) { html += sbApplyKatex(item.text); continue; }
+            html += `<p style="text-align:justify;">${sbApplyKatex(item.text)}</p>`;
+        }
+    }
+    flush();
+    return html;
+}
+
+function sbBuildProcedures(content, tableData) {
+    if (!content?.length) return '';
+    const td = tableData || {};
+    const hasSteps = content.some(c => c.type === 'step' || c.step_number);
+    let tblIdx = 0, stepNum = 0;
+    return `<div class="av-procedures-list">${content.map(c => {
+        if (c.type === 'sub_header') { stepNum = 0; return `<div class="av-sub-header">${c.text}</div>`; }
+        if (c.type === 'computation_space') return `<div class="av-computation-space"><i class="ph-bold ph-pencil-simple"></i> Show computations here</div>`;
+        if (c.type === 'graph_attachment') return `<div class="av-graph-attachment"><i class="ph-bold ph-chart-line"></i> Attach graph below</div>`;
+        if (c.type === 'table') return sbSnapTable(c, tblIdx++, td, 'procedures');
+        if (c.type === 'step' || c.step_number) {
+            const tbls = (c.inline_tables||(c.inline_table?[c.inline_table]:[])).map(t=>sbSnapTable(t,tblIdx++,td,'procedures')).join('');
+            return `<div class="av-procedure-step"><div class="av-step-num">${++stepNum}.</div><div class="av-step-text">${c.instruction||c.text||''}${tbls}</div></div>`;
+        }
+        if (c.text?.trim().startsWith('<')) return `<div class="av-text-block">${c.text}</div>`;
+        const txt = (c.text||'').trim();
+        if (!txt) return '';
+        if (hasSteps) return `<div class="av-procedure-step"><div class="av-step-num">${++stepNum}.</div><div class="av-step-text">${txt}</div></div>`;
+        return `<p class="av-step-intro">${txt}</p>`;
+    }).join('')}</div>`;
+}
+
+function sbBuildDataSheet(section, tableData, answers) {
+    // Prefer view_html snapshot — it has field rows, comp blocks, headers, tables
+    if (section.view_html) {
+        const wrap = document.createElement('div');
+        wrap.innerHTML = section.view_html;
+
+        // Table cell inputs → readonly span
+        wrap.querySelectorAll('.data-table-input').forEach(inp => {
+            const t = inp.dataset.tbl, r = inp.dataset.row, c = inp.dataset.col;
+            const scopedKey = `data_sheet:${t}`;
+            const val = tableData?.[scopedKey]?.[r]?.[c]
+                     ?? tableData?.[String(t)]?.[r]?.[c] ?? '';
+            const span = document.createElement('span');
+            span.style.cssText = 'display:block;padding:6px 10px;font-size:12px;color:var(--text-2);min-width:80px;font-family:\'DM Sans\',sans-serif;text-align:center;';
+            span.textContent = val || '—';
+            inp.parentNode.replaceChild(span, inp);
+        });
+
+        // Attach blocks — populate images + note before generic answer-textarea sweep
+        wrap.querySelectorAll('.av-ds-attach-block').forEach(block => {
+            const zone = block.querySelector('.av-ds-attach-zone');
+            const idx  = zone?.dataset.index;
+            if (!idx) return;
+            if (zone) zone.style.display = 'none';
+
+            const imgs       = block.querySelector('.av-ds-attach-imgs');
+            const savedFiles = answers?.[`${idx}_imgs`];
+            if (imgs) {
+                if (Array.isArray(savedFiles) && savedFiles.length) {
+                    imgs.innerHTML = savedFiles.map(f => {
+                        const fname = f.file || f;
+                        const oname = (f.name || fname).replace(/'/g, "\\'");
+                        const url   = `/api/submissions/file/${fname}`;
+                        return `<div onclick="_sbOpenFileModal('${url}',false,'${oname}')"
+                            style="display:flex;align-items:center;gap:10px;padding:10px 12px;
+                            border:1.5px solid var(--border);border-radius:10px;background:var(--surface);
+                            cursor:pointer;transition:border-color 0.15s;margin-bottom:4px;"
+                            onmouseover="this.style.borderColor='var(--primary)'"
+                            onmouseout="this.style.borderColor='var(--border)'">
+                            <i class="ph-bold ph-image" style="font-size:20px;color:#0a66c2;flex-shrink:0;"></i>
+                            <span style="font-size:13px;font-weight:600;color:var(--text-1);flex:1;word-break:break-all;font-family:'DM Sans',sans-serif;">${f.name || fname}</span>
+                            <i class="ph-bold ph-caret-right" style="color:var(--text-3);font-size:16px;flex-shrink:0;"></i>
+                        </div>`;
+                    }).join('');
+                } else {
+                    imgs.innerHTML = '<p style="font-size:12px;color:var(--text-3);font-family:\'DM Sans\',sans-serif;text-align:center;padding:6px 0;margin:0;">No image attached</p>';
+                }
+            }
+
+            // Note textarea — replace with styled block, mark as handled
+            const noteEl  = block.querySelector('.av-ds-attach-note');
+            if (noteEl) {
+                const noteVal = answers?.[noteEl.dataset.index] ?? '';
+                if (noteVal) {
+                    const noteDiv = document.createElement('div');
+                    noteDiv.style.cssText = 'margin-top:8px;padding:8px 12px;background:var(--input-bg);border-radius:8px;font-size:13px;color:var(--text-2);font-family:\'DM Sans\',sans-serif;line-height:1.5;';
+                    noteDiv.textContent = noteVal;
+                    noteEl.parentNode.replaceChild(noteDiv, noteEl);
+                } else {
+                    noteEl.remove();
+                }
+            }
+        });
+
+        // Field row inputs + comp/attach textareas → readonly span
+        wrap.querySelectorAll('.answer-textarea').forEach(el => {
+            const idx = el.dataset.index;
+            const val = answers?.[idx] ?? '';
+            const span = document.createElement('span');
+            span.style.cssText = 'display:inline-block;min-width:80px;padding:2px 8px;border-bottom:1.5px solid var(--border);font-size:13px;color:var(--text);font-family:\'DM Sans\',sans-serif;';
+            span.textContent = val || '—';
+            el.parentNode.replaceChild(span, el);
+        });
+
+        // Disable any remaining inputs
+        wrap.querySelectorAll('input,textarea,select').forEach(el => { el.disabled = true; });
+
+        if (tableData?.notes) wrap.innerHTML += `<div style="margin-top:10px;padding:10px 14px;background:var(--input-bg);border-radius:10px;font-size:13px;color:var(--text-2);font-family:'DM Sans',sans-serif;"><strong>Notes:</strong> ${tableData.notes}</div>`;
+        return wrap.innerHTML;
+    }
+
+    // Fallback: rebuild from structured content
+    let tblIdx = 0, html = '';
+    const content = section.content || [];
+    for (let i = 0; i < content.length; i++) {
+        const c = content[i], nxt = content[i+1];
+        if (c.type === 'table') { html += sbSnapTable(c, tblIdx++, tableData); continue; }
+        if (!c.text || c.text === '<p><br></p>') continue;
+        if (nxt?.type === 'table' && !nxt.title) {
+            const plain = c.text.replace(/<[^>]*>/g,'').trim();
+            if (plain) { html += sbSnapTable({...nxt,title:plain}, tblIdx++, tableData); i++; continue; }
+        }
+        html += c.text.trim().startsWith('<') ? `<div class="av-text-block">${c.text}</div>` : `<p class="av-text-block">${c.text}</p>`;
+    }
+    if (tblIdx === 0 && parsedActivity?.tables?.length) {
+        parsedActivity.tables.forEach((tbl, ti) => { html += sbSnapTable(tbl, ti, tableData); });
+    }
+    if (tableData?.notes) html += `<div style="margin-top:10px;padding:10px 14px;background:var(--input-bg);border-radius:10px;font-size:13px;color:var(--text-2);font-family:'DM Sans',sans-serif;"><strong>Notes:</strong> ${tableData.notes}</div>`;
+    return html;
+}
+
+function sbBuildGuideQuestions(content, answers, tableData) {
+    const td = tableData || {};
+    let qCounter = 0, tblIdx = 0, fbCounter = 0;
+    const items = [];
+    for (let i = 0; i < content.length; i++) {
+        const c = content[i], nxt = content[i+1];
+        if (nxt?.type === 'table' && !nxt.title && c.text) {
+            const plain = c.text.replace(/<[^>]*>/g,'').trim();
+            if (plain) { items.push({...nxt,title:plain}); i++; continue; }
+        }
+        items.push(c);
+    }
+    return items.map(c => {
+        if (c.type === 'image' && c.src) return `<div style="text-align:center;margin:10px 0;"><img src="${c.src}" style="max-width:80%;border-radius:8px;"></div>`;
+        if (c.type === 'table') return sbSnapTable(c, tblIdx++, td, 'guide_questions');
+        if (c.type === 'text' && !c.question_number) return `<p class="av-step-intro" style="padding:4px 0;">${c.text||''}</p>`;
+        if (c.type === 'fill_blank') {
+            const idx = fbCounter++;
+            const ans = answers?.[`fb_${idx}`] ?? '';
+            return `<div class="av-fill-blank">
+                <span style="display:inline-block;min-width:60px;border-bottom:1.5px solid var(--primary-l);text-align:center;padding:2px 8px;font-size:13px;color:var(--text);">${ans||'&nbsp;&nbsp;&nbsp;'}</span>
+                ${c.number?`<span class="av-fill-blank-num">${c.number}</span>`:''}
+                <span>${c.text||''}</span>
+            </div>`;
+        }
+        if (c.type === 'sub_question') {
+            const idx = qCounter++;
+            const ans = answers?.[String(idx)] ?? answers?.[idx] ?? '';
+            return `<div class="av-sub-question">
+                <span class="av-sub-q-label">${/[\.\)]$/.test(c.label)?c.label:c.label+'.'}</span>
+                <div class="av-sub-q-body">
+                    <span>${c.text||''}</span>
+                    ${ans ? `<div class="sb-view-answer">${ans}</div>` : `<div class="sb-no-answer">No answer provided.</div>`}
+                </div>
+            </div>`;
+        }
+        const qNum  = c.question_number || (qCounter + 1);
+        const qText = c.question || c.text || '';
+        if (!qText) return '';
+        const ansIdx = qCounter++;
+        const ans = answers?.[String(ansIdx)] ?? answers?.[ansIdx] ?? '';
+        const tbls = (c.inline_tables||(c.inline_table?[c.inline_table]:[])).map(t=>sbSnapTable(t,tblIdx++,td,'guide_questions')).join('');
+        return `<div class="av-question-item">
+            <div class="av-question-text"><strong>${qNum}.</strong>&nbsp;<span class="av-q-body">${sbApplyKatex(qText)}</span></div>
+            ${tbls}
+            ${ans ? `<div class="sb-view-answer">${ans}</div>` : `<div class="sb-no-answer">No answer provided.</div>`}
+        </div>`;
+    }).join('');
+}
+
+function sbBuildSection(section, sub) {
+    const type = section.type;
+    const content = section.content || [];
+    const meta = SB_SECTION_META[type] || { icon: '<i class="ph-bold ph-file-text"></i>', iconClass: 'av-icon-slate', label: section.title || type };
+
+    if (type === 'lab_title') {
+        const labNum   = section.title || 'LABORATORY ACTIVITY';
+        const labTitle = content.map(c => (c.text||'').replace(/<[^>]*>/g,'').trim()).filter(Boolean).join(' ');
+        return `<div class="av-lab-header" style="margin-bottom:16px;">
+            <div class="av-lab-badge"><i class="ph-bold ph-flask"></i> ${labNum}</div>
+            ${labTitle ? `<h2 class="av-lab-title-text" style="margin:8px 0 0;">${labTitle}</h2>` : ''}
+        </div>`;
+    }
+
+    let bodyHtml = '';
+    if (type === 'introduction') {
+        bodyHtml = `<div class="intro-preview-wrap">${sbBuildIntro(content)}</div>`;
+    } else if (type === 'outcomes') {
+        const introItem = content.find(c => c.type === 'outcome_intro');
+        const items = content.filter(c => c.type !== 'outcome_intro');
+        bodyHtml = (introItem ? `<p class="av-text-block" style="margin-bottom:10px;">${introItem.text}</p>` : '') +
+            `<ol class="av-numbered-list">${items.map((c,i) =>
+                `<li><span>${c.text||c.outcome||''}</span></li>`
+            ).join('')}</ol>`;
+    } else if (type === 'materials') {
+        const checked = sub.materials_checked || {};
+        bodyHtml = `<div class="av-materials-list">${content.map((c,i) => {
+            if (c.is_checkbox || c.item) {
+                const isChk = checked[String(i)] || checked[i];
+                return `<div class="av-material-item">
+                    <input type="checkbox" class="av-material-check" ${isChk ? 'checked' : ''} disabled>
+                    <span>${c.item||c.text||''}</span>
+                </div>`;
+            }
+            if (c.note || c.text) return `<div class="av-material-note"><i class="ph-bold ph-push-pin"></i> <span>${c.note||c.text}</span></div>`;
+            return '';
+        }).join('')}</div>`;
+    } else if (type === 'procedures') {
+        bodyHtml = sbBuildProcedures(content, sub.table_data || {});
+    } else if (type === 'data_sheet') {
+        bodyHtml = sbBuildDataSheet(section, sub.table_data || {}, sub.answers || {});
+    } else if (type === 'guide_questions') {
+        bodyHtml = sbBuildGuideQuestions(content, sub.answers || {}, sub.table_data || {});
+    } else if (type === 'references') {
+        bodyHtml = `<div class="av-references-list">${content.map(c =>
+            c.text ? `<div class="av-reference-item"><span>${c.text}</span></div>` : ''
+        ).join('')}</div>`;
+    } else if (type === 'student_info') {
+        const info       = sub.student_info || {};
+        const members    = info.members || [];
+        const attendance = info.attendance || {};
+        const leaderIdx  = info.leader_index ?? -1;
+        const groupNum   = info.group_number || info.group_id;
+        const groupName  = info.group_name || '';
+        let si = '';
+        if (groupNum) {
+            si += `<div class="sb-si-group-banner">
+                <span class="sb-si-group-badge"><i class="ph-bold ph-circles-three"></i> Group ${groupNum}</span>
+                ${groupName ? `<span class="sb-si-group-info"><strong>${groupName}</strong></span>` : ''}
+                <span class="sb-si-group-info">${members.length} member${members.length !== 1 ? 's' : ''}</span>
+            </div>`;
+        }
+        si += `<div class="sb-si-member-grid">`;
+        members.forEach((m, i) => {
+            const name       = typeof m === 'string' ? m : (m.full_name || m.name || 'Unknown');
+            const avatarSrc  = typeof m === 'object' ? (m.avatar || null) : null;
+            const isLeader   = leaderIdx === i;
+            const contributed = attendance[i] !== 'absent' && attendance[String(i)] !== 'absent';
+            const avatarHtml  = avatarSrc ? makePhotoAvatar(avatarSrc, 36, '50%') : makeInitialsAvatar(name, 36, '50%', 13);
+            si += `<div class="sb-si-member-row ${isLeader ? 'is-leader' : ''}">
+                ${avatarHtml}
+                <div class="sb-si-member-info">
+                    <div class="sb-si-member-name">${name}</div>
+                    <div class="sb-si-badges">
+                        ${isLeader
+                            ? `<span class="sb-si-badge-leader"><i class="ph-bold ph-crown-simple"></i> Leader</span>`
+                            : `<span class="sb-si-badge-member"><i class="ph-bold ph-user"></i> Member</span>`}
+                        <span class="sb-si-contrib ${contributed ? 'yes' : 'no'}">
+                            <i class="ph-bold ${contributed ? 'ph-check-circle' : 'ph-x-circle'}"></i>
+                            ${contributed ? 'Contributed' : 'Did not contribute'}
+                        </span>
+                    </div>
+                </div>
+            </div>`;
+        });
+        si += `</div>`;
+        if (info.section || info.date) {
+            si += `<div class="sb-si-meta-row">
+                ${info.section ? `<div class="sb-si-meta-chip"><i class="ph-bold ph-tag"></i> ${info.section}</div>` : ''}
+                ${info.date    ? `<div class="sb-si-meta-chip"><i class="ph-bold ph-calendar"></i> ${info.date}</div>` : ''}
+            </div>`;
+        }
+        bodyHtml = si;
+    }
+
+    if (!bodyHtml.trim()) return '';
+    const uid = type;
+    return `<div class="av-section-wrapper" data-section-type="${type}">
+        <div class="av-section-header" onclick="sbToggle('${uid}')">
+            <div class="av-section-header-left">
+                <div class="av-section-icon ${meta.iconClass}">${meta.icon}</div>
+                <span class="av-section-label">${meta.label}</span>
+            </div>
+            <div class="av-section-header-right">
+                <i class="ph-bold ph-caret-down av-toggle-icon open" id="sb-toggle-${uid}"></i>
+            </div>
+        </div>
+        <div class="av-section-body" id="sb-body-${uid}">
+            <div class="av-section-body-inner">${bodyHtml}</div>
+        </div>
+    </div>`;
+}
+
+function sbToggle(uid) {
+    const body = document.getElementById(`sb-body-${uid}`);
+    const icon = document.getElementById(`sb-toggle-${uid}`);
+    if (!body) return;
+    body.classList.toggle('hidden');
+    if (icon) icon.classList.toggle('open', !body.classList.contains('hidden'));
+}
+
+function buildFullSubmissionView(sub) {
+    if (!parsedActivity?.sections) return buildSubmissionDetail(sub);
+    const sections = parsedActivity.sections;
+    let html = '';
+    for (const type of SB_SECTION_ORDER) {
+        if (type === 'student_info') continue; // handled separately below
+        const section = sections.find(s => s.type === type);
+        if (section) html += sbBuildSection(section, sub);
+    }
+    // Student info is always rendered from submission data, not activity sections
+    if (sub.student_info && Object.keys(sub.student_info).length > 0) {
+        html += sbBuildSection({ type: 'student_info', content: [] }, sub);
+    }
+    // Upload Files section
+    const sbFiles2 = sub.uploaded_files?.length ? sub.uploaded_files
+                   : sub.uploaded_file ? [{ file: sub.uploaded_file, name: 'Uploaded File' }] : [];
+    if (sbFiles2.length) {
+        const fileCards = sbFiles2.map((f, i) => {
+            const safeName = f.file || f;
+            const dispName = f.name || `File ${i + 1}`;
+            const isPdf    = safeName.endsWith('.pdf');
+            const url      = `/api/submissions/file/${safeName}`;
+            const icon     = isPdf ? 'ph-file-pdf' : 'ph-image';
+            const color    = isPdf ? '#ef4444' : '#0a66c2';
+            return `<div onclick="_sbOpenFileModal('${url}',${isPdf},'${dispName.replace(/'/g,"\\'")}')"
+                style="display:flex;align-items:center;gap:10px;padding:10px 12px;
+                border:1.5px solid var(--border);border-radius:10px;background:var(--surface);
+                cursor:pointer;transition:border-color 0.15s;margin-bottom:8px;"
+                onmouseover="this.style.borderColor='var(--primary)'"
+                onmouseout="this.style.borderColor='var(--border)'">
+                <i class="ph-bold ${icon}" style="font-size:20px;color:${color};flex-shrink:0;"></i>
+                <span style="font-size:13px;font-weight:600;color:var(--text-1);flex:1;word-break:break-all;font-family:'DM Sans',sans-serif;">${dispName}</span>
+                <i class="ph-bold ph-caret-right" style="color:var(--text-3);font-size:16px;flex-shrink:0;"></i>
+            </div>`;
+        }).join('');
+        html += `<div class="av-section-wrapper" data-section-type="upload_files">
+            <div class="av-section-header" onclick="sbToggle('upload_files')">
+                <div class="av-section-header-left">
+                    <div class="av-section-icon av-icon-teal"><i class="ph-bold ph-paperclip"></i></div>
+                    <span class="av-section-label">Uploaded Files (${sbFiles2.length})</span>
+                </div>
+                <div class="av-section-header-right">
+                    <i class="ph-bold ph-caret-down av-toggle-icon open" id="sb-toggle-upload_files"></i>
+                </div>
+            </div>
+            <div class="av-section-body" id="sb-body-upload_files">
+                <div class="av-section-body-inner">${fileCards}</div>
+            </div>
+        </div>`;
+    }
+    // Grade form
+    const currentGrade = sub.grade ?? '';
+    const isGroup = !!sub.group_id;
+    const gradeLabel = isGroup ? 'Save Grade for All Members' : 'Save Grade';
+    const gradeNote  = isGroup ? `<div style="font-size:11px;color:var(--text-3);margin-top:4px;"><i class="ph-bold ph-users"></i> This grade will apply to all members of this group.</div>` : '';
+    html += `<div class="sb-grade-form" style="margin-top:8px;">
+        <div class="sb-grade-form-title"><i class="ph-bold ph-star"></i> Grade This Submission${gradeNote}</div>
+        <div class="sb-grade-row">
+            <span class="sb-grade-row-label">Score:</span>
+            <input type="number" class="sb-grade-input" id="gradeInput" min="0" max="100" value="${currentGrade}" placeholder="0">
+            <span class="sb-grade-denom-label">/100</span>
+            <input type="range" class="sb-grade-slider" id="gradeSlider" min="0" max="100" value="${currentGrade||0}">
+        </div>
+        <div class="sb-quick-wrap">
+            <span class="sb-quick-label">Quick:</span>
+            <div class="sb-quick-grades">
+                ${[60,65,70,75,80,85,90,95,100].map(g=>`<button class="sb-quick-btn" onclick="setGrade(${g})">${g}</button>`).join('')}
+            </div>
+        </div>
+        <label class="sb-feedback-label">Feedback (optional):</label>
+        <textarea class="sb-feedback-input" id="feedbackInput" placeholder="Write your feedback here...">${sub.feedback||''}</textarea>
+        <div class="sb-grade-actions">
+            <button class="sb-btn-save-grade" onclick="submitGrade(${sub.id})">
+                <i class="ph-bold ph-floppy-disk"></i> ${gradeLabel}
+            </button>
+            <span class="sb-grade-saved-msg" id="gradeSavedMsg">
+                <i class="ph-bold ph-check-circle"></i> Grade Saved!
+            </span>
+        </div>
+    </div>`;
+    return html;
+}
+
 function viewSubmission(subId) {
     currentSubmission = allSubmissions.find(s => s.id === subId);
     if (!currentSubmission) return;
@@ -1242,14 +1804,28 @@ function viewSubmission(subId) {
     modalAvatarEl.innerHTML = avatarHtml;
     modalAvatarEl.style.background = 'none';
     document.getElementById('modalStudentName').textContent = currentSubmission.student_name;
-    document.getElementById('modalSubmitTime').textContent = 'Submitted: ' + currentSubmission.submitted_at;
-    document.getElementById('modalBody').innerHTML = buildSubmissionDetail(currentSubmission);
+    const snEl = document.getElementById('modalStudentNumber');
+    if (snEl) snEl.textContent = currentSubmission.student_number || '';
+    document.getElementById('modalSubmitTime').textContent  = 'Submitted: ' + currentSubmission.submitted_at;
+    document.getElementById('modalBody').innerHTML = buildFullSubmissionView(currentSubmission);
     document.getElementById('submissionModal').classList.add('active');
     const gradeInput  = document.getElementById('gradeInput');
     const gradeSlider = document.getElementById('gradeSlider');
     if (gradeInput && gradeSlider) {
         gradeInput.addEventListener('input',  () => gradeSlider.value = gradeInput.value);
         gradeSlider.addEventListener('input', () => gradeInput.value  = gradeSlider.value);
+    }
+    // KaTeX auto-render pass for any remaining un-rendered math
+    if (window.renderMathInElement) {
+        try {
+            renderMathInElement(document.getElementById('modalBody'), {
+                delimiters: [
+                    { left: '\\[', right: '\\]', display: true },
+                    { left: '\\(', right: '\\)', display: false },
+                ],
+                throwOnError: false
+            });
+        } catch {}
     }
 }
 
@@ -1365,19 +1941,39 @@ function buildSubmissionDetail(sub) {
         </div>`;
     }
 
-    if (sub.uploaded_file) {
+    const sbFiles = sub.uploaded_files?.length ? sub.uploaded_files
+                  : sub.uploaded_file ? [{ file: sub.uploaded_file, name: 'Uploaded File' }] : [];
+    if (sbFiles.length) {
+        const sbFileCards = sbFiles.map((f, i) => {
+            const safeName = f.file || f;
+            const dispName = f.name || `File ${i + 1}`;
+            const isPdf    = safeName.endsWith('.pdf');
+            const url      = `/api/submissions/file/${safeName}`;
+            const icon     = isPdf ? 'ph-file-pdf' : 'ph-image';
+            const color    = isPdf ? '#ef4444' : '#0a66c2';
+            return `<div onclick="_sbOpenFileModal('${url}',${isPdf},'${dispName.replace(/'/g,"\\'")}')"
+                style="display:flex;align-items:center;gap:10px;padding:10px 12px;
+                border:1.5px solid var(--border);border-radius:10px;background:var(--surface);
+                cursor:pointer;transition:border-color 0.15s;margin-bottom:8px;"
+                onmouseover="this.style.borderColor='var(--primary)'"
+                onmouseout="this.style.borderColor='var(--border)'">
+                <i class="ph-bold ${icon}" style="font-size:20px;color:${color};flex-shrink:0;"></i>
+                <span style="font-size:13px;font-weight:600;color:var(--text-1);flex:1;word-break:break-all;font-family:'DM Sans',sans-serif;">${dispName}</span>
+                <i class="ph-bold ph-caret-right" style="color:var(--text-3);font-size:16px;flex-shrink:0;"></i>
+            </div>`;
+        }).join('');
         html += `<div class="sb-detail-section">
-            <div class="sb-detail-title"><i class="ph-bold ph-paperclip"></i> Uploaded File</div>
-            <a href="/api/submissions/file/${sub.uploaded_file}"
-               target="_blank" class="sb-file-link">
-                <i class="ph-bold ph-file-arrow-down"></i> View Uploaded File
-            </a>
+            <div class="sb-detail-title"><i class="ph-bold ph-paperclip"></i> Uploaded Files (${sbFiles.length})</div>
+            ${sbFileCards}
         </div>`;
     }
 
     const currentGrade = sub.grade ?? '';
+    const isGroup2 = !!sub.group_id;
+    const gradeLabel2 = isGroup2 ? 'Save Grade for All Members' : 'Save Grade';
+    const gradeNote2  = isGroup2 ? `<div style="font-size:11px;color:var(--text-3);margin-top:4px;"><i class="ph-bold ph-users"></i> This grade will apply to all members of this group.</div>` : '';
     html += `<div class="sb-grade-form">
-        <div class="sb-grade-form-title"><i class="ph-bold ph-star"></i> Grade This Submission</div>
+        <div class="sb-grade-form-title"><i class="ph-bold ph-star"></i> Grade This Submission${gradeNote2}</div>
         <div class="sb-grade-row">
             <span class="sb-grade-row-label">Score:</span>
             <input type="number" class="sb-grade-input" id="gradeInput"
@@ -1399,7 +1995,7 @@ function buildSubmissionDetail(sub) {
             placeholder="Write your feedback here...">${sub.feedback || ''}</textarea>
         <div class="sb-grade-actions">
             <button class="sb-btn-save-grade" onclick="submitGrade(${sub.id})">
-                <i class="ph-bold ph-floppy-disk"></i> Save Grade
+                <i class="ph-bold ph-floppy-disk"></i> ${gradeLabel2}
             </button>
             <span class="sb-grade-saved-msg" id="gradeSavedMsg">
                 <i class="ph-bold ph-check-circle"></i> Grade Saved!
@@ -1472,6 +2068,55 @@ loadData();
         } catch { /* ignore */ }
     }, 5000);
 })();
+</script>
+
+<div id="sbFilePreviewModal" style="
+    position:fixed;inset:0;z-index:9999;
+    background:rgba(0,0,0,0.82);backdrop-filter:blur(4px);
+    display:flex;flex-direction:column;align-items:stretch;
+    opacity:0;pointer-events:none;transition:opacity 0.2s;" onclick="_sbCloseFileModal(event)">
+    <div style="display:flex;align-items:center;gap:10px;padding:12px 16px;background:rgba(20,20,30,0.95);flex-shrink:0;">
+        <i id="sbFileModalIcon" class="ph-bold ph-file" style="font-size:20px;flex-shrink:0;color:#fff;"></i>
+        <span id="sbFileModalName" style="flex:1;font-size:14px;font-weight:600;color:#fff;font-family:'DM Sans',sans-serif;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;"></span>
+        <a id="sbFileModalOpen" href="#" target="_blank" style="display:flex;align-items:center;gap:5px;padding:6px 12px;background:#0a66c2;color:#fff;border:none;border-radius:8px;font-size:12px;font-weight:600;font-family:'DM Sans',sans-serif;cursor:pointer;text-decoration:none;">
+            <i class="ph-bold ph-arrow-square-out"></i> Open</a>
+        <button onclick="_sbCloseFileModal()" style="background:none;border:none;color:#fff;font-size:22px;cursor:pointer;padding:4px 8px;border-radius:6px;line-height:1;">
+            <i class="ph-bold ph-x"></i></button>
+    </div>
+    <div id="sbFileModalBody" style="flex:1;overflow:auto;display:flex;align-items:flex-start;justify-content:center;"></div>
+</div>
+<script>
+function _sbOpenFileModal(url, isPdf, name) {
+    const modal = document.getElementById('sbFilePreviewModal');
+    const body  = document.getElementById('sbFileModalBody');
+    document.getElementById('sbFileModalName').textContent = name || (isPdf ? 'Document' : 'Image');
+    document.getElementById('sbFileModalOpen').href = url;
+    const icon = document.getElementById('sbFileModalIcon');
+    icon.className = `ph-bold ${isPdf ? 'ph-file-pdf' : 'ph-image'}`;
+    icon.style.cssText = `font-size:20px;flex-shrink:0;color:${isPdf ? '#f87171' : '#60a5fa'};`;
+    body.innerHTML = '';
+    if (isPdf) {
+        const fr = document.createElement('iframe');
+        fr.src = url; fr.style.cssText = 'width:100%;height:100%;border:none;min-height:100vh;';
+        body.appendChild(fr);
+    } else {
+        const img = document.createElement('img');
+        img.src = url; img.alt = name;
+        img.style.cssText = 'max-width:100%;max-height:100vh;object-fit:contain;display:block;margin:auto;';
+        body.appendChild(img);
+    }
+    modal.style.opacity = '1';
+    modal.style.pointerEvents = 'all';
+    document.body.style.overflow = 'hidden';
+}
+function _sbCloseFileModal(e) {
+    if (e && e.target !== document.getElementById('sbFilePreviewModal')) return;
+    const modal = document.getElementById('sbFilePreviewModal');
+    modal.style.opacity = '0';
+    modal.style.pointerEvents = 'none';
+    document.getElementById('sbFileModalBody').innerHTML = '';
+    document.body.style.overflow = '';
+}
 </script>
 </body>
 </html>

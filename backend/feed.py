@@ -38,7 +38,10 @@ def get_history():
     user_id = int(get_jwt_identity())
     user = User.query.get(user_id)
     if user.role == 'professor':
-        class_ids = [c.id for c in Class.query.filter_by(professor_id=user_id).all()]
+        from models import ClassTeacher
+        owned = [c.id for c in Class.query.filter_by(professor_id=user_id).all()]
+        coteaching = [ct.class_id for ct in ClassTeacher.query.filter_by(teacher_id=user_id).all()]
+        class_ids = list(set(owned + coteaching))
     else:
         class_ids = [m.class_id for m in ClassMember.query.filter_by(student_id=user_id).all()]
     if not class_ids:

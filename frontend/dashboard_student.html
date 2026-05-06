@@ -559,7 +559,7 @@
         .status-overdue       { background: rgba(239,68,68,0.12);   color: #fca5a5; border: 1px solid rgba(239,68,68,0.25); }
         .status-not-submitted { background: var(--card-bg); color: var(--text-3); border: 1px solid var(--border); }
 
-        .grade-pill { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 800; color: var(--primary-l); }
+        .grade-pill { font-family: 'Inter', sans-serif; font-size: 11px; font-weight: 800; color: var(--primary-l);color: #ffffff; }
         .due-info { font-size: 11px; color: var(--text-3); display: flex; align-items: center; gap: 4px; margin-top: 3px; }
         .due-info.overdue { color: #fca5a5; }
 
@@ -638,7 +638,7 @@
 
     <div class="welcome-banner">
         <div class="wb-left">
-            <p class="db-welcome-greeting">Welcome back</p>
+            <p class="db-welcome-greeting">Welcome!</p>
             <h2 class="db-welcome-name" id="welcomeName">Student</h2>
             <p class="db-welcome-sub">View your enrolled classes and pending activities.</p>
         </div>
@@ -913,6 +913,37 @@ async function loadClasses() {
         container.innerHTML = `<div class="db-classes-grid">${data.map((c, i) => {
             const t = THEMES[c.theme || 0];
             return `
+            ${c.enrollment_status === 'pending' ? `
+            <div class="db-class-card fade-up" style="animation-delay:${i * 0.07}s;position:relative;opacity:0.7;cursor:default;">
+                <div class="cc-banner ${t.bannerClass}"${c.theme === 6 && c.banner_image ? ` style="background:url('${c.banner_image}') center/cover no-repeat,#111;"` : ''}>
+                    ${c.theme === 6 && c.banner_image ? '' : renderBannerDecos(t, 0.18)}
+                    <div style="position:absolute;top:8px;left:10px;background:#f59e0b;color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;"><i class="ph-bold ph-clock"></i> Pending Approval</div>
+                </div>
+                <div class="cc-card-body">
+                    <div class="cc-class-name">${c.class_name}</div>
+                    <div class="cc-class-sub">${c.subject}</div>
+                    <div class="cc-class-section">${c.section}</div>
+                    <div class="cc-card-footer">
+                        <span class="cc-prof"><i class="ph-bold ph-chalkboard-teacher"></i> ${c.professor_name}</span>
+                        <span style="font-size:11px;color:#f59e0b;">Waiting for approval</span>
+                    </div>
+                </div>
+            </div>` : c.enrollment_status === 'rejected' ? `
+            <div class="db-class-card fade-up" style="animation-delay:${i * 0.07}s;position:relative;opacity:0.6;cursor:default;">
+                <div class="cc-banner ${t.bannerClass}"${c.theme === 6 && c.banner_image ? ` style="background:url('${c.banner_image}') center/cover no-repeat,#111;"` : ''}>
+                    ${c.theme === 6 && c.banner_image ? '' : renderBannerDecos(t, 0.18)}
+                    <div style="position:absolute;top:8px;left:10px;background:#ef4444;color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:20px;"><i class="ph-bold ph-x-circle"></i> Request Declined</div>
+                </div>
+                <div class="cc-card-body">
+                    <div class="cc-class-name">${c.class_name}</div>
+                    <div class="cc-class-sub">${c.subject}</div>
+                    <div class="cc-class-section">${c.section}</div>
+                    <div class="cc-card-footer">
+                        <span class="cc-prof"><i class="ph-bold ph-chalkboard-teacher"></i> ${c.professor_name}</span>
+                        <span style="font-size:11px;color:#ef4444;">Your request was declined</span>
+                    </div>
+                </div>
+            </div>` : `
             <div class="db-class-card fade-up" onclick="navigateTo('/class_detail?id=${c.id}')" style="animation-delay:${i * 0.07}s;position:relative;">
                 <div class="cc-banner ${t.bannerClass}"${c.theme === 6 && c.banner_image ? ` style="background:url('${c.banner_image}') center/cover no-repeat,#111;"` : ''}>
                     ${c.theme === 6 && c.banner_image ? '' : renderBannerDecos(t, 0.18)}
@@ -927,7 +958,7 @@ async function loadClasses() {
                         <span class="cc-arrow"><i class="ph-bold ph-arrow-right"></i></span>
                     </div>
                 </div>
-            </div>`}).join('')}</div>`;
+            </div>`}`}).join('')}</div>`;
         if (typeof observeFade === 'function') observeFade(container);
 
         const ids = data.map(c => c.id);

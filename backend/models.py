@@ -23,6 +23,9 @@ class User(db.Model):
     avatar     = db.Column(db.Text,        nullable=True)        # base64 data URL
     created_at = db.Column(db.DateTime,    default=datetime.utcnow)
 
+    # Preferences
+    notifications_enabled = db.Column(db.Boolean, default=True)
+
     # Admin controls
     status    = db.Column(db.String(20), default='active')      # 'active' | 'pending' | 'deactivated'
     is_active = db.Column(db.Boolean,    default=True)           # False = deactivated by admin
@@ -56,6 +59,7 @@ class Class(db.Model):
 
     # Admin controls
     is_archived = db.Column(db.Boolean, default=False)       # True = archived by admin
+    auto_accept = db.Column(db.Boolean, default=True)        # True = auto-enroll, False = manual approval
 
 class ClassMember(db.Model):
     __tablename__ = 'class_members'
@@ -65,6 +69,7 @@ class ClassMember(db.Model):
     student_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     joined_at = db.Column(db.DateTime, default=datetime.utcnow)
     is_archived = db.Column(db.Boolean, default=False)  # student soft-archive
+    enrollment_status = db.Column(db.String(20), default='approved')  # approved, pending, rejected
 
 
 class Announcement(db.Model):
@@ -115,7 +120,8 @@ class Submission(db.Model):
     student_info = db.Column(db.JSON, nullable=True)       # JSON - name, section, date
 
     # File upload
-    uploaded_file = db.Column(db.String(200), nullable=True)
+    uploaded_file  = db.Column(db.String(200), nullable=True)   # legacy single-file
+    uploaded_files = db.Column(db.JSON, nullable=True)           # [{file, name}, ...]
 
     # Grading
     grade = db.Column(db.Float, nullable=True)
@@ -233,12 +239,22 @@ class Notification(db.Model):
 class ClassInvite(db.Model):
     __tablename__ = 'class_invites'
 
+    id          = db.Column(db.Integer, primary_key=True)
+    class_id    = db.Column(db.Integer, db.ForeignKey('classes.id'),  nullable=False)
+    student_id  = db.Column(db.Integer, db.ForeignKey('users.id'),    nullable=False)
+    invited_by  = db.Column(db.Integer, db.ForeignKey('users.id'),    nullable=False)
+    status      = db.Column(db.String(20), default='pending')  # pending|accepted|declined
+    invite_type = db.Column(db.String(20), default='student')  # student|teacher
+    created_at  = db.Column(db.DateTime, default=datetime.utcnow)
+
+
+class ClassTeacher(db.Model):
+    __tablename__ = 'class_teachers'
+
     id         = db.Column(db.Integer, primary_key=True)
-    class_id   = db.Column(db.Integer, db.ForeignKey('classes.id'),  nullable=False)
-    student_id = db.Column(db.Integer, db.ForeignKey('users.id'),    nullable=False)
-    invited_by = db.Column(db.Integer, db.ForeignKey('users.id'),    nullable=False)
-    status     = db.Column(db.String(20), default='pending')  # pending|accepted|declined
-    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    class_id   = db.Column(db.Integer, db.ForeignKey('classes.id'), nullable=False)
+    teacher_id = db.Column(db.Integer, db.ForeignKey('users.id'),   nullable=False)
+    joined_at  = db.Column(db.DateTime, default=datetime.utcnow)
 
 
 class FeedEvent(db.Model):

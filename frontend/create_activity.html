@@ -2548,7 +2548,6 @@ body.dashboard-body {
                     <button class="ds-btn-add-table" onclick="dsAddHeaderBlock()"><i class="ph-bold ph-text-h"></i> Header</button>
                     <button class="ds-btn-add-table" onclick="dsAddFieldBlock()"><i class="ph-bold ph-input-field"></i> Field Row</button>
                     <button class="ds-btn-add-table" onclick="dsAddTable()"><i class="ph-bold ph-table"></i> Table</button>
-                    <button class="ds-btn-add-table" onclick="dsAddComputationBlock()"><i class="ph-bold ph-pencil-simple"></i> Computation</button>
                     <button class="ds-btn-add-table" onclick="dsAddAttachmentBlock()"><i class="ph-bold ph-image-square"></i> Attachment</button>
                 </div>
             </div>
@@ -4766,9 +4765,6 @@ function insertProcTable(procId, rows, cols, title, insertAfterEl) {
             <div class="ca-tbl-dd-item" onclick="_tblMenuAction('${tblId}',()=>insertProcTable('ds',4,3,'',document.getElementById('${tblId}-wrap')))">
                 <i class="ph-bold ph-table"></i> Insert Table After
             </div>
-            <div class="ca-tbl-dd-item" onclick="_tblMenuAction('${tblId}',()=>dsAddComputationBlock('',document.getElementById('${tblId}-wrap')))">
-                <i class="ph-bold ph-pencil-simple"></i> Add Computation After
-            </div>
             <div class="ca-tbl-dd-item" onclick="_tblMenuAction('${tblId}',()=>dsAddAttachmentBlock('',document.getElementById('${tblId}-wrap')))">
                 <i class="ph-bold ph-image-square"></i> Add Attachment After
             </div>
@@ -5805,9 +5801,9 @@ function _serializeProcTableWrap(wrap, tblIdx = 0) {
         html += '<tr>';
         tr.querySelectorAll('td').forEach(td => {
             const raw = (td.querySelector('textarea')?.value || '').trim();
-            const rawInline = raw.replace(/\\\[([\s\S]*?)\\\]/g, '\\($1\\)');
-            const rendered = (rawInline.includes('\\(') || rawInline.includes('\\['))
-                ? renderEqToHtml(rawInline) : rawInline;
+            const span = (obj && obj.colspan > 1) ? ` colspan="${obj.colspan}"` : '';
+            const hasLatex = raw.includes('\\(') || raw.includes('\\[');
+            const rendered = hasLatex ? renderEqToHtml(raw) : raw;
             html += `<th class="av-tbl-readonly-cell"><span class="av-tbl-header-text">${rendered}</span></th>`;
         });
         html += '</tr>';
@@ -6122,7 +6118,7 @@ function renderGqPreview() {
     const questions = [];
     document.querySelectorAll('.ca-q-row').forEach((row, i) => {
         const q = qEditors[row.id];
-        if (!q || q.getText().trim().length === 0) return;
+        if (!q || q.root.innerHTML.replace(/<[^>]*>/g, '').trim().length === 0) return;
         const inlineTables = _collectProcTables(row.id);
         const qObj = { question_number: i + 1, question: _quillToDisplay(q.root.innerHTML) };
         if (inlineTables.length) qObj.inline_tables = inlineTables;
@@ -6186,6 +6182,18 @@ function _htmlForQuill(html) {
         }
     });
     return tmp.innerHTML;
+}
+
+function _normalizePrefillRichText(text) {
+    const raw = String(text || '').trim();
+    if (!raw) return '';
+    const hasHtmlTag = /<\s*[a-z][^>]*>/i.test(raw);
+    let html = hasHtmlTag ? raw : `<p>${raw}</p>`;
+    // Remove accidental blank paragraphs at top/bottom that cause visual extra spacing.
+    html = html
+        .replace(/^(?:\s*<p>(?:\s|&nbsp;|<br\s*\/?>)*<\/p>\s*)+/i, '')
+        .replace(/(?:\s*<p>(?:\s|&nbsp;|<br\s*\/?>)*<\/p>\s*)+$/i, '');
+    return html;
 }
 
 // Convert Quill-specific formatting classes to inline CSS so preview divs
@@ -6523,14 +6531,17 @@ function _applyTblCellRender(td, ta, cleanVal, isHeader) {
 // ============================================================
 // PREFILL FROM DOCX
 // ============================================================
-async function prefillFromDocx(activityId, suppressToast = false) {
+async function prefillFromDocx(activityId, suppressToast = false, forceReparse = true) {
     showToast('Loading parsed activity...', 'info');
     try {
-        // Re-parse the DOCX from disk so any parser fixes are applied to the stored data
-        await fetch(`/api/activities/${activityId}/reparse`, {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${token}` }
-        }).catch(() => {}); // silent — if file is missing or already latest, fall through
+        // Re-parse only for direct DOCX-import flow. In edit flow, use stored parsed_content
+        // so sections don't disappear due to parser drift.
+        if (forceReparse) {
+            await fetch(`/api/activities/${activityId}/reparse`, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` }
+            }).catch(() => {}); // silent — if file is missing or already latest, fall through
+        }
 
         const res = await fetch(`/api/activities/${activityId}/parsed`, {
             headers: { 'Authorization': `Bearer ${token}` }
@@ -6559,7 +6570,9 @@ async function prefillFromDocx(activityId, suppressToast = false) {
             document.getElementById('labExperimentTitle').value = labTitle.content?.[0]?.text || '';
         }
 
-        // Activity title is already set from filename (via localStorage) — do not overwrite with experiment title
+        // Restore activity title if blank (e.g. after refresh when localStorage was already cleared)
+        const titleEl = document.getElementById('activityTitleInput');
+        if (titleEl && !titleEl.value && data.title) titleEl.value = data.title;
 
         // Introduction — chunk-based rendering (tables appear inline, not at bottom)
         if (intro?.content?.length) {
@@ -6698,7 +6711,7 @@ async function prefillFromDocx(activityId, suppressToast = false) {
             renderIntroPreview();
         }
 
-        // Outcomes — set Quill content
+        // Outcomes — set Quill content (fallback to view_html when parsed shape is unexpected)
         if (outcomes?.content?.length) {
             const introItem = outcomes.content.find(o => o.type === 'outcome_intro');
             const outcomeItems = outcomes.content.filter(o => o.type === 'outcome');
@@ -6707,7 +6720,20 @@ async function prefillFromDocx(activityId, suppressToast = false) {
             outHtml += outcomeItems.map(o =>
                 `<p>${o.number ? `<strong>${o.number}.</strong> ` : ''}${renderEqToHtml(o.text || '')}</p>`
             ).join('');
-            outcomesQ.root.innerHTML = _htmlForQuill(outHtml);
+            if (outHtml.trim()) {
+                outcomesQ.root.innerHTML = _htmlForQuill(outHtml);
+            } else if (outcomes.view_html) {
+                outcomesQ.root.innerHTML = _htmlForQuill(outcomes.view_html);
+            } else {
+                const fallbackText = outcomes.content
+                    .map(o => (o && typeof o === 'object') ? (o.text || o.outcome || '') : String(o || ''))
+                    .filter(Boolean)
+                    .map(t => `<p>${t}</p>`)
+                    .join('');
+                outcomesQ.root.innerHTML = _htmlForQuill(fallbackText);
+            }
+        } else if (outcomes?.view_html) {
+            outcomesQ.root.innerHTML = _htmlForQuill(outcomes.view_html);
         }
 
         // Materials — clear defaults, add from parsed
@@ -6773,10 +6799,10 @@ async function prefillFromDocx(activityId, suppressToast = false) {
                     if (q) {
                         // Store plain LaTeX text — KaTeX is rendered only in preview mode
                         const text = step.text || step.instruction || '';
-                        let html = `<p>${text}</p>`;
+                        let html = _normalizePrefillRichText(text);
                         if (step.continuation?.length) {
                             for (const cont of step.continuation) {
-                                html += `<p>${cont.text || ''}</p>`;
+                                html += _normalizePrefillRichText(cont.text || '');
                             }
                         }
                         if (step.inline_images?.length) {
@@ -6807,27 +6833,35 @@ async function prefillFromDocx(activityId, suppressToast = false) {
 
         // Data sheet — render all items sequentially as editable blocks
         const dataSheet = data.sections?.find(s => s.type === 'data_sheet');
-        if (dataSheet?.content?.length && data.tables) {
+        const dsContent = Array.isArray(dataSheet?.content) ? dataSheet.content : [];
+        const dsTables = Array.isArray(data.tables) ? data.tables : [];
+        const dsWorkingContent = dsContent.length
+            ? dsContent
+            : dsTables.map(() => ({ type: 'table' }));
+        if (dsWorkingContent.length && dsTables.length) {
             document.getElementById('ds-tbls').innerHTML = '';
 
             // Pre-compute table titles (ds_text immediately before each table)
             const _tblTitles = [];
             let _lt = '';
-            for (const item of dataSheet.content) {
+            for (const item of dsWorkingContent) {
                 if (item.type === 'table') { _tblTitles.push(_lt); _lt = ''; }
                 else if (item.type === 'ds_text' && item.text?.trim()) _lt = item.text.replace(/<[^>]*>/g, '').trim();
                 else _lt = '';
             }
 
             // Pre-build table row data — handles both old plain-array format and new {rows,title} format
-            const _tblRows = (data.tables || [])
+            const _tblRows = dsTables
                 .map((tbl, i) => {
                     const plainRows = Array.isArray(tbl) ? tbl : (tbl.rows || []);
                     if (!plainRows.length) return null;
                     const tblTitle = Array.isArray(tbl) ? (_tblTitles[i] || '') : (tbl.title || _tblTitles[i] || '');
                     const rawRows = plainRows.map((row, ri) =>
                         row.map(cell => {
-                            const v = String(cell || '').replace(/<[^>]*>/g, '').trim();
+                            const rawVal = (typeof cell === 'object' && cell !== null)
+                                ? String(cell.value || '')
+                                : String(cell || '');
+                            const v = rawVal.replace(/<[^>]*>/g, '').trim();
                             return { type: ri === 0 ? 'header' : (v ? 'text' : 'input'), value: v };
                         })
                     );
@@ -6836,23 +6870,21 @@ async function prefillFromDocx(activityId, suppressToast = false) {
                 .filter(t => t && t.rows.length > 0);
 
             let tblIdx = 0;
-            for (let _di = 0; _di < dataSheet.content.length; _di++) {
-                const item = dataSheet.content[_di];
-                const nextItem = dataSheet.content[_di + 1];
+            for (let _di = 0; _di < dsWorkingContent.length; _di++) {
+                const item = dsWorkingContent[_di];
+                const nextItem = dsWorkingContent[_di + 1];
                 if (item.type === 'ds_header') {
                     dsAddHeaderBlock(item.text.replace(/<[^>]*>/g, '').trim());
                 } else if (item.type === 'ds_field') {
                     dsAddFieldBlock(item.parts);
                 } else if (item.type === 'ds_text') {
-                    const prevItem = dataSheet.content[_di - 1];
+                    const prevItem = dsWorkingContent[_di - 1];
                     if (nextItem?.type === 'table') {
                         // Table title — skip (applied to the table's title input)
                     } else {
                         const _rawLabel = item.text.replace(/<[^>]*>/g, '').trim();
-                        if (_dsIsAttachPrompt(_rawLabel)) {
+                        if (_dsIsAttachPrompt(_rawLabel) || _dsIsCompPrompt(_rawLabel) || prevItem?.type === 'table') {
                             dsAddAttachmentBlock(_rawLabel);
-                        } else if (prevItem?.type === 'table' || _dsIsCompPrompt(_rawLabel)) {
-                            dsAddComputationBlock(_rawLabel);
                         } else {
                             dsAddTextBlock(item.text);
                         }
@@ -6919,7 +6951,7 @@ async function prefillFromDocx(activityId, suppressToast = false) {
                     const lastRow = rows[rows.length - 1];
                     if (lastRow) {
                         const qq = qEditors[lastRow.id];
-                        if (qq) qq.root.innerHTML = `<p>${q.text || ''}</p>`;
+                        if (qq) qq.root.innerHTML = _htmlForQuill(_normalizePrefillRichText(q.text || ''));
                         if (q.type === 'fill_blank') {
                             const numLabel = lastRow.querySelector('.ca-q-num');
                             if (numLabel) numLabel.textContent = q.number || '___';
@@ -6936,7 +6968,7 @@ async function prefillFromDocx(activityId, suppressToast = false) {
                     const qq = qEditors[lastRow.id];
                     if (qq) {
                         const text = q.question || q.text || '';
-                        let html = `<p>${text}</p>`;
+                        let html = _normalizePrefillRichText(text);
                         if (q.inline_images?.length) {
                             q.inline_images.forEach(img => {
                                 html += `<p style="text-align:center;"><img src="${img.src}" data-physlab="1"
@@ -6960,7 +6992,7 @@ async function prefillFromDocx(activityId, suppressToast = false) {
                             if (lastSub) {
                                 const sqq = sqEditors[lastSub.id];
                                 if (sqq) {
-                                    let sqHtml = `<p>${sq.question || sq.text || ''}</p>`;
+                                    let sqHtml = _normalizePrefillRichText(sq.question || sq.text || '');
                                     if (sq.inline_images?.length) {
                                         sq.inline_images.forEach(img => {
                                             sqHtml += `<p style="text-align:center;"><img src="${img.src}" data-physlab="1"
@@ -6979,20 +7011,27 @@ async function prefillFromDocx(activityId, suppressToast = false) {
                     }
                 }
             }
+            await new Promise(r => setTimeout(r, 80));
             renderGqPreview();
             _gqSetEditMode(false);
         }
 
         // References — bullet point format
         if (refs?.content?.length) {
-            const ops = [];
-            refs.content.forEach(r => {
-                const text = (r.text || '').trim();
-                if (!text) return;
-                ops.push({ insert: text });
-                ops.push({ insert: '\n', attributes: { list: 'bullet' } });
-            });
-            if (ops.length) refsQ.setContents({ ops });
+            const refTexts = refs.content
+                .map(r => String(r?.text || '').trim())
+                .filter(Boolean);
+            const hasListMarkup = refTexts.some(t => /<\s*(ul|ol|li)\b/i.test(t));
+            if (hasListMarkup) {
+                refsQ.root.innerHTML = _htmlForQuill(refTexts.join(''));
+            } else {
+                const ops = [];
+                refTexts.forEach(text => {
+                    ops.push({ insert: text });
+                    ops.push({ insert: '\n', attributes: { list: 'bullet' } });
+                });
+                if (ops.length) refsQ.setContents({ ops });
+            }
         }
 
         renderOutcomesPreview();
@@ -7038,18 +7077,16 @@ function _snapTable(tbl, idx, isPreview = false) {
             const obj  = (cell && typeof cell === 'object') ? cell : null;
             const raw  = (obj ? String(obj.value || '') : String(cell || '')).replace(/"/g, '&quot;');
             const span = (obj && obj.colspan > 1) ? ` colspan="${obj.colspan}"` : '';
-            // Table cells must never use display/block math — convert \[...\] → \(...\) for inline rendering
-            const rawInline = raw.replace(/\\\[([\s\S]*?)\\\]/g, '\\($1\\)');
-            const hasLatex = rawInline.includes('\\(') || rawInline.includes('\\[');
-            const rendered = hasLatex ? renderEqToHtml(rawInline) : rawInline;
+            const hasLatex = raw.includes('\\(') || raw.includes('\\[');
+            const rendered = hasLatex ? renderEqToHtml(raw) : raw;
             if (isPreview) {
                 // Preview (intro/proc preview): all cells same readonly style
                 html += `<th${span} class="av-tbl-readonly-cell"><span class="av-tbl-header-text">${rendered}</span></th>`;
             } else {
                 const isHeader    = obj ? (obj.type === 'header') : false;
                 const isPreFilled = !isHeader && (obj ? (obj.type === 'text') : false);
-                if (isHeader) {
-                    html += `<th${span}><span class="av-tbl-header-text">${rendered}</span></th>`;
+                if (isHeader || (hasLatex && raw)) {
+                    html += `<th${span} class="av-tbl-readonly-cell"><span class="av-tbl-header-text">${rendered}</span></th>`;
                 } else if (isPreFilled) {
                     html += `<td${span} class="av-tbl-label-cell"><span>${rendered}</span></td>`;
                 } else {
@@ -7204,7 +7241,7 @@ function _snapDataSheet(tables) {
                 <textarea class="av-ds-attach-note answer-textarea" data-index="attach_note_${idx}" placeholder="Add a note (optional)..." rows="2"></textarea>
             </div>`;
         } else if (el.classList.contains('ca-proc-table-wrap')) {
-            if (tables[tblIdx]) html += _snapTable(tables[tblIdx], tblIdx, true);
+            if (tables[tblIdx]) html += _snapTable(tables[tblIdx], tblIdx, false);
             tblIdx++;
         }
     });
@@ -7326,6 +7363,7 @@ function collectActivityData() {
 // SAVE
 // ============================================================
 let _savedActivityId = null; // store after save, before post
+let _editActivityFileType = null; // set during edit prefill to route save payload
 
 async function saveActivity() {
     const title = document.getElementById('activityTitleInput').value.trim();
@@ -7373,8 +7411,6 @@ async function saveActivity() {
 
 function closeCaptionModal() {
     document.getElementById('captionOverlay').classList.remove('open');
-    // Activity is already saved — just go back to class detail
-    navigateTo('/class_detail?id=' + classId);
 }
 
 async function confirmPostToStream() {
@@ -7415,10 +7451,18 @@ async function confirmPostToStream() {
 async function prefillFromEdit(activityId) {
     showToast('Loading activity for editing...', 'info');
     try {
-        const res = await fetch(`/api/activities/${activityId}/parsed`, {
-            headers: { 'Authorization': `Bearer ${token}` }
-        });
+        const [res, editedRes] = await Promise.all([
+            fetch(`/api/activities/${activityId}/parsed`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            }),
+            fetch(`/api/activities/${activityId}/edited`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            }).catch(() => null)
+        ]);
         if (!res.ok) { showToast('Cannot load activity!', 'error'); return; }
+        const parsed = await res.json();
+        const edited = (editedRes && editedRes.ok) ? await editedRes.json() : {};
+        _editActivityFileType = parsed.file_type || null;
 
         // Show edit banner
         const banner = document.createElement('div');
@@ -7426,8 +7470,32 @@ async function prefillFromEdit(activityId) {
         banner.innerHTML = '<i class="ph-bold ph-pencil-simple" style="font-size:18px;"></i><span><strong>Edit Mode</strong> — Make your changes and save to update the activity.</span>';
         document.querySelector('.av-page-wrap')?.prepend(banner);
 
-        // Reuse prefillFromDocx — same data format (suppress DOCX toast)
-        await prefillFromDocx(activityId, true);
+        // Reuse prefillFromDocx — same data format (suppress DOCX toast), no forced reparse.
+        await prefillFromDocx(activityId, true, false);
+
+        // Edit-mode fallback: mirror saved edited text blocks from activity view
+        // when parser structure is incomplete.
+        if (edited && typeof edited === 'object') {
+            if (edited.introduction && !_introHasText()) {
+                if (_introChunkEditors.length) _introChunkEditors[0].root.innerHTML = _htmlForQuill(edited.introduction);
+                renderIntroPreview();
+            }
+            if (edited.outcomes && !outcomesQ.getText().trim()) {
+                outcomesQ.root.innerHTML = _htmlForQuill(edited.outcomes);
+                renderOutcomesPreview();
+            }
+            if (edited.references && !refsQ.getText().trim()) {
+                refsQ.root.innerHTML = _htmlForQuill(edited.references);
+                renderRefsPreview();
+            }
+            // If data sheet failed to hydrate from parsed tables, show a non-empty fallback
+            // so professor can still see/edit context instead of a blank section.
+            const dsBody = document.getElementById('ds-tbls');
+            if (edited.data_sheet && dsBody && !dsBody.children.length) {
+                dsAddTextBlock(edited.data_sheet);
+                _dsSetEditMode(false);
+            }
+        }
 
         // Change save button to update mode
         const saveBtn = document.querySelector('.ca-btn-save');
@@ -7450,14 +7518,43 @@ async function saveActivityEdit(activityId) {
     btn.disabled = true;
     btn.innerHTML = '<i class="ph-bold ph-spinner"></i> Saving...';
 
-    // Option B: collect text overlays only — preserve original parsed_content (images)
-    const textOverlays = collectTextOverlays();
+    const payload = { title };
+    const isManualEdit = _editActivityFileType === 'manual';
+
+    if (isManualEdit) {
+        try {
+            payload.activity_data = collectActivityData();
+            // Keep overlays too for compatibility with existing edited-content rendering.
+            payload.text_overlays = collectTextOverlays();
+        } catch (collectErr) {
+            console.error('collectActivityData error during edit:', collectErr);
+            showToast('Error collecting activity data: ' + collectErr.message, 'error');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="ph-bold ph-floppy-disk"></i> Save Changes';
+            return;
+        }
+    } else {
+        // DOCX edit flow: persist classic overlays plus normalized section payload.
+        try {
+            const docxSections = collectDocxSectionPayload();
+            // Keep overlays limited to classic text sections to avoid layout regressions
+            // in structured sections that are rendered from parsed_content.
+            payload.text_overlays = collectTextOverlays();
+            payload.docx_sections = docxSections;
+        } catch (collectErr) {
+            console.error('collectDocxSectionPayload error during edit:', collectErr);
+            showToast('Error collecting DOCX edits: ' + collectErr.message, 'error');
+            btn.disabled = false;
+            btn.innerHTML = '<i class="ph-bold ph-floppy-disk"></i> Save Changes';
+            return;
+        }
+    }
 
     try {
         const res = await fetch(`/api/activities/${activityId}/update`, {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-            body: JSON.stringify({ title, text_overlays: textOverlays })
+            body: JSON.stringify(payload)
         });
         const data = await res.json();
         if (res.ok) {
@@ -7471,6 +7568,30 @@ async function saveActivityEdit(activityId) {
 
     btn.disabled = false;
     btn.innerHTML = '<i class="ph-bold ph-floppy-disk"></i> Save Changes';
+}
+
+function collectDocxSectionPayload() {
+    const activityData = collectActivityData();
+    const sec = activityData?.sections || {};
+
+    return {
+        materials: {
+            content: Array.isArray(sec.materials) ? sec.materials : [],
+            view_html: _snapMaterials(Array.isArray(sec.materials) ? sec.materials : [])
+        },
+        procedures: {
+            content: Array.isArray(sec.procedures) ? sec.procedures : [],
+            view_html: _snapProcedures(Array.isArray(sec.procedures) ? sec.procedures : [])
+        },
+        guide_questions: {
+            content: Array.isArray(sec.guide_questions) ? sec.guide_questions : [],
+            view_html: _snapGuideQuestions(Array.isArray(sec.guide_questions) ? sec.guide_questions : [])
+        },
+        data_sheet: {
+            view_html: _snapDataSheet(Array.isArray(activityData?.tables) ? activityData.tables : []),
+            tables: Array.isArray(activityData?.tables) ? activityData.tables : []
+        }
+    };
 }
 
 function collectTextOverlays() {
@@ -7490,7 +7611,6 @@ function collectTextOverlays() {
     if (refsQ && refsQ.getText().trim()) {
         overlays['references'] = refsQ.root.innerHTML;
     }
-
     return overlays;
 }
 

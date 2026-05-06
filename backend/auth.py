@@ -164,16 +164,17 @@ def get_profile():
         return jsonify({'message': 'User not found!'}), 404
 
     return jsonify({
-        'id':             user.id,
-        'full_name':      user.full_name,
-        'first_name':     user.first_name,
-        'last_name':      user.last_name,
-        'middle_initial': user.middle_initial or '',
-        'email':          user.email or '',
-        'student_number': user.student_number or '',
-        'role':           user.role,
-        'avatar':         user.avatar or '',
-        'joined_at':      user.created_at.isoformat() if user.created_at else None
+        'id':                    user.id,
+        'full_name':             user.full_name,
+        'first_name':            user.first_name,
+        'last_name':             user.last_name,
+        'middle_initial':        user.middle_initial or '',
+        'email':                 user.email or '',
+        'student_number':        user.student_number or '',
+        'role':                  user.role,
+        'avatar':                user.avatar or '',
+        'joined_at':             user.created_at.isoformat() if user.created_at else None,
+        'notifications_enabled': user.notifications_enabled if user.notifications_enabled is not None else True
     }), 200
 
 
@@ -223,6 +224,23 @@ def update_profile():
 
 
 # ============================================================
+# UPDATE PREFERENCES
+# ============================================================
+@auth.route('/preferences', methods=['PUT'])
+@jwt_required()
+def update_preferences():
+    user_id = int(get_jwt_identity())
+    user    = User.query.get(user_id)
+    if not user:
+        return jsonify({'message': 'User not found!'}), 404
+    data = request.get_json()
+    if 'notifications_enabled' in data:
+        user.notifications_enabled = bool(data['notifications_enabled'])
+    db.session.commit()
+    return jsonify({'message': 'Preferences saved!', 'notifications_enabled': user.notifications_enabled}), 200
+
+
+# ============================================================
 # CHANGE PASSWORD
 # ============================================================
 @auth.route('/change-password', methods=['PUT'])
@@ -269,8 +287,8 @@ def upload_avatar():
         return jsonify({'message': 'No avatar data provided!'}), 400
     if not avatar.startswith('data:image/'):
         return jsonify({'message': 'Invalid image format!'}), 400
-    if len(avatar) > 700_000:
-        return jsonify({'message': 'Image too large! Please use an image under 500KB.'}), 400
+    if len(avatar) > 7_000_000:
+        return jsonify({'message': 'Image too large! Please use an image under 5MB.'}), 400
 
     user.avatar = avatar
     db.session.commit()

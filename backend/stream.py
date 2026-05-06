@@ -130,6 +130,37 @@ def create_post(class_id):
         pass
     return jsonify(format_post(post, user_id)), 201
 
+# ===== UPDATE POST =====
+@stream.route('/<int:class_id>/stream/<int:post_id>', methods=['PUT'])
+@jwt_required()
+def update_post(class_id, post_id):
+    from models import Class
+    user_id = int(get_jwt_identity())
+    user = User.query.get(user_id)
+    post = StreamPost.query.get(post_id)
+ 
+    if not post or post.class_id != class_id:
+        return jsonify({'message': 'Post not found!'}), 404
+ 
+    # Only professors can edit posts
+    if user.role != 'professor':
+        return jsonify({'message': 'Only professors can edit posts!'}), 403
+ 
+    cls = Class.query.get(class_id)
+    from classes import _is_class_prof
+    if not cls or not _is_class_prof(class_id, user_id):
+        return jsonify({'message': 'Not authorized!'}), 403
+ 
+    data = request.get_json()
+    new_message = data.get('message', '').strip()
+ 
+    # Allow empty message (null) but not just whitespace
+    post.message = new_message if new_message else None
+    db.session.commit()
+    _notify_stream(class_id)
+ 
+    return jsonify(format_post(post, user_id)), 200
+ 
 
 # ===== DELETE POST =====
 @stream.route('/<int:class_id>/stream/<int:post_id>', methods=['DELETE'])
@@ -144,7 +175,8 @@ def delete_post(class_id, post_id):
     # Professor can delete any post in their class; students can only delete their own
     if user.role == 'professor':
         cls = Class.query.get(class_id)
-        if not cls or cls.professor_id != user_id:
+        from classes import _is_class_prof
+        if not cls or not _is_class_prof(class_id, user_id):
             return jsonify({'message': 'Not authorized!'}), 403
     else:
         if post.posted_by_id != user_id:

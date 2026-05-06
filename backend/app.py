@@ -2,7 +2,6 @@ from gevent import monkey
 monkey.patch_all()
 
 from flask import Flask, send_from_directory, render_template
-from werkzeug.utils import secure_filename
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
@@ -129,14 +128,6 @@ def archived_page():
 def admin_dashboard():
     return send_from_directory('../frontend', 'admin_dashboard.html')
 
-# File download route
-@app.route('/api/submissions/file/<filename>')
-def serve_submission_file(filename):
-    safe = secure_filename(filename)
-    return send_from_directory(
-        os.path.join(os.path.dirname(__file__), 'uploads'),
-        safe
-    )
 
 @app.route('/register')
 def register():
@@ -146,6 +137,8 @@ def register():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
+        from submissions import _migrate_uploaded_files_column
+        _migrate_uploaded_files_column()
         seed_admin(app)
         print("Database ready!")
     port = int(os.environ.get('PORT', 5000))
