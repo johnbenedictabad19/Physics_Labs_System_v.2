@@ -1,1 +1,1 @@
-web: cd backend && python app.py
+web: cd backend && flask db upgrade && python app.py
