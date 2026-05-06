@@ -5801,7 +5801,7 @@ function _serializeProcTableWrap(wrap, tblIdx = 0) {
         html += '<tr>';
         tr.querySelectorAll('td').forEach(td => {
             const raw = (td.querySelector('textarea')?.value || '').trim();
-            const span = (obj && obj.colspan > 1) ? ` colspan="${obj.colspan}"` : '';
+            const span = td.colSpan > 1 ? ` colspan="${td.colSpan}"` : '';
             const hasLatex = raw.includes('\\(') || raw.includes('\\[');
             const rendered = hasLatex ? renderEqToHtml(raw) : raw;
             html += `<th class="av-tbl-readonly-cell"><span class="av-tbl-header-text">${rendered}</span></th>`;
