@@ -6715,7 +6715,7 @@
             if (activeGroup) {
                 selectedGroupId = activeGroup.id;
                 activeGroup.members.forEach((m, i) => {
-                    memberNames.push({ id: m.id, full_name: m.full_name, avatar: m.avatar || '' });
+                    memberNames.push({ id: m.id, full_name: m.full_name });
                     if (m.is_leader) leaderIndex = i;
                 });
             } else {
