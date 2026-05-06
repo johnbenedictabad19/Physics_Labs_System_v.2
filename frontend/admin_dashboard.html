@@ -202,6 +202,7 @@
             font-weight:800; font-size:13px; color:white; overflow:hidden; }
         .tav img { width:100%; height:100%; object-fit:cover; }
         .tav-name { font-weight:600; color:var(--text); }
+        .tav-stunum { font-size:11px; color:var(--accent); margin-top:1px; font-weight:500; }
         .tav-email { font-size:11px; color:var(--text-3); margin-top:2px; }
 
         /* ═══ STATUS BADGES ═══ */
@@ -734,7 +735,7 @@ function renderUsers() {
     let list = allUsers.filter(u => {
         if (roleFil && u.role !== roleFil) return false;
         if (statFil && u.status !== statFil) return false;
-        if (search && !u.full_name.toLowerCase().includes(search) && !u.email.toLowerCase().includes(search)) return false;
+        if (search && !u.full_name.toLowerCase().includes(search) && !u.email.toLowerCase().includes(search) && !(u.student_number||'').toLowerCase().includes(search)) return false;
         return true;
     });
 
@@ -747,7 +748,11 @@ function renderUsers() {
         <tr>
             <td><div class="table-avatar">
                 ${avatarHtml(u)}
-                <div><div class="tav-name">${u.full_name}</div><div class="tav-email">${u.email}</div></div>
+                <div>
+                    <div class="tav-name">${u.full_name}</div>
+                    ${u.student_number ? `<div class="tav-stunum">${u.student_number}</div>` : ''}
+                    <div class="tav-email">${u.email}</div>
+                </div>
             </div></td>
             <td><span class="badge badge-${u.role}">${u.role}</span></td>
             <td><span class="badge badge-${u.status}">${u.status}</span></td>
