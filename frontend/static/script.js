@@ -108,7 +108,9 @@ function checkAuth(expectedRole) {
     initSessionGuard();
 
     if (role !== expectedRole) {
-        if (role === 'professor') {
+        if (role === 'admin') {
+            window.location.href = '/admin_dashboard';
+        } else if (role === 'professor') {
             window.location.href = '/dashboard_professor';
         } else {
             window.location.href = '/dashboard_student';

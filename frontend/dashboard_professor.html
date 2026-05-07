@@ -1000,8 +1000,14 @@ function openCardMenu(e, id) {
 function positionCardMenu(btn) {
     const dd = document.getElementById('cardDropdown');
     const r = btn.getBoundingClientRect();
-    dd.style.top  = (r.bottom + window.scrollY + 4) + 'px';
-    dd.style.left = Math.max(8, r.right - 180 + window.scrollX) + 'px';
+    const ddW = 170;
+    let top  = r.bottom + 4;
+    let left = r.right - ddW;
+    // keep within viewport
+    if (left < 8) left = 8;
+    if (left + ddW > window.innerWidth - 8) left = window.innerWidth - ddW - 8;
+    dd.style.top  = top + 'px';
+    dd.style.left = left + 'px';
 }
 function closeCardMenu() { document.getElementById('cardDropdown')?.classList.remove('open'); }
 document.addEventListener('click', e => { if (!e.target.closest('.cc-menu-btn') && !e.target.closest('.card-dropdown')) closeCardMenu(); });

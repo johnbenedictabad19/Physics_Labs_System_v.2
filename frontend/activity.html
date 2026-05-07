@@ -2631,6 +2631,12 @@
             border-color: #ef4444;
         }
 
+        .av-att-btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+            pointer-events: none;
+        }
+
         /* Group select dropdown (student view) */
         .av-grp-select-wrap {
             display: flex;
@@ -4382,6 +4388,11 @@
                     _retainedServerFiles = Array.isArray(existingSubmission?.uploaded_files)
                         ? existingSubmission.uploaded_files.slice()
                         : [];
+                    // Pre-populate attendance from server state so buttons render correctly
+                    const _savedAtt = existingSubmission?.student_info?.attendance;
+                    if (_savedAtt) {
+                        Object.entries(_savedAtt).forEach(([k, v]) => { _attendance[k] = v; });
+                    }
                 }
 
                 renderActivity(parsedData);
@@ -5569,10 +5580,10 @@
                         : `<span class="av-badge-member"><i class="ph-bold ph-user"></i> Member</span>`}</div>
             </div>
             <div class="av-attendance-btns">
-                <button class="av-att-btn present ${hasAmbag ? 'active' : ''}" onclick="toggleAttendance(${i},'present')">
+                <button class="av-att-btn present ${hasAmbag ? 'active' : ''}" onclick="toggleAttendance(${i},'present')" ${submissionLocked() || !isEditMode ? 'disabled' : ''}>
                     <i class="ph-bold ph-check-circle"></i> Contributed
                 </button>
-                <button class="av-att-btn absent ${!hasAmbag ? 'active' : ''}" onclick="toggleAttendance(${i},'absent')">
+                <button class="av-att-btn absent ${!hasAmbag ? 'active' : ''}" onclick="toggleAttendance(${i},'absent')" ${submissionLocked() || !isEditMode ? 'disabled' : ''}>
                     <i class="ph-bold ph-x-circle"></i> Did not contribute
                 </button>
             </div>
@@ -5747,8 +5758,8 @@
                         : `<span class="av-badge-member"><i class="ph-bold ph-user"></i> Member</span>`}</div>
             </div>
             <div class="av-attendance-btns">
-                <button class="av-att-btn present ${hasAmbag ? 'active' : ''}" onclick="toggleAttendance(${i},'present')"><i class="ph-bold ph-check-circle"></i> May Ambag</button>
-                <button class="av-att-btn absent  ${!hasAmbag ? 'active' : ''}" onclick="toggleAttendance(${i},'absent')"><i class="ph-bold ph-x-circle"></i> Walang Ambag</button>
+                <button class="av-att-btn present ${hasAmbag ? 'active' : ''}" onclick="toggleAttendance(${i},'present')" ${submissionLocked() || !isEditMode ? 'disabled' : ''}><i class="ph-bold ph-check-circle"></i> May Ambag</button>
+                <button class="av-att-btn absent  ${!hasAmbag ? 'active' : ''}" onclick="toggleAttendance(${i},'absent')" ${submissionLocked() || !isEditMode ? 'disabled' : ''}><i class="ph-bold ph-x-circle"></i> Walang Ambag</button>
             </div>
         </div>`;
                 memberRowCount = i + 1;
@@ -5817,6 +5828,7 @@
         const _attendance = {};   // { memberIndex: 'present'|'absent' }
 
         function toggleAttendance(idx, val) {
+            if (submissionLocked() || !isEditMode) return;
             _attendance[idx] = val;
             const row = document.getElementById(`member-row-${idx}`);
             if (!row) return;
@@ -5927,6 +5939,7 @@
             document.querySelectorAll('.av-ds-attach-imgs .av-file-card-remove').forEach(b => b.style.display = 'none');
             document.getElementById('av-file-dropzone')?.classList.add('disabled');
             document.querySelectorAll('#av-file-cards .av-file-card-remove').forEach(b => b.style.display = 'none');
+            document.querySelectorAll('.av-att-btn').forEach(b => b.disabled = true);
         }
 
         function _enterEditModeUI() {
@@ -5940,6 +5953,7 @@
             document.querySelectorAll('.av-ds-comp-attach').forEach(l => l.classList.remove('disabled'));
             document.querySelectorAll('.av-ds-attach-zone').forEach(z => z.classList.remove('disabled'));
             document.getElementById('av-file-dropzone')?.classList.remove('disabled');
+            document.querySelectorAll('.av-att-btn').forEach(b => b.disabled = false);
             _renderFileCards();
             // Show/add remove buttons on attach image cards
             document.querySelectorAll('.av-ds-attach-imgs [data-server-file]').forEach(card => {
@@ -6005,7 +6019,7 @@
         function restoreDraft() {
             // Priority 1: group draft from backend (most recent from any member)
             const source = groupDraft;
-            if (source?.answers || source?.table_data) {
+            if (source?.answers || source?.table_data || source?.student_info?.attendance) {
                 applyDraftData(source);
                 const saver = source.student_name || 'a group member';
                 showSaveIndicator('collab', `Loaded from ${saver}`);
@@ -6070,6 +6084,19 @@
                 const dEl = document.getElementById('activityDate');
                 if (sEl && data.student_info.section && !sEl.disabled) sEl.value = data.student_info.section;
                 if (dEl && data.student_info.date && !dEl.disabled) dEl.value = data.student_info.date;
+            }
+
+            // Attendance (Contributed / Did not contribute) — stored inside student_info
+            const _att = data.student_info?.attendance;
+            if (_att) {
+                Object.entries(_att).forEach(([idx, val]) => {
+                    _attendance[idx] = val;
+                    const row = document.getElementById(`member-row-${idx}`);
+                    if (!row) return;
+                    row.querySelectorAll('.av-att-btn').forEach(b => b.classList.remove('active'));
+                    const target = row.querySelector(`.av-att-btn.${val}`);
+                    if (target) target.classList.add('active');
+                });
             }
 
             _restoringDraft = false; // re-enable dirty tracking
