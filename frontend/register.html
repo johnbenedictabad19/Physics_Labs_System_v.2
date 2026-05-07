@@ -121,9 +121,8 @@
         .pw-rule { font-size:12px; color:var(--text-3); margin-bottom:4px; display:flex; align-items:center; gap:6px; transition:color 0.2s; }
         .pw-rule:last-child { margin-bottom:0; }
         .pw-rule.met { color:#6ee7b7; }
-        #bd_day::-webkit-inner-spin-button, #bd_day::-webkit-outer-spin-button,
-        #bd_year::-webkit-inner-spin-button, #bd_year::-webkit-outer-spin-button { -webkit-appearance:none; margin:0; }
-        #bd_day, #bd_year { -moz-appearance:textfield; }
+        [data-theme="dark"] select option { background:#22272b; color:#fff; }
+        [data-theme="light"] select option { background:#fff; color:#1B1F23; }
         .sn-boxes { display:flex; align-items:center; gap:5px; }
         .sn-box { width:36px; height:42px; text-align:center; font-size:15px; font-weight:600; padding:0; background:var(--input-bg); border:1.5px solid var(--border); border-radius:8px; color:var(--text); outline:none; transition:border-color 0.2s, box-shadow 0.2s; text-transform:uppercase; }
         .sn-box:focus { border-color:var(--border-f); background:var(--input-bg-f); box-shadow:0 0 0 3px rgba(10,102,194,0.12); }
@@ -392,17 +391,20 @@
             <div class="input-row cols-3">
                 <div class="input-group">
                     <label class="input-label">Last Name</label>
-                    <input type="text" id="last_name" placeholder="Dela Cruz" required autocomplete="family-name">
+                    <input type="text" id="last_name" placeholder="Dela Cruz" required autocomplete="family-name"
+                        oninput="this.value=this.value.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ\s\-']/g,'')">
                     <i class="ph-bold ph-user input-icon"></i>
                 </div>
                 <div class="input-group">
                     <label class="input-label">First Name</label>
-                    <input type="text" id="first_name" placeholder="Juan" required autocomplete="given-name">
+                    <input type="text" id="first_name" placeholder="Juan" required autocomplete="given-name"
+                        oninput="this.value=this.value.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ\s\-']/g,'')">
                     <i class="ph-bold ph-user input-icon"></i>
                 </div>
                 <div class="input-group no-icon">
                     <label class="input-label">M.I. <span class="optional-tag">(opt.)</span></label>
-                    <input type="text" id="middle_initial" placeholder="A" maxlength="2" autocomplete="additional-name">
+                    <input type="text" id="middle_initial" placeholder="A" maxlength="2" autocomplete="additional-name"
+                        oninput="this.value=this.value.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ]/g,'')">
                 </div>
             </div>
             <div class="btn-nav">
@@ -441,8 +443,8 @@
                 </div>
                 <div style="margin-bottom:4px;">
                     <label class="input-label"><i class="ph-bold ph-cake" style="margin-right:4px;"></i>Birthday</label>
-                    <div style="display:flex;gap:8px;">
-                        <select id="bd_month" style="flex:1.4;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;background:var(--input-bg);color:var(--text);font-size:14px;font-family:inherit;outline:none;cursor:pointer;">
+                    <div style="display:flex;gap:8px;align-items:center;justify-content:center;">
+                        <select id="bd_month" style="flex:0 0 145px;width:145px;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;background:var(--input-bg);color:var(--text);font-size:14px;font-family:inherit;outline:none;cursor:pointer;">
                             <option value="">Month</option>
                             <option value="01">January</option>
                             <option value="02">February</option>
@@ -457,10 +459,12 @@
                             <option value="11">November</option>
                             <option value="12">December</option>
                         </select>
-                        <input type="number" id="bd_day" placeholder="Day" min="1" max="31" inputmode="numeric" autocomplete="off"
-                            style="flex:0.8;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;background:var(--input-bg);color:var(--text);font-size:14px;font-family:inherit;outline:none;">
-                        <input type="number" id="bd_year" placeholder="Year" min="1900" max="2099" inputmode="numeric" autocomplete="off"
-                            style="flex:1;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;background:var(--input-bg);color:var(--text);font-size:14px;font-family:inherit;outline:none;">
+                        <input type="text" id="bd_day" placeholder="Day" inputmode="numeric" autocomplete="off"
+                            oninput="this.value=this.value.replace(/\D/g,'').slice(0,2)"
+                            style="flex:0 0 64px;width:64px;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;background:var(--input-bg);color:var(--text);font-size:14px;font-family:inherit;outline:none;">
+                        <input type="text" id="bd_year" placeholder="Year" inputmode="numeric" autocomplete="off"
+                            oninput="this.value=this.value.replace(/\D/g,'').slice(0,4)"
+                            style="flex:0 0 90px;width:90px;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;background:var(--input-bg);color:var(--text);font-size:14px;font-family:inherit;outline:none;">
                     </div>
                     <input type="hidden" id="birthday">
                 </div>
@@ -928,7 +932,8 @@ function buildReview() {
     const ln  = document.getElementById('last_name').value.trim();
     const fn  = document.getElementById('first_name').value.trim();
     const mi  = document.getElementById('middle_initial').value.trim();
-    const fullName = `${ln}, ${fn}${mi ? ' ' + mi + '.' : ''}`;
+    const miClean = mi.replace(/\.+$/, '');
+    const fullName = `${ln}, ${fn}${miClean ? ' ' + miClean + '.' : ''}`;
     const badgeClass = selectedRole === 'professor' ? 'badge-professor' : 'badge-student';
     const badgeLabel = selectedRole === 'professor' ? '<i class="ph-bold ph-chalkboard-teacher"></i> Professor' : '<i class="ph-bold ph-student"></i> Student';
 
@@ -985,7 +990,14 @@ document.querySelectorAll('.modal-overlay').forEach(m => {
 // ── Alert ──
 function showAlert(msg) {
     const el = document.getElementById('regError');
+    el.className = 'alert alert-error';
     el.innerHTML = '<i class="ph-bold ph-warning"></i> ' + msg;
+    el.style.display = 'flex';
+}
+function showSuccess(msg) {
+    const el = document.getElementById('regError');
+    el.className = 'alert alert-success';
+    el.innerHTML = '<i class="ph-bold ph-check-circle"></i> ' + msg;
     el.style.display = 'flex';
 }
 function clearAlert() {
@@ -1005,7 +1017,7 @@ async function handleSubmit() {
         role:           selectedRole,
         last_name:      document.getElementById('last_name').value.trim(),
         first_name:     document.getElementById('first_name').value.trim(),
-        middle_initial: document.getElementById('middle_initial').value.trim(),
+        middle_initial: document.getElementById('middle_initial').value.trim().replace(/\.+$/, ''),
         password:       document.getElementById('password').value,
     };
     if (selectedRole === 'student') {
@@ -1023,19 +1035,19 @@ async function handleSubmit() {
         const data = await res.json();
         if (res.ok) {
             btnText.innerHTML = '<i class="ph-bold ph-check-circle"></i> Success!';
-            if (selectedRole === 'student') {
-                setTimeout(() => window.location.href = '/login', 1500);
-            } else {
-                showAlert('Account requested! Please wait for admin approval.');
-                document.getElementById('regError').className = 'alert alert-success';
-                document.getElementById('regError').style.display = 'flex';
-                btnText.innerHTML = orig;
-                setTimeout(() => updateSubmitBtn(), 100);
-            }
+            const msg = selectedRole === 'student'
+                ? 'Account created! Redirecting to login...'
+                : 'Account requested! Awaiting admin approval. Redirecting to login...';
+            showSuccess(msg);
+            setTimeout(() => window.location.href = '/login', 3000);
         } else {
-            showAlert(data.message || 'Registration failed!');
+            const errMsg = data.message || 'Registration failed!';
+            showAlert(errMsg);
             btnText.innerHTML = orig;
             updateSubmitBtn();
+            if (errMsg.toLowerCase().includes('already registered')) {
+                setTimeout(() => window.location.href = '/login', 3000);
+            }
         }
     } catch {
         showAlert('Cannot connect to server!');

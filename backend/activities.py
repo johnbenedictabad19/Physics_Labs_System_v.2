@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from database import db
-from models import Activity, User, StreamPost
+from models import Activity, User, StreamPost, ClassMember
 import os
 import json
 from datetime import datetime
@@ -97,6 +97,15 @@ def upload_activity(class_id):
 @jwt_required()
 def get_activities(class_id):
     from sqlalchemy import exists
+    user_id = get_jwt_identity()
+    user = User.query.get(user_id)
+    # Students must be approved members to see activities
+    if user and user.role == 'student':
+        membership = ClassMember.query.filter_by(
+            class_id=class_id, student_id=user_id
+        ).first()
+        if not membership or membership.enrollment_status != 'approved':
+            return jsonify([]), 200
     acts = Activity.query.filter_by(class_id=class_id)\
         .filter(exists().where(StreamPost.activity_id == Activity.id))\
         .order_by(Activity.created_at.desc()).all()

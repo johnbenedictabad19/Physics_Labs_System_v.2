@@ -44,7 +44,7 @@ def upload_banner():
     ext = f.filename.rsplit('.', 1)[1].lower()
     filename = f'banner_{user_id}_{int(datetime.utcnow().timestamp())}.{ext}'
     f.save(os.path.join(BANNER_UPLOAD_DIR, filename))
-    return jsonify({'url': f'http://127.0.0.1:5000/api/classes/banners/{filename}'}), 200
+    return jsonify({'url': f'/api/classes/banners/{filename}'}), 200
 
 # ===== SERVE BANNER =====
 @classes.route('/banners/<filename>', methods=['GET'])

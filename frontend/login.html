@@ -164,6 +164,8 @@
         .pw-rule { font-size:12px; color:var(--text-3); margin-bottom:4px; display:flex; align-items:center; gap:6px; transition:color 0.2s; }
         .pw-rule:last-child { margin-bottom:0; }
         .pw-rule.met { color:#6ee7b7; }
+        [data-theme="dark"] select option { background:#22272b; color:#fff; }
+        [data-theme="light"] select option { background:#fff; color:#1B1F23; }
 
         /* BTN */
         .btn-submit {
@@ -419,12 +421,32 @@
                 </div>
                 <input type="hidden" id="f_student_number">
             </div>
-            <div class="input-group" style="margin-bottom:10px;">
-                <label class="input-label">Birthday</label>
-                <input type="text" id="f_birthday_display" placeholder="mm/dd/yyyy" maxlength="10" autocomplete="off" inputmode="numeric" style="padding-right:42px;">
-                <i class="ph-bold ph-cake input-icon"></i>
-                <i class="ph-bold ph-calendar-blank" style="position:absolute;right:13px;bottom:13px;color:var(--text-3);font-size:17px;cursor:pointer;z-index:1;" onclick="document.getElementById('f_birthday').showPicker()"></i>
-                <input type="date" id="f_birthday" style="position:absolute;opacity:0;pointer-events:none;width:0;height:0;top:0;left:0;">
+            <div style="margin-bottom:10px;">
+                <label class="input-label"><i class="ph-bold ph-cake" style="margin-right:4px;"></i>Birthday</label>
+                <div style="display:flex;gap:8px;align-items:center;justify-content:center;">
+                    <select id="f_bd_month" style="flex:0 0 145px;width:145px;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;background:var(--input-bg);color:var(--text);font-size:14px;font-family:inherit;outline:none;cursor:pointer;">
+                        <option value="">Month</option>
+                        <option value="01">January</option>
+                        <option value="02">February</option>
+                        <option value="03">March</option>
+                        <option value="04">April</option>
+                        <option value="05">May</option>
+                        <option value="06">June</option>
+                        <option value="07">July</option>
+                        <option value="08">August</option>
+                        <option value="09">September</option>
+                        <option value="10">October</option>
+                        <option value="11">November</option>
+                        <option value="12">December</option>
+                    </select>
+                    <input type="text" id="f_bd_day" placeholder="Day" inputmode="numeric" autocomplete="off"
+                        oninput="this.value=this.value.replace(/\D/g,'').slice(0,2);syncForgotBirthday()"
+                        style="flex:0 0 64px;width:64px;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;background:var(--input-bg);color:var(--text);font-size:14px;font-family:inherit;outline:none;">
+                    <input type="text" id="f_bd_year" placeholder="Year" inputmode="numeric" autocomplete="off"
+                        oninput="this.value=this.value.replace(/\D/g,'').slice(0,4);syncForgotBirthday()"
+                        style="flex:0 0 90px;width:90px;padding:10px 12px;border:1.5px solid var(--border);border-radius:10px;background:var(--input-bg);color:var(--text);font-size:14px;font-family:inherit;outline:none;">
+                </div>
+                <input type="hidden" id="f_birthday">
             </div>
             <div class="input-group" style="margin-bottom:4px;">
                 <label class="input-label">New Password</label>
@@ -609,24 +631,16 @@ async function handleLogin(e) {
     });
 })();
 
-// ── Forgot: Birthday mask ──
-(function() {
-    const display = document.getElementById('f_birthday_display');
-    const hidden  = document.getElementById('f_birthday');
-    if (!display) return;
-    display.addEventListener('input', () => {
-        let v = display.value.replace(/\D/g,'').slice(0,8);
-        if (v.length >= 5)      v = v.slice(0,2)+'/'+v.slice(2,4)+'/'+v.slice(4);
-        else if (v.length >= 3) v = v.slice(0,2)+'/'+v.slice(2);
-        display.value = v;
-        const p = display.value.split('/');
-        if (p.length===3 && p[2].length===4) hidden.value = `${p[2]}-${p[0].padStart(2,'0')}-${p[1].padStart(2,'0')}`;
-    });
-    hidden.addEventListener('change', () => {
-        const [y,m,d] = hidden.value.split('-');
-        display.value = `${m}/${d}/${y}`;
-    });
-})();
+// ── Forgot: Birthday sync ──
+function syncForgotBirthday() {
+    const m = document.getElementById('f_bd_month').value;
+    const d = document.getElementById('f_bd_day').value.padStart(2,'0');
+    const y = document.getElementById('f_bd_year').value;
+    const hidden = document.getElementById('f_birthday');
+    if (m && d !== '00' && y.length === 4) hidden.value = `${y}-${m}-${d}`;
+    else hidden.value = '';
+}
+document.getElementById('f_bd_month')?.addEventListener('change', syncForgotBirthday);
 
 // ── Forgot: Password checker ──
 function checkForgotPw() {
