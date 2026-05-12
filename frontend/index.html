@@ -5,6 +5,13 @@
 <meta charset="UTF-8">
 <link rel="icon" href="static/logo.svg" type="image/svg+xml">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="PHYSLAB">
+<link rel="apple-touch-icon" href="/static/logo.svg">
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#4f46e5">
 <title>PHYSLAB — Physics Laboratory Management System</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -384,5 +391,6 @@
 </footer>
 
 <script src="static/landing.js"></script>
+<script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/sw.js",{scope:"/"}).catch(()=>{});</script>
 </body>
 </html>

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#4f46e5">
+  <title>PHYSLAB — You're Offline</title>
+  <link rel="manifest" href="/manifest.json">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      height: 100%;
+      font-family: 'Sora', 'Inter', system-ui, sans-serif;
+      background: #eeeeff;
+      color: #1B1F23;
+    }
+
+    body {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 24px;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Background grid */
+    .bg-grid {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background-image:
+        linear-gradient(rgba(10,102,194,0.07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(10,102,194,0.07) 1px, transparent 1px);
+      background-size: 60px 60px;
+    }
+
+    /* Gradient blobs */
+    .blob {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.35;
+    }
+    .blob-1 {
+      width: 500px; height: 500px;
+      background: radial-gradient(circle, #818cf8, transparent 70%);
+      top: -150px; left: -150px;
+    }
+    .blob-2 {
+      width: 400px; height: 400px;
+      background: radial-gradient(circle, #a5b4fc, transparent 70%);
+      bottom: -100px; right: -100px;
+    }
+
+    /* Card */
+    .card {
+      position: relative;
+      z-index: 1;
+      background: rgba(255,255,255,0.72);
+      border: 1px solid rgba(10,102,194,0.14);
+      border-radius: 24px;
+      padding: 48px 40px;
+      max-width: 420px;
+      width: 100%;
+      text-align: center;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      box-shadow: 0 32px 80px rgba(10,102,194,0.15);
+    }
+
+    /* Logo */
+    .logo-wrap {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 36px;
+    }
+    .logo-img {
+      width: 36px;
+      height: 36px;
+    }
+    .logo-text {
+      font-family: 'Unbounded', system-ui, sans-serif;
+      font-size: 18px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      background: linear-gradient(135deg, #4f46e5, #818cf8);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* Icon */
+    .offline-icon-wrap {
+      width: 80px;
+      height: 80px;
+      margin: 0 auto 24px;
+      background: linear-gradient(135deg, rgba(79,70,229,0.12), rgba(129,140,248,0.18));
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .offline-icon {
+      width: 40px;
+      height: 40px;
+      color: #4f46e5;
+    }
+
+    /* Text */
+    h1 {
+      font-family: 'Unbounded', system-ui, sans-serif;
+      font-size: 22px;
+      font-weight: 800;
+      color: #1B1F23;
+      margin-bottom: 12px;
+      letter-spacing: -0.01em;
+    }
+    p {
+      font-size: 14px;
+      color: #555;
+      line-height: 1.6;
+      margin-bottom: 32px;
+    }
+
+    /* Button */
+    .btn-retry {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: linear-gradient(135deg, #4f46e5, #6366f1);
+      color: #fff;
+      font-family: 'Sora', system-ui, sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      padding: 12px 28px;
+      border: none;
+      border-radius: 12px;
+      cursor: pointer;
+      text-decoration: none;
+      box-shadow: 0 4px 16px rgba(79,70,229,0.35);
+      transition: opacity 0.2s, transform 0.15s;
+    }
+    .btn-retry:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-retry:active { transform: translateY(0); opacity: 1; }
+
+    .hint {
+      margin-top: 20px;
+      font-size: 12px;
+      color: #999;
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-grid"></div>
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+
+  <div class="card">
+    <div class="logo-wrap">
+      <img src="/static/logo.svg" alt="PhysLab" class="logo-img" onerror="this.style.display='none'">
+      <span class="logo-text">PHYSLAB</span>
+    </div>
+
+    <div class="offline-icon-wrap">
+      <!-- Wi-Fi off SVG icon (inline, no network needed) -->
+      <svg class="offline-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor">
+        <path d="M213.92,210.62a8,8,0,1,1-11.84,10.76L52.08,45.38A8,8,0,0,1,63.92,34.62l22.1,24.31A191.36,191.36,0,0,1,128,56c44.78,0,86.43,15.37,119.13,43.34a8,8,0,0,1-10.26,12.27A175.56,175.56,0,0,0,128,72a175.44,175.44,0,0,0-36.69,3.89ZM128,104a151.6,151.6,0,0,1,71.29,17.69,8,8,0,0,0,7.54-14.07A167.29,167.29,0,0,0,128,88a168.3,168.3,0,0,0-21,.38ZM71.31,93.91,86.4,110.62A119.43,119.43,0,0,0,40.74,131.7a8,8,0,1,1-9.48-12.86A134.56,134.56,0,0,1,71.31,93.91ZM128,152a24,24,0,1,0,24,24A24,24,0,0,0,128,152Zm0,32a8,8,0,1,1,8-8A8,8,0,0,1,128,184Zm37.28-62.88a8,8,0,0,0-1.24,11.26l.13.15A8,8,0,0,0,176.42,121.12Zm-58.56,0A119.7,119.7,0,0,0,68.1,149.12a8,8,0,0,0,11.24,1.5l.14-.11a8,8,0,0,0,1.37-11.23A103.35,103.35,0,0,1,106.72,121.12Z"/>
+      </svg>
+    </div>
+
+    <h1>You're Offline</h1>
+    <p>No internet connection detected.<br>Please check your connection and try again.</p>
+
+    <button class="btn-retry" onclick="window.location.reload()">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 256 256" fill="currentColor">
+        <path d="M224,48V96a8,8,0,0,1-8,8H168a8,8,0,0,1,0-16h28.69L182.06,73.37a79.56,79.56,0,1,0,1.65,114.5,8,8,0,0,1,11.13,11.47,95.55,95.55,0,1,1-1.88-137.6L208,76.69V48a8,8,0,0,1,16,0Z"/>
+      </svg>
+      Try Again
+    </button>
+
+    <p class="hint">PhysLab requires an internet connection to load activities and classes.</p>
+  </div>
+</body>
+</html>

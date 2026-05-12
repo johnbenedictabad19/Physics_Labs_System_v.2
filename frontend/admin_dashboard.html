@@ -6,6 +6,13 @@
     <meta charset="UTF-8">
     <link rel="icon" href="/static/favicons/admin_dashboard.svg" type="image/svg+xml">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="PHYSLAB">
+    <link rel="apple-touch-icon" href="/static/logo.svg">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#4f46e5">
     <title>Admin Dashboard — PHYSLAB</title>
     <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800;900&family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&family=Abril+Fatface&display=swap" rel="stylesheet">
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
@@ -942,5 +949,6 @@ async function deleteClass(id, name) {
 loadAll();
 setTimeout(() => moveTabInd(document.querySelector('.tab-btn.active')), 50);
 </script>
+<script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/sw.js",{scope:"/"}).catch(()=>{});</script>
 </body>
 </html>

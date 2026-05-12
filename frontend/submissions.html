@@ -10,6 +10,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="PHYSLAB">
     <link rel="apple-touch-icon" href="/static/logo.svg">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#4f46e5">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Submissions — PHYSLAB</title>
     <link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800;900&family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&family=Merriweather:wght@400;700&family=Abril+Fatface&display=swap" rel="stylesheet">
@@ -2128,5 +2130,6 @@ function _sbCloseFileModal(e) {
     document.body.style.overflow = '';
 }
 </script>
+<script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/sw.js",{scope:"/"}).catch(()=>{});</script>
 </body>
 </html>

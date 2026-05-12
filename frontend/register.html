@@ -8,6 +8,8 @@
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="PHYSLAB">
     <link rel="apple-touch-icon" href="/static/logo.svg">
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#4f46e5">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PHYSLAB — Create Account</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -1135,5 +1137,6 @@ function togglePw(id, el) {
     el.className = (input.type === 'password' ? 'ph-bold ph-eye' : 'ph-bold ph-eye-slash') + ' toggle-pw';
 }
 </script>
+<script>if("serviceWorker"in navigator)navigator.serviceWorker.register("/sw.js",{scope:"/"}).catch(()=>{});</script>
 </body>
 </html>

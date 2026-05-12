@@ -1,7 +1,9 @@
-const CACHE = 'physlab-v3';
+const CACHE = 'physlab-v5';
+const OFFLINE = '/static/offline.html';
 const STATIC = [
+  OFFLINE,
   '/static/logo.svg',
-  '/static/manifest.json',
+  '/manifest.json',
   'https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800;900&family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap',
   'https://unpkg.com/@phosphor-icons/web',
 ];
@@ -23,9 +25,19 @@ self.addEventListener('activate', e => {
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
 
-  // Always network for API, socket, and HTML pages
+  // Always network for API and socket
   if (url.pathname.startsWith('/api/') || url.pathname.startsWith('/socket.io')) return;
-  if (!url.pathname.includes('.') || url.pathname.endsWith('.html')) return;
+
+  // Navigation requests (HTML pages) — network first, fallback to offline page
+  if (e.request.mode === 'navigate') {
+    e.respondWith(
+      fetch(e.request).catch(() => caches.match(OFFLINE))
+    );
+    return;
+  }
+
+  // Non-asset requests (no extension) — skip
+  if (!url.pathname.includes('.')) return;
 
   // Network-first for CSS and JS so updates reflect on normal reload
   if (url.pathname.endsWith('.css') || url.pathname.endsWith('.js')) {
