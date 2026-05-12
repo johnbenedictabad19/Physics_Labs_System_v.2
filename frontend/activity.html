@@ -5035,10 +5035,10 @@
                         if (c.type === 'sub_header') { _grpStep = 0; return `<div class="av-sub-header" style="margin:10px 0 4px;">${c.text}</div>`; }
                         if (c.type === 'computation_space') return `<div class="av-computation-space"><i class="ph-bold ph-pencil-simple"></i> Show computations here</div>`;
                         if (c.type === 'graph_attachment') return `<div class="av-graph-attachment"><i class="ph-bold ph-chart-line"></i> Attach graph below</div>`;
-                        if (c.type === 'table') return _snapTable(c, tblIdx++, role === 'professor');
+                        if (c.type === 'table') return _snapTable(c, tblIdx++, true);
                         if (c.type === 'step' || c.step_number) {
                             const tbls = c.inline_tables || (c.inline_table ? [c.inline_table] : []);
-                            const inlineTbls = tbls.map(t => _snapTable(t, tblIdx++, role === 'professor')).join('');
+                            const inlineTbls = tbls.map(t => _snapTable(t, tblIdx++, true)).join('');
                             return `<div class="av-procedure-step">
                         <div class="av-step-num">${++_grpStep}.</div>
                         <div class="av-step-text">${c.instruction || c.text || ''}${inlineTbls}</div>
@@ -5053,7 +5053,7 @@
                     if (c.type === 'sub_header') return `<div class="av-sub-header" style="margin:10px 0 4px;">${c.text}</div>`;
                     if (c.type === 'computation_space') return `<div class="av-computation-space"><i class="ph-bold ph-pencil-simple"></i> Show computations here</div>`;
                     if (c.type === 'graph_attachment') return `<div class="av-graph-attachment"><i class="ph-bold ph-chart-line"></i> Attach graph below</div>`;
-                    if (c.type === 'table') return _snapTable(c, tblIdx++, role === 'professor');
+                    if (c.type === 'table') return _snapTable(c, tblIdx++, true);
                     if (isHTML(c.text)) return `<div class="av-text-block">${c.text}</div>`;
                     const txt = (c.text || '').trim();
                     if (!txt) return '';
@@ -5073,7 +5073,7 @@
                 else {
                     for (let i = 0; i < content.length; i++) {
                         const c = content[i], nxt = content[i + 1];
-                        if (c.type === 'table') { html += _snapTable(c, tblIdx++, role === 'professor'); continue; }
+                        if (c.type === 'table') { html += _snapTable(c, tblIdx++, true); continue; }
                         if (c.type === 'ds_header') {
                             html += `<div class="av-ds-group-header">${renderEqToHtml(c.text || '')}</div>`;
                             continue;
@@ -5098,7 +5098,7 @@
                         if (!c.text || c.text === '<p><br></p>') continue;
                         if (nxt?.type === 'table' && !nxt.title) {
                             const plain = c.text.replace(/<[^>]*>/g, '').trim();
-                            if (plain) { html += _snapTable({ ...nxt, title: plain }, tblIdx++, role === 'professor'); i++; continue; }
+                            if (plain) { html += _snapTable({ ...nxt, title: plain }, tblIdx++, true); i++; continue; }
                         }
                         html += isHTML(c.text) ? `<div class="av-text-block">${c.text}</div>` : `<p class="av-text-block">${c.text}</p>`;
                     }
@@ -5107,7 +5107,7 @@
                 // Fallback: use top-level tables array if no inline tables were found in content
                 if (tblIdx === 0 && tables && tables.length > 0) {
                     tables.forEach((tbl, ti) => {
-                        html += _snapTable(tbl, ti, role === 'professor');
+                        html += _snapTable(tbl, ti, true);
                     });
                 }
 
@@ -5165,7 +5165,7 @@
                 </div>`;
 
                     // Inline table (e.g. table inside a question)
-                    if (c.type === 'table') return _snapTable(c, tblIdx++, role === 'professor');
+                    if (c.type === 'table') return _snapTable(c, tblIdx++, true);
 
                     // Instruction / contextual text (not a question)
                     if (c.type === 'text' && !c.question_number) {
@@ -5215,7 +5215,7 @@
 
                     // Inline tables attached to this question
                     const qTables = (c.inline_tables || (c.inline_table ? [c.inline_table] : []))
-                        .map(t => _snapTable(t, tblIdx++, role === 'professor')).join('');
+                        .map(t => _snapTable(t, tblIdx++, true)).join('');
 
                     // Sub-questions (a., b., c...)
                     let subQHtml = '';
@@ -5226,7 +5226,7 @@
                                 ?? existingSubmission?.answers?.[sqIdx] ?? '';
                             const sqText = sq.question || sq.text || '';
                             const sqTbls = (sq.inline_tables || (sq.inline_table ? [sq.inline_table] : []))
-                                .map(t => _snapTable(t, tblIdx++, role === 'professor')).join('');
+                                .map(t => _snapTable(t, tblIdx++, true)).join('');
                             return `<div class="av-sub-question">
                         <span class="av-sub-q-label">${sq.label || String.fromCharCode(97 + si)}.</span>
                         <div class="av-sub-q-body">
