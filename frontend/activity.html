@@ -3202,9 +3202,14 @@
             color: var(--text-3);
             font-style: italic;
             margin-top: 6px;
-            text-align: center;
+            text-align: center !important;
             font-family: 'DM Sans', sans-serif;
         }
+
+        /* Quill alignment classes — no Quill stylesheet outside the editor */
+        .ql-align-center { text-align: center !important; }
+        .ql-align-right  { text-align: right  !important; }
+        .ql-align-justify{ text-align: justify !important; }
 
         .av-figure-image.selected {
             outline: 2px solid var(--primary-l);
@@ -4733,7 +4738,7 @@
             // procedures/guide_questions always rebuilt from structured data so equations render via _snapTable.
             const useSnapshot = section.view_html && !['procedures', 'guide_questions', 'introduction'].includes(sType);
             if (useSnapshot) {
-                viewDiv.innerHTML = _applyKatexToHtml(section.view_html);
+                viewDiv.innerHTML = _applyKatexToHtml(_convertQuillHtml(section.view_html));
                 // data_sheet snapshot doesn't include the student notes textarea — append it here
                 if (sType === 'data_sheet' && role === 'student') {
                     const isDisabled = submissionLocked() || !isEditMode;
@@ -4870,7 +4875,7 @@
                 } else if (item.type === 'image' && item.src) {
                     html += renderImageHtml(item);
                 } else if (item.type === 'figure_caption') {
-                    html += `<p style="text-align:center;"><em>${item.text}</em></p>`;
+                    html += `<p class="av-figure-caption">${item.text}</p>`;
                 } else if (item.type === 'spacing') {
                     html += `<p><br></p>`;
                 } else if (item.type === 'sub_header') {

@@ -5101,6 +5101,13 @@ function _dsSetEditMode(editing) {
             wrap.style.display = 'none';
             if (ta) { ta.style.display = ''; _autoResizeTa(ta); }
         });
+        // Restore table toolbars
+        container.querySelectorAll('.ca-proc-table-wrap .ca-proc-table-toolbar').forEach(toolbar => {
+            const titleInput = toolbar.querySelector('input[type="text"]');
+            if (titleInput) titleInput.style.display = '';
+            toolbar.querySelector('.ca-tbl-title-rendered')?.remove();
+            toolbar.querySelector('.ca-tbl-dots-btn') && (toolbar.querySelector('.ca-tbl-dots-btn').style.display = '');
+        });
     } else {
         // Re-render all content, hide raw inputs/textareas
         container.querySelectorAll('.ds-header-block-wrap').forEach(block => {
@@ -5132,6 +5139,37 @@ function _dsSetEditMode(editing) {
             }
             wrap.style.display = '';
             if (ta) ta.style.display = 'none';
+        });
+        // Lock table toolbars: render title, hide edit buttons
+        container.querySelectorAll('.ca-proc-table-wrap .ca-proc-table-toolbar').forEach(toolbar => {
+            const titleInput = toolbar.querySelector('input[type="text"]');
+            if (!titleInput) return;
+            const val = titleInput.value.trim();
+            if (val) {
+                const rendered = document.createElement('span');
+                rendered.className = 'ca-tbl-title-rendered';
+                rendered.style.cssText = 'flex:1;font-size:12px;font-weight:600;color:var(--text-2);font-family:"DM Sans",sans-serif;';
+                rendered.innerHTML = renderEqToHtml(val);
+                titleInput.after(rendered);
+            }
+            titleInput.style.display = 'none';
+            toolbar.querySelector('.ca-tbl-dots-btn') && (toolbar.querySelector('.ca-tbl-dots-btn').style.display = 'none');
+        });
+        // Render regular table cells with content (no pre-existing render wrap)
+        container.querySelectorAll('.ca-proc-inline-tbl td:not(.ca-tbl-header-cell)').forEach(td => {
+            if (td.querySelector('.ca-tbl-cell-render-wrap')) return; // already handled above
+            const ta = td.querySelector('textarea');
+            if (!ta) return;
+            const val = ta.value.trim();
+            if (!val) return; // leave empty cells as inputs for students
+            const renderWrap = document.createElement('div');
+            renderWrap.className = 'ca-tbl-cell-render-wrap';
+            const rendDiv = document.createElement('div');
+            rendDiv.className = 'ca-tbl-cell-rendered';
+            rendDiv.innerHTML = renderEqToHtml(val);
+            renderWrap.appendChild(rendDiv);
+            td.appendChild(renderWrap);
+            ta.style.display = 'none';
         });
     }
 }
