@@ -139,6 +139,10 @@
         .tabs { display:flex; gap:4px; background:var(--input-bg); border:1px solid var(--border);
             border-radius:12px; padding:4px; margin-bottom:20px; width:fit-content; flex-wrap:wrap;
             position:relative; }
+        @media (max-width:600px) {
+            .tabs { width:100%; flex-wrap:nowrap; overflow-x:auto; }
+            .tab-btn { white-space:nowrap; font-size:12px; padding:8px 12px; }
+        }
         .tab-ind { position:absolute; top:4px; bottom:4px; left:0; border-radius:9px;
             background:rgba(10,102,194,0.12); border:1.5px solid var(--primary);
             width:80px; transform:translateX(4px);
