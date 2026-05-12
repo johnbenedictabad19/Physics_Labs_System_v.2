@@ -966,7 +966,7 @@ async function loadClasses() {
             </div>`}`}).join('')}</div>`;
         if (typeof observeFade === 'function') observeFade(container);
 
-        const ids = data.map(c => c.id);
+        const ids = data.filter(c => c.enrollment_status === 'approved').map(c => c.id);
         loadAllActivities(ids);
 
     } catch {

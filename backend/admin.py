@@ -187,10 +187,88 @@ def delete_user(user_id):
     if not target:
         return jsonify({'message': 'User not found!'}), 404
 
-    db.session.delete(target)
-    db.session.commit()
+    try:
+        from models import (ClassMember, Notification, StreamComment, StreamPost,
+                            Announcement, GroupMember, Group, SessionAttendance,
+                            ClassSession, ClassInvite, ClassTeacher, Submission,
+                            Activity, EditedContent, Class)
+        from sqlalchemy import or_
 
-    return jsonify({'message': f'{target.full_name} has been permanently deleted.'}), 200
+        name = target.full_name
+
+        # 1. Notifications
+        Notification.query.filter_by(user_id=user_id).delete()
+
+        # 2. Stream comments by this user
+        StreamComment.query.filter_by(user_id=user_id).delete()
+
+        # 3. Group memberships (as member) & nullify leader
+        GroupMember.query.filter_by(student_id=user_id).delete()
+        Group.query.filter_by(leader_id=user_id).update({'leader_id': None})
+
+        # 4. Session attendance (as student)
+        SessionAttendance.query.filter_by(student_id=user_id).delete()
+
+        # 5. Class memberships (as student)
+        ClassMember.query.filter_by(student_id=user_id).delete()
+
+        # 6. Class invites involving this user
+        ClassInvite.query.filter(
+            or_(ClassInvite.student_id == user_id, ClassInvite.invited_by == user_id)
+        ).delete(synchronize_session='fetch')
+
+        # 7. Co-teacher records
+        ClassTeacher.query.filter_by(teacher_id=user_id).delete()
+
+        # 8. Nullify graded_by on submissions this user graded
+        Submission.query.filter_by(graded_by=user_id).update({'graded_by': None})
+
+        # 9. Delete submissions by this student
+        Submission.query.filter_by(student_id=user_id).delete()
+
+        # 10. Stream posts & announcements by this user (outside owned classes)
+        StreamPost.query.filter_by(posted_by_id=user_id).delete()
+        Announcement.query.filter_by(posted_by_id=user_id).delete()
+
+        # 11. Class sessions created by this user (outside owned classes)
+        for s in ClassSession.query.filter_by(created_by=user_id).all():
+            db.session.delete(s)  # cascade deletes attendance
+
+        # 12. If professor: delete all owned classes and their contents
+        for cls in Class.query.filter_by(professor_id=user_id).all():
+            cid = cls.id
+            ClassMember.query.filter_by(class_id=cid).delete()
+            ClassInvite.query.filter_by(class_id=cid).delete()
+            ClassTeacher.query.filter_by(class_id=cid).delete()
+            Announcement.query.filter_by(class_id=cid).delete()
+            StreamPost.query.filter_by(class_id=cid).delete()
+            GroupMember.query.filter(
+                GroupMember.group_id.in_(
+                    db.session.query(Group.id).filter_by(class_id=cid)
+                )
+            ).delete(synchronize_session='fetch')
+            Group.query.filter_by(class_id=cid).delete()
+            for session in ClassSession.query.filter_by(class_id=cid).all():
+                db.session.delete(session)
+            for act in Activity.query.filter_by(class_id=cid).all():
+                EditedContent.query.filter_by(activity_id=act.id).delete()
+                Submission.query.filter_by(activity_id=act.id).delete()
+                db.session.delete(act)
+            db.session.delete(cls)
+
+        # 13. Activities uploaded by user in other classes
+        for act in Activity.query.filter_by(uploaded_by=user_id).all():
+            EditedContent.query.filter_by(activity_id=act.id).delete()
+            Submission.query.filter_by(activity_id=act.id).delete()
+            db.session.delete(act)
+
+        db.session.delete(target)
+        db.session.commit()
+        return jsonify({'message': f'{name} has been permanently deleted.'}), 200
+
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({'message': f'Delete failed: {str(e)}'}), 500
 
 
 # ── Reset user password ──
