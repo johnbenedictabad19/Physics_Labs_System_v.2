@@ -1,10 +1,12 @@
-const CACHE = 'physlab-v5';
+const CACHE = 'physlab-v7';
 const OFFLINE = '/static/offline.html';
 const STATIC = [
   OFFLINE,
   '/static/logo.svg',
+  '/static/logo-192.png',
   '/manifest.json',
   'https://fonts.googleapis.com/css2?family=Unbounded:wght@700;800;900&family=Sora:wght@400;600;700;800&family=DM+Sans:wght@400;500;600&display=swap',
+  'https://fonts.googleapis.com/css2?family=Abril+Fatface&display=swap',
   'https://unpkg.com/@phosphor-icons/web',
 ];
 
