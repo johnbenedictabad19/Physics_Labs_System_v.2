@@ -40,6 +40,20 @@ def register_collab(socketio):
         except Exception:
             return
 
+        # Verify user is actually a member of this group
+        from models import GroupMember, Group, Activity
+        membership = GroupMember.query.filter_by(group_id=group_id, student_id=uid).first()
+        if not membership:
+            emit('collab_error', {'message': 'Not a member of this group'})
+            return
+
+        # Verify group belongs to the activity's class (prevent cross-class room join)
+        grp = Group.query.get(group_id)
+        act = Activity.query.get(activity_id)
+        if not grp or not act or grp.class_id != act.class_id:
+            emit('collab_error', {'message': 'Group/activity mismatch'})
+            return
+
         room = _rid(activity_id, group_id)
         join_room(room)
 
@@ -87,11 +101,15 @@ def register_collab(socketio):
         value      = d.get('value', '')
 
         # Store in room draft state for late joiners / reconnects
-        _rooms[room]['draft'][f'{field_type}_{field_id}'] = {
+        draft = _rooms[room]['draft']
+        draft[f'{field_type}_{field_id}'] = {
             'field_type': field_type,
             'field_id':   field_id,
             'value':      value
         }
+        if len(draft) > 300:
+            for k in list(draft.keys())[:50]:
+                del draft[k]
 
         emit('field_updated', {
             'field_type': field_type,
@@ -137,11 +155,16 @@ def register_collab(socketio):
             return
         block_index = str(d.get('block_index', ''))
         files = d.get('files', [])
-        _rooms[room]['draft'][f'attach_{block_index}'] = {
+        draft = _rooms[room]['draft']
+        draft[f'attach_{block_index}'] = {
             'field_type': 'attach',
             'block_index': block_index,
             'files': files
         }
+        if len(draft) > 300:
+            for k in list(draft.keys())[:50]:
+                del draft[k]
+
         emit('attach_updated', {
             'block_index': block_index,
             'files': files,

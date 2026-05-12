@@ -1590,7 +1590,7 @@ function sbBuildGuideQuestions(content, answers, tableData) {
     }).join('');
 }
 
-function sbBuildSection(section, sub) {
+function sbBuildSection(section, sub, sectionIdx) {
     const type = section.type;
     const content = section.content || [];
     const meta = SB_SECTION_META[type] || { icon: '<i class="ph-bold ph-file-text"></i>', iconClass: 'av-icon-slate', label: section.title || type };
@@ -1686,12 +1686,12 @@ function sbBuildSection(section, sub) {
     }
 
     if (!bodyHtml.trim()) return '';
-    const uid = type;
+    const uid = sectionIdx !== undefined ? `${type}_${sectionIdx}` : type;
     return `<div class="av-section-wrapper" data-section-type="${type}">
         <div class="av-section-header" onclick="sbToggle('${uid}')">
             <div class="av-section-header-left">
                 <div class="av-section-icon ${meta.iconClass}">${meta.icon}</div>
-                <span class="av-section-label">${meta.label}</span>
+                <span class="av-section-label">${section.title || meta.label}</span>
             </div>
             <div class="av-section-header-right">
                 <i class="ph-bold ph-caret-down av-toggle-icon open" id="sb-toggle-${uid}"></i>
@@ -1715,10 +1715,20 @@ function buildFullSubmissionView(sub) {
     if (!parsedActivity?.sections) return buildSubmissionDetail(sub);
     const sections = parsedActivity.sections;
     let html = '';
-    for (const type of SB_SECTION_ORDER) {
-        if (type === 'student_info') continue; // handled separately below
-        const section = sections.find(s => s.type === type);
-        if (section) html += sbBuildSection(section, sub);
+    const hasSectionsConfig = Array.isArray(parsedActivity.sections_config) && parsedActivity.sections_config.length > 0;
+    if (hasSectionsConfig) {
+        // Respect professor's custom order; support Phase 4 duplicate sections
+        sections.forEach((section, idx) => {
+            if (section.type === 'student_info') return;
+            html += sbBuildSection(section, sub, idx);
+        });
+    } else {
+        // Legacy / DOCX: use hardcoded default order
+        for (const type of SB_SECTION_ORDER) {
+            if (type === 'student_info') continue;
+            const section = sections.find(s => s.type === type);
+            if (section) html += sbBuildSection(section, sub, SB_SECTION_ORDER.indexOf(type));
+        }
     }
     // Student info is always rendered from submission data, not activity sections
     if (sub.student_info && Object.keys(sub.student_info).length > 0) {

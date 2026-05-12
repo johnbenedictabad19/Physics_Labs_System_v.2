@@ -440,6 +440,7 @@
                         <input class="sn-box" id="sn8" maxlength="1" inputmode="alphanumeric" autocomplete="off">
                     </div>
                     <input type="hidden" id="student_number">
+                    <p id="sn-check-msg" style="display:none;margin:4px 0 0;font-size:12px;"></p>
                 </div>
                 <div style="margin-bottom:4px;">
                     <label class="input-label"><i class="ph-bold ph-cake" style="margin-right:4px;"></i>Birthday</label>
@@ -482,6 +483,7 @@
                     <input type="email" id="email" placeholder="prof@university.edu.ph" autocomplete="email">
                     <i class="ph-bold ph-envelope input-icon"></i>
                 </div>
+                <p id="email-check-msg" style="display:none;margin:4px 0 0;font-size:12px;"></p>
             </div>
 
             <div class="btn-nav">
@@ -579,7 +581,7 @@
     </div><!-- end steps-wrap -->
 
     <div class="divider">or</div>
-    <div class="switch-link">Already have an account? <a href="/login">Sign in</a></div>
+    <div class="switch-link">Already have an account? <a href="/login">Log In</a></div>
 </div>
 
 <!-- ═══ MODALS ═══ -->
@@ -762,8 +764,62 @@ function updateIndicator(n) {
     }
 }
 
-function goNext(step) {
+// ── Duplicate check state ──
+let _snCheckState   = null; // null=unchecked, true=available, false=taken
+let _emailCheckState = null;
+
+function _setCheckMsg(elId, available, takenMsg) {
+    const el = document.getElementById(elId);
+    if (!el) return;
+    if (available === null) { el.style.display = 'none'; return; }
+    el.style.display = 'block';
+    el.style.color = available ? '#10b981' : '#ef4444';
+    el.innerHTML = available
+        ? '<i class="ph-bold ph-check-circle"></i> Available'
+        : `<i class="ph-bold ph-x-circle"></i> ${takenMsg}`;
+}
+
+async function checkStudentNumber() {
+    const sn = document.getElementById('student_number').value.trim();
+    const boxes = Array.from({length:9}, (_,i) => document.getElementById('sn'+i));
+    if (boxes.some(b => !b.value)) { _snCheckState = null; _setCheckMsg('sn-check-msg', null); return; }
+    try {
+        const res = await fetch('/api/auth/check-student-number', {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ student_number: sn })
+        });
+        const d = await res.json();
+        _snCheckState = d.available;
+        _setCheckMsg('sn-check-msg', d.available, 'Student number already registered.');
+    } catch { _snCheckState = null; }
+}
+
+async function checkEmailAvailable() {
+    const em = document.getElementById('email').value.trim();
+    if (!em || !em.includes('@')) { _emailCheckState = null; _setCheckMsg('email-check-msg', null); return; }
+    try {
+        const res = await fetch('/api/auth/check-email', {
+            method: 'POST', headers: {'Content-Type':'application/json'},
+            body: JSON.stringify({ email: em })
+        });
+        const d = await res.json();
+        _emailCheckState = d.available;
+        _setCheckMsg('email-check-msg', d.available, 'Email already registered.');
+    } catch { _emailCheckState = null; }
+}
+
+async function goNext(step) {
     if (!validateStep(step)) return;
+    // Step 3: run duplicate check before proceeding
+    if (step === 3) {
+        if (selectedRole === 'student') {
+            await checkStudentNumber();
+            if (_snCheckState === false) { showAlert('Student number already registered. Please use a different student number.'); return; }
+        } else {
+            await checkEmailAvailable();
+            if (_emailCheckState === false) { showAlert('Email already registered. Please use a different email address.'); return; }
+        }
+    }
     showStep(step + 1, 'forward');
 }
 
@@ -850,6 +906,7 @@ function validateStep(step) {
                 if (i < 8) boxes[i+1].focus();
             }
             syncHidden();
+            if (boxes.every(b => b.value)) checkStudentNumber();
         });
         box.addEventListener('paste', e => {
             e.preventDefault();
@@ -862,7 +919,15 @@ function validateStep(step) {
             syncHidden();
             const next = boxes.find((b,j) => j >= raw.length && !b.value);
             if (next) next.focus(); else boxes[8].focus();
+            if (boxes.every(b => b.value)) checkStudentNumber();
         });
+    });
+
+    // Reset check state when any box value changes
+    boxes.forEach(box => {
+        box.addEventListener('input', () => {
+            if (!boxes.every(b => b.value)) { _snCheckState = null; _setCheckMsg('sn-check-msg', null); }
+        }, true);
     });
 })();
 
@@ -880,6 +945,13 @@ function validateStep(step) {
     document.getElementById('bd_day').addEventListener('input', syncBirthday);
     document.getElementById('bd_year').addEventListener('input', syncBirthday);
 })();
+
+// ── Professor email duplicate check on blur ──
+document.getElementById('email').addEventListener('blur', checkEmailAvailable);
+document.getElementById('email').addEventListener('input', () => {
+    _emailCheckState = null;
+    _setCheckMsg('email-check-msg', null);
+});
 
 // ── Step 3 toggle ──
 function updateStep3Fields() {

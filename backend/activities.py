@@ -264,9 +264,12 @@ def create_manual(class_id):
         return jsonify({'message': 'Please provide a title!'}), 400
 
     try:
+        sec = activity_data.get('sections', {})
         parsed_content = {
             'sections': build_sections_from_manual(activity_data),
-            'tables': activity_data.get('tables', [])
+            'tables': activity_data.get('tables', []),
+            'sections_config': sec.get('sections_config', []),
+            'extra_sections':  sec.get('extra_sections',  [])
         }
     except Exception as e:
         print(f"Build sections error: {e}")
@@ -419,9 +422,12 @@ def update_activity(activity_id):
                 'message': 'Manual activity updates require non-empty activity_data.'
             }), 400
         try:
+            sec = activity_data.get('sections', {})
             parsed_content = {
                 'sections': build_sections_from_manual(activity_data),
-                'tables': activity_data.get('tables', [])
+                'tables': activity_data.get('tables', []),
+                'sections_config': sec.get('sections_config', []),
+            'extra_sections':  sec.get('extra_sections',  [])
             }
             activity.parsed_content = json.dumps(parsed_content)
         except Exception as e:
@@ -462,115 +468,145 @@ def set_due_date(activity_id):
 # ===== BUILD SECTIONS FROM MANUAL =====
 def build_sections_from_manual(data):
     """
-    FIXED: student_info is at TOP LEVEL of activity_data,
-    not nested inside 'sections'. Matches what create_activity.html sends.
+    Builds the ordered sections list for a manual activity.
+    - When sections_config is present: only includes sections the professor added,
+      in the order they appear (supports custom names + Phase 4 duplicates).
+    - When sections_config is absent (DOCX import / legacy): includes all
+      sections that have content in the default fixed order.
     """
-    sections = []
-    sec = data.get('sections', {})
+    sec             = data.get('sections', {})
+    sections_config = sec.get('sections_config', [])
+    extra_sections  = sec.get('extra_sections',  [])
 
-    # Lab title
+    _key_to_type = {
+        'introduction':    'introduction',
+        'outcomes':        'outcomes',
+        'materials':       'materials',
+        'procedures':      'procedures',
+        'datasheet':       'data_sheet',
+        'guide-questions': 'guide_questions',
+        'references':      'references',
+    }
+
+    # ── Lab title (always first) ──────────────────────────────────────────
     lab_num   = data.get('lab_number', '') or sec.get('lab_number', 'LABORATORY ACTIVITY')
-    lab_title = data.get('lab_title', '')  or sec.get('lab_title', '')
-    sections.append({
-        'type': 'lab_title',
-        'title': lab_num or 'LABORATORY ACTIVITY',
+    lab_title = data.get('lab_title',  '') or sec.get('lab_title',  '')
+    result = [{
+        'type':    'lab_title',
+        'title':   lab_num or 'LABORATORY ACTIVITY',
         'content': [{'text': lab_title}] if lab_title else []
-    })
+    }]
 
-    # Introduction
+    # ── Build candidate sections keyed by frontend key ────────────────────
+    # Each candidate is only added if it actually has content.
+    candidates = {}
+
     intro_structured = sec.get('introduction_structured', None)
     intro = sec.get('introduction', '')
     if intro_structured and isinstance(intro_structured, list) and intro_structured:
-        sections.append({
-            'type': 'introduction',
-            'title': 'INTRODUCTION',
+        candidates['introduction'] = {
+            'type': 'introduction', 'title': 'INTRODUCTION',
             'content': intro_structured
-        })
+        }
     elif intro:
-        sections.append({
-            'type': 'introduction',
-            'title': 'INTRODUCTION',
+        candidates['introduction'] = {
+            'type': 'introduction', 'title': 'INTRODUCTION',
             'content': [{'text': intro}]
-        })
+        }
 
-    # Outcomes
     outcomes = sec.get('outcomes', '')
     if outcomes:
-        sections.append({
-            'type': 'outcomes',
-            'title': 'TARGET LEARNING OUTCOMES',
+        candidates['outcomes'] = {
+            'type': 'outcomes', 'title': 'TARGET LEARNING OUTCOMES',
             'content': [{'text': outcomes}]
-        })
+        }
 
-    # Materials
     materials = sec.get('materials', [])
     if materials:
         s = {'type': 'materials', 'title': 'MATERIALS', 'content': materials}
-        if sec.get('materials_view_html'):
-            s['view_html'] = sec['materials_view_html']
-        sections.append(s)
+        if sec.get('materials_view_html'): s['view_html'] = sec['materials_view_html']
+        candidates['materials'] = s
 
-    # Procedures
     procedures = sec.get('procedures', [])
     if procedures:
         s = {'type': 'procedures', 'title': 'PROCEDURES', 'content': procedures}
-        if sec.get('procedures_view_html'):
-            s['view_html'] = sec['procedures_view_html']
-        sections.append(s)
+        if sec.get('procedures_view_html'): s['view_html'] = sec['procedures_view_html']
+        candidates['procedures'] = s
 
-    # Data sheet
-    datasheet_desc = sec.get('datasheet_desc', '')
-    s = {
-        'type': 'data_sheet',
-        'title': 'DATA SHEET',
-        'content': [{'text': datasheet_desc}] if datasheet_desc else []
-    }
-    if sec.get('datasheet_view_html'):
-        s['view_html'] = sec['datasheet_view_html']
-    sections.append(s)
+    ds = {'type': 'data_sheet', 'title': 'DATA SHEET',
+          'content': [{'text': sec.get('datasheet_desc', '')}] if sec.get('datasheet_desc') else []}
+    if sec.get('datasheet_view_html'): ds['view_html'] = sec['datasheet_view_html']
+    candidates['datasheet'] = ds  # always a candidate (may be empty)
 
-    # Guide questions
     questions = sec.get('guide_questions', [])
     if questions:
         s = {'type': 'guide_questions', 'title': 'GUIDE QUESTIONS', 'content': questions}
-        if sec.get('guide_questions_view_html'):
-            s['view_html'] = sec['guide_questions_view_html']
-        sections.append(s)
+        if sec.get('guide_questions_view_html'): s['view_html'] = sec['guide_questions_view_html']
+        candidates['guide-questions'] = s
 
-    # References
     references = sec.get('references', '')
     if references:
-        sections.append({
-            'type': 'references',
-            'title': 'REFERENCES',
+        candidates['references'] = {
+            'type': 'references', 'title': 'REFERENCES',
             'content': [{'text': references}]
-        })
+        }
 
-    # ✅ FIX: student_info is at TOP LEVEL of activity_data, not inside 'sections'
+    # ── Assemble body sections ────────────────────────────────────────────
+    if sections_config:
+        # New-style: only include what's in sections_config, in its order.
+        dup_lookup = {}
+        for es in extra_sections:
+            dup_lookup[(es.get('key', ''), es.get('instance', 1))] = es
+
+        for cfg in sections_config:
+            k        = cfg.get('key', '')
+            name     = cfg.get('name', '').strip()
+            instance = cfg.get('instance', 1)
+
+            if instance == 1:
+                s = candidates.get(k)
+                if s:
+                    s = dict(s)
+                    if name: s['title'] = name
+                    result.append(s)
+            else:
+                # Duplicate instance (Phase 4)
+                es   = dup_lookup.get((k, instance))
+                html = es.get('html', '') if es else ''
+                if html:
+                    stype = _key_to_type.get(k)
+                    if stype:
+                        result.append({
+                            'type':    stype,
+                            'title':   name or k.replace('-', ' ').title(),
+                            'content': [{'text': html}]
+                        })
+    else:
+        # Legacy / DOCX: include all candidates with content in default order.
+        for k in ['introduction', 'outcomes', 'materials', 'procedures',
+                  'datasheet', 'guide-questions', 'references']:
+            if k in candidates:
+                result.append(candidates[k])
+
+    # ── Student info (always last) ────────────────────────────────────────
     student_info = data.get('student_info', {})
-    members = student_info.get('members', [])
+    members    = student_info.get('members', [])
     group_id   = student_info.get('group_id')
     group_name = student_info.get('group_name', '')
 
-    content = []
+    si_content = []
     for i, m in enumerate(members):
-        content.append({
-            'field': 'Name',
-            'type': 'member',
-            'value': m,
-            'is_leader': i == 0  # first member is leader (already sorted in frontend)
+        si_content.append({
+            'field': 'Name', 'type': 'member', 'value': m,
+            'is_leader': i == 0
         })
-    content.append({'field': 'Course/Year/Section', 'type': 'dropdown',
-                    'value': student_info.get('section', '')})
-    content.append({'field': 'Date', 'type': 'date',
-                    'value': student_info.get('date', '')})
-
-    sections.append({
-        'type': 'student_info',
-        'title': 'STUDENT INFORMATION',
-        'content': content,
-        'group_id': group_id,
-        'group_name': group_name
+    si_content.append({'field': 'Course/Year/Section', 'type': 'dropdown',
+                       'value': student_info.get('section', '')})
+    si_content.append({'field': 'Date', 'type': 'date',
+                       'value': student_info.get('date', '')})
+    result.append({
+        'type': 'student_info', 'title': 'STUDENT INFORMATION',
+        'content': si_content, 'group_id': group_id, 'group_name': group_name
     })
 
-    return sections
+    return result

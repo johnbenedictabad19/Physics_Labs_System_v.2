@@ -79,10 +79,11 @@ def submit_activity(activity_id):
         return jsonify({'message': 'Only students can submit!'}), 403
 
     # Block re-submit if already submitted (not draft)
+    # with_for_update() serializes concurrent submits from the same group at DB level
     existing = Submission.query.filter_by(
         activity_id=activity_id,
         student_id=user_id
-    ).filter(Submission.status.in_(['submitted', 'graded'])).first()
+    ).filter(Submission.status.in_(['submitted', 'graded'])).with_for_update().first()
 
     if existing:
         # Already submitted — return the existing submission so frontend can show submitted state
@@ -226,7 +227,7 @@ def submit_activity(activity_id):
                 # Only create if not already submitted/graded
                 already = Submission.query.filter_by(
                     activity_id=activity_id, student_id=mid
-                ).filter(Submission.status.in_(['submitted', 'graded'])).first()
+                ).filter(Submission.status.in_(['submitted', 'graded'])).with_for_update().first()
                 if not already:
                     db.session.add(Submission(
                         activity_id=activity_id,

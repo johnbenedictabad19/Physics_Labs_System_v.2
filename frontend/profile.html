@@ -826,8 +826,9 @@ input[type="file"]#avatarInput { display:none; }
                     <button class="pf-cam-btn" onclick="document.getElementById('avatarInput').click()">
                         <i class="ph-bold ph-camera"></i>
                     </button>
-                    <input type="file" id="avatarInput" accept="image/*" onchange="previewAvatar(this)">
+                    <input type="file" id="avatarInput" accept="image/png,image/jpeg" onchange="previewAvatar(this)">
                 </div>
+                <p style="font-size:11px;color:var(--text-3);margin:5px 0 0;text-align:center;">PNG or JPG only</p>
                 <!-- Role pill top right -->
                 <div class="pf-avatar-actions">
                     <div class="pf-role-pill">
@@ -1216,6 +1217,12 @@ function initPage() {
 // ===== AVATAR =====
 function previewAvatar(input) {
     if (!input.files[0]) return;
+    const allowed = ['image/png', 'image/jpeg'];
+    if (!allowed.includes(input.files[0].type)) {
+        showToast('Only PNG and JPG files are allowed.', 'error');
+        input.value = '';
+        return;
+    }
     const reader = new FileReader();
     reader.onload = async e => {
         const dataUrl = e.target.result;

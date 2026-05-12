@@ -77,6 +77,29 @@ def register():
 
 
 # ============================================================
+# DUPLICATE CHECKS (used by registration Step 3)
+# ============================================================
+@auth.route('/check-student-number', methods=['POST'])
+def check_student_number():
+    data = request.get_json() or {}
+    sn = (data.get('student_number') or '').strip()
+    if not sn:
+        return jsonify({'available': False}), 400
+    exists = User.query.filter_by(student_number=sn).first() is not None
+    return jsonify({'available': not exists}), 200
+
+
+@auth.route('/check-email', methods=['POST'])
+def check_email():
+    data = request.get_json() or {}
+    email = (data.get('email') or '').strip().lower()
+    if not email:
+        return jsonify({'available': False}), 400
+    exists = User.query.filter_by(email=email).first() is not None
+    return jsonify({'available': not exists}), 200
+
+
+# ============================================================
 # LOGIN
 # ============================================================
 @auth.route('/login', methods=['POST'])

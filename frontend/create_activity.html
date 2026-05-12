@@ -1881,6 +1881,125 @@ body.dashboard-body {
 .ca-icon-slate  { background: rgba(100,116,139,0.15) !important; color: #94a3b8 !important; }
 .ca-icon-violet { background: rgba(0,65,130,0.15)  !important; color: #c084fc !important; }
 
+/* ===== SECTION DRAG HANDLE (Phase 3) ===== */
+.ca-section-drag-handle {
+    display: flex; align-items: center; justify-content: center;
+    width: 24px; height: 24px; flex-shrink: 0; margin-right: 2px;
+    color: var(--text-3); cursor: grab; border-radius: 6px;
+    transition: color 0.15s, background 0.15s;
+}
+.ca-section-drag-handle:hover { color: var(--text-2); background: var(--input-bg); }
+.ca-section-drag-handle:active { cursor: grabbing; }
+.ca-section-drag-handle i { font-size: 16px; pointer-events: none; }
+/* Section being dragged */
+.ca-optional-section.ca-dragging {
+    opacity: 0.4; pointer-events: none;
+}
+/* Drop indicator line */
+.ca-section-drop-indicator {
+    height: 3px; border-radius: 2px;
+    background: var(--primary); margin: 2px 0;
+    pointer-events: none;
+}
+
+/* ===== SECTION REMOVE BUTTON ===== */
+.ca-section-remove-btn {
+    display: flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 8px; border: none;
+    background: transparent; color: var(--text-3); cursor: pointer;
+    transition: background 0.15s, color 0.15s; flex-shrink: 0;
+}
+.ca-section-remove-btn:hover { background: rgba(244,63,94,0.12); color: #fb7185; }
+.ca-section-remove-btn i { font-size: 14px; pointer-events: none; }
+/* Section label rename inline input */
+.ca-section-label { cursor: default; }
+.ca-section-label[title] { cursor: text; }
+.ca-section-rename-input {
+    font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600;
+    color: var(--text); background: var(--input-bg);
+    border: 1.5px solid var(--primary); border-radius: 6px;
+    padding: 2px 8px; outline: none; min-width: 80px; max-width: 240px;
+    line-height: 1.4;
+}
+
+/* ===== ADD SECTION BUTTON ===== */
+.ca-add-section-btn-wrap {
+    display: flex; justify-content: center; padding: 4px 0 8px;
+}
+.ca-add-section-btn {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 24px; border-radius: 12px; border: 2px dashed var(--border);
+    background: transparent; color: var(--text-3); cursor: pointer;
+    font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 600;
+    transition: border-color 0.15s, color 0.15s, background 0.15s;
+}
+.ca-add-section-btn:hover {
+    border-color: var(--primary); color: var(--primary);
+    background: rgba(10,102,194,0.06);
+}
+.ca-add-section-btn i { font-size: 16px; }
+
+/* ===== ADD SECTION MODAL ===== */
+.ca-addsec-overlay {
+    position: fixed; inset: 0; z-index: 1200;
+    background: rgba(0,0,0,0.45); display: flex;
+    align-items: center; justify-content: center;
+    animation: fadeIn 0.15s ease;
+}
+.ca-addsec-modal {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 20px; width: 480px; max-width: 95vw;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+    animation: slideUp 0.18s ease;
+    overflow: hidden;
+}
+.ca-addsec-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 20px 14px; border-bottom: 1px solid var(--border);
+}
+.ca-addsec-header span {
+    font-family: 'DM Sans', sans-serif; font-size: 15px;
+    font-weight: 700; color: var(--text);
+}
+.ca-addsec-close {
+    width: 30px; height: 30px; border-radius: 8px; border: none;
+    background: transparent; color: var(--text-3); cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px; transition: background 0.15s;
+}
+.ca-addsec-close:hover { background: var(--input-bg); }
+.ca-addsec-grid {
+    display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;
+    padding: 18px 20px 20px;
+}
+.ca-addsec-tile {
+    display: flex; align-items: center; gap: 12px;
+    padding: 12px 14px; border-radius: 12px; border: 1.5px solid var(--border);
+    background: var(--input-bg); cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, transform 0.1s;
+    user-select: none;
+}
+.ca-addsec-tile:hover:not(.ca-addsec-tile-added) {
+    border-color: var(--primary); background: rgba(10,102,194,0.07);
+    transform: translateY(-1px);
+}
+.ca-addsec-tile.ca-addsec-tile-added {
+    opacity: 0.5; cursor: not-allowed;
+}
+.ca-addsec-tile-icon {
+    width: 34px; height: 34px; border-radius: 9px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 16px;
+}
+.ca-addsec-tile-info { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+.ca-addsec-tile-name {
+    font-family: 'DM Sans', sans-serif; font-size: 13px;
+    font-weight: 600; color: var(--text); line-height: 1.2;
+}
+.ca-addsec-tile-sub {
+    font-family: 'DM Sans', sans-serif; font-size: 11px;
+    color: var(--text-3); line-height: 1.2;
+}
+
 /* ===== FIELDS ===== */
 .ca-fields-wrap { padding: 16px !important; gap: 14px !important; }
 .ca-field-label { color: var(--text-2) !important; font-size: 12px !important; }
@@ -2409,12 +2528,15 @@ body.dashboard-body {
         </div>
     </div>
 
+    <!-- OPTIONAL SECTIONS ZONE (drag-and-drop target in Phase 3) -->
+    <div id="ca-optional-sections">
+
     <!-- INTRODUCTION -->
-    <div class="ca-section-wrapper" data-section="introduction">
+    <div class="ca-section-wrapper ca-optional-section" data-section="introduction" data-section-key="introduction" data-section-instance="1">
         <div class="ca-section-header" onclick="toggleSection('introduction')">
             <div class="ca-section-header-left">
                 <div class="ca-section-icon ca-icon-purple"><i class="ph-bold ph-book-open"></i></div>
-                <span class="ca-section-label">Introduction</span>
+                <span class="ca-section-label" ondblclick="startSectionRename(event,this)" title="Double-click to rename">Introduction</span>
             </div>
             <div class="intro-header-actions" onclick="event.stopPropagation()">
                 <i class="ph-bold ph-caret-down ca-toggle-icon open" id="toggle-introduction" onclick="toggleSection('introduction')" style="cursor:pointer;"></i>
@@ -2426,6 +2548,9 @@ body.dashboard-body {
                 </button>
                 <button class="ca-btn-done-intro" id="intro-done-btn" style="display:none;" onclick="doneIntroEdit()" title="Done">
                     <i class="ph-bold ph-check"></i>
+                </button>
+                <button class="ca-section-remove-btn" onclick="removeSection(this)" title="Remove section">
+                    <i class="ph-bold ph-trash"></i>
                 </button>
             </div>
         </div>
@@ -2443,11 +2568,11 @@ body.dashboard-body {
     </div>
 
     <!-- TARGET LEARNING OUTCOMES -->
-    <div class="ca-section-wrapper" data-section="outcomes">
+    <div class="ca-section-wrapper ca-optional-section" data-section="outcomes" data-section-key="outcomes" data-section-instance="1">
         <div class="ca-section-header" onclick="toggleSection('outcomes')">
             <div class="ca-section-header-left">
                 <div class="ca-section-icon ca-icon-green"><i class="ph-bold ph-target"></i></div>
-                <span class="ca-section-label">Target Learning Outcomes</span>
+                <span class="ca-section-label" ondblclick="startSectionRename(event,this)" title="Double-click to rename">Target Learning Outcomes</span>
             </div>
             <div class="intro-header-actions" onclick="event.stopPropagation()">
                 <i class="ph-bold ph-caret-down ca-toggle-icon open" id="toggle-outcomes" onclick="toggleSection('outcomes')" style="cursor:pointer;"></i>
@@ -2460,6 +2585,9 @@ body.dashboard-body {
                 <button class="ca-btn-done-intro" id="outcomes-done-btn" style="display:none;" onclick="doneOutcomesEdit()" title="Done">
                     <i class="ph-bold ph-check"></i>
                 </button>
+                <button class="ca-section-remove-btn" onclick="removeSection(this)" title="Remove section">
+                    <i class="ph-bold ph-trash"></i>
+                </button>
             </div>
         </div>
         <div class="ca-section-body" id="body-outcomes">
@@ -2471,13 +2599,18 @@ body.dashboard-body {
     </div>
 
     <!-- MATERIALS -->
-    <div class="ca-section-wrapper">
+    <div class="ca-section-wrapper ca-optional-section" data-section-key="materials" data-section-instance="1">
         <div class="ca-section-header" onclick="toggleSection('materials')">
             <div class="ca-section-header-left">
                 <div class="ca-section-icon ca-icon-orange"><i class="ph-bold ph-test-tube"></i></div>
-                <span class="ca-section-label">Materials</span>
+                <span class="ca-section-label" ondblclick="startSectionRename(event,this)" title="Double-click to rename">Materials</span>
             </div>
-            <i class="ph-bold ph-caret-down ca-toggle-icon open" id="toggle-materials"></i>
+            <div class="intro-header-actions" onclick="event.stopPropagation()">
+                <i class="ph-bold ph-caret-down ca-toggle-icon open" id="toggle-materials" onclick="toggleSection('materials')" style="cursor:pointer;"></i>
+                <button class="ca-section-remove-btn" onclick="removeSection(this)" title="Remove section">
+                    <i class="ph-bold ph-trash"></i>
+                </button>
+            </div>
         </div>
         <div class="ca-section-body" id="body-materials">
             <div class="ca-items-body">
@@ -2491,11 +2624,11 @@ body.dashboard-body {
     </div>
 
     <!-- PROCEDURES -->
-    <div class="ca-section-wrapper" data-section="procedures">
+    <div class="ca-section-wrapper ca-optional-section" data-section="procedures" data-section-key="procedures" data-section-instance="1">
         <div class="ca-section-header" onclick="toggleSection('procedures')">
             <div class="ca-section-header-left">
                 <div class="ca-section-icon ca-icon-indigo"><i class="ph-bold ph-list-numbers"></i></div>
-                <span class="ca-section-label">Procedures</span>
+                <span class="ca-section-label" ondblclick="startSectionRename(event,this)" title="Double-click to rename">Procedures</span>
             </div>
             <div class="intro-header-actions" onclick="event.stopPropagation()">
                 <i class="ph-bold ph-caret-down ca-toggle-icon open" id="toggle-procedures" onclick="toggleSection('procedures')" style="cursor:pointer;"></i>
@@ -2507,6 +2640,9 @@ body.dashboard-body {
                 </button>
                 <button class="ca-btn-done-intro" id="proc-done-btn" style="display:none;" onclick="doneProcEdit()" title="Done">
                     <i class="ph-bold ph-check"></i>
+                </button>
+                <button class="ca-section-remove-btn" onclick="removeSection(this)" title="Remove section">
+                    <i class="ph-bold ph-trash"></i>
                 </button>
             </div>
         </div>
@@ -2522,11 +2658,11 @@ body.dashboard-body {
     </div>
 
     <!-- DATA SHEET -->
-    <div class="ca-section-wrapper" data-section="datasheet">
+    <div class="ca-section-wrapper ca-optional-section" data-section="datasheet" data-section-key="datasheet" data-section-instance="1">
         <div class="ca-section-header" onclick="toggleSection('datasheet')">
             <div class="ca-section-header-left">
                 <div class="ca-section-icon ca-icon-teal"><i class="ph-bold ph-table"></i></div>
-                <span class="ca-section-label">Data Sheet</span>
+                <span class="ca-section-label" ondblclick="startSectionRename(event,this)" title="Double-click to rename">Data Sheet</span>
             </div>
             <div class="intro-header-actions" onclick="event.stopPropagation()">
                 <i class="ph-bold ph-caret-down ca-toggle-icon open" id="toggle-datasheet" onclick="toggleSection('datasheet')" style="cursor:pointer;"></i>
@@ -2535,6 +2671,9 @@ body.dashboard-body {
                 </button>
                 <button class="ca-btn-done-intro" id="ds-done-btn" style="display:none;" onclick="_dsSetEditMode(false)" title="Done">
                     <i class="ph-bold ph-check"></i>
+                </button>
+                <button class="ca-section-remove-btn" onclick="removeSection(this)" title="Remove section">
+                    <i class="ph-bold ph-trash"></i>
                 </button>
             </div>
         </div>
@@ -2555,11 +2694,11 @@ body.dashboard-body {
     </div>
 
     <!-- GUIDE QUESTIONS -->
-    <div class="ca-section-wrapper">
+    <div class="ca-section-wrapper ca-optional-section" data-section-key="guide-questions" data-section-instance="1">
         <div class="ca-section-header" onclick="toggleSection('questions')">
             <div class="ca-section-header-left">
                 <div class="ca-section-icon ca-icon-rose"><i class="ph-bold ph-question"></i></div>
-                <span class="ca-section-label">Guide Questions</span>
+                <span class="ca-section-label" ondblclick="startSectionRename(event,this)" title="Double-click to rename">Guide Questions</span>
             </div>
             <div class="intro-header-actions" onclick="event.stopPropagation()">
                 <i class="ph-bold ph-caret-down ca-toggle-icon open" id="toggle-questions" onclick="toggleSection('questions')" style="cursor:pointer;"></i>
@@ -2571,6 +2710,9 @@ body.dashboard-body {
                 </button>
                 <button class="ca-btn-done-intro" id="gq-done-btn" style="display:none;" onclick="doneGqEdit()" title="Done">
                     <i class="ph-bold ph-check"></i>
+                </button>
+                <button class="ca-section-remove-btn" onclick="removeSection(this)" title="Remove section">
+                    <i class="ph-bold ph-trash"></i>
                 </button>
             </div>
         </div>
@@ -2586,11 +2728,11 @@ body.dashboard-body {
     </div>
 
     <!-- REFERENCES -->
-    <div class="ca-section-wrapper" data-section="references">
+    <div class="ca-section-wrapper ca-optional-section" data-section="references" data-section-key="references" data-section-instance="1">
         <div class="ca-section-header" onclick="toggleSection('references')">
             <div class="ca-section-header-left">
                 <div class="ca-section-icon ca-icon-slate"><i class="ph-bold ph-books"></i></div>
-                <span class="ca-section-label">References</span>
+                <span class="ca-section-label" ondblclick="startSectionRename(event,this)" title="Double-click to rename">References</span>
             </div>
             <div class="intro-header-actions" onclick="event.stopPropagation()">
                 <i class="ph-bold ph-caret-down ca-toggle-icon open" id="toggle-references" onclick="toggleSection('references')" style="cursor:pointer;"></i>
@@ -2603,6 +2745,9 @@ body.dashboard-body {
                 <button class="ca-btn-done-intro" id="refs-done-btn" style="display:none;" onclick="doneRefsEdit()" title="Done">
                     <i class="ph-bold ph-check"></i>
                 </button>
+                <button class="ca-section-remove-btn" onclick="removeSection(this)" title="Remove section">
+                    <i class="ph-bold ph-trash"></i>
+                </button>
             </div>
         </div>
         <div class="ca-section-body" id="body-references">
@@ -2611,6 +2756,15 @@ body.dashboard-body {
                 <div id="editor-references"></div>
             </div>
         </div>
+    </div>
+
+    </div><!-- /#ca-optional-sections -->
+
+    <!-- ADD SECTION BUTTON -->
+    <div class="ca-add-section-btn-wrap" id="ca-add-section-wrap">
+        <button class="ca-add-section-btn" onclick="openAddSectionModal()">
+            <i class="ph-bold ph-plus-circle"></i> Add Section
+        </button>
     </div>
 
     <!-- STUDENT INFORMATION -->
@@ -2649,6 +2803,67 @@ body.dashboard-body {
 <!-- SAVE TOAST -->
 <div class="ca-toast" id="saveToast">
     <i class="ph-bold ph-check-circle"></i> Activity Saved Successfully!
+</div>
+
+<!-- ===== ADD SECTION MODAL ===== -->
+<div class="ca-addsec-overlay" id="addSectionOverlay" style="display:none;" onclick="closeAddSectionModal()">
+    <div class="ca-addsec-modal" onclick="event.stopPropagation()">
+        <div class="ca-addsec-header">
+            <span><i class="ph-bold ph-squares-four" style="margin-right:6px;"></i>Add Section</span>
+            <button class="ca-addsec-close" onclick="closeAddSectionModal()"><i class="ph-bold ph-x"></i></button>
+        </div>
+        <div class="ca-addsec-grid">
+            <div class="ca-addsec-tile" data-addsec-key="introduction" onclick="_addSectionTileClick('introduction')">
+                <div class="ca-addsec-tile-icon ca-icon-purple"><i class="ph-bold ph-book-open"></i></div>
+                <div class="ca-addsec-tile-info">
+                    <span class="ca-addsec-tile-name">Introduction</span>
+                    <span class="ca-addsec-tile-sub">Text &amp; tables</span>
+                </div>
+            </div>
+            <div class="ca-addsec-tile" data-addsec-key="outcomes" onclick="_addSectionTileClick('outcomes')">
+                <div class="ca-addsec-tile-icon ca-icon-green"><i class="ph-bold ph-target"></i></div>
+                <div class="ca-addsec-tile-info">
+                    <span class="ca-addsec-tile-name">Target Outcomes</span>
+                    <span class="ca-addsec-tile-sub">Text &amp; tables</span>
+                </div>
+            </div>
+            <div class="ca-addsec-tile" data-addsec-key="materials" onclick="_addSectionTileClick('materials')">
+                <div class="ca-addsec-tile-icon ca-icon-orange"><i class="ph-bold ph-test-tube"></i></div>
+                <div class="ca-addsec-tile-info">
+                    <span class="ca-addsec-tile-name">Materials</span>
+                    <span class="ca-addsec-tile-sub">Single instance</span>
+                </div>
+            </div>
+            <div class="ca-addsec-tile" data-addsec-key="procedures" onclick="_addSectionTileClick('procedures')">
+                <div class="ca-addsec-tile-icon ca-icon-indigo"><i class="ph-bold ph-list-numbers"></i></div>
+                <div class="ca-addsec-tile-info">
+                    <span class="ca-addsec-tile-name">Procedures</span>
+                    <span class="ca-addsec-tile-sub">Single instance</span>
+                </div>
+            </div>
+            <div class="ca-addsec-tile" data-addsec-key="datasheet" onclick="_addSectionTileClick('datasheet')">
+                <div class="ca-addsec-tile-icon ca-icon-teal"><i class="ph-bold ph-table"></i></div>
+                <div class="ca-addsec-tile-info">
+                    <span class="ca-addsec-tile-name">Data Sheet</span>
+                    <span class="ca-addsec-tile-sub">Single instance</span>
+                </div>
+            </div>
+            <div class="ca-addsec-tile" data-addsec-key="guide-questions" onclick="_addSectionTileClick('guide-questions')">
+                <div class="ca-addsec-tile-icon ca-icon-rose"><i class="ph-bold ph-question"></i></div>
+                <div class="ca-addsec-tile-info">
+                    <span class="ca-addsec-tile-name">Guide Questions</span>
+                    <span class="ca-addsec-tile-sub">Text &amp; tables</span>
+                </div>
+            </div>
+            <div class="ca-addsec-tile" data-addsec-key="references" onclick="_addSectionTileClick('references')">
+                <div class="ca-addsec-tile-icon ca-icon-slate"><i class="ph-bold ph-books"></i></div>
+                <div class="ca-addsec-tile-info">
+                    <span class="ca-addsec-tile-name">References</span>
+                    <span class="ca-addsec-tile-sub">Text &amp; tables</span>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
 
 <!-- ===== EQUATION MODAL ===== -->
@@ -3127,12 +3342,19 @@ hookEditorSelectionChange('references',     refsQ);
 // FLOATING TOOLBAR — SHOW / HIDE
 // ============================================================
 const floatToolbar = document.getElementById('floatToolbar');
+let _hideToolbarTimer = null;
 
 function showToolbar() {
+    // Cancel any pending hide — e.g. when Edit button click triggers focus
+    if (_hideToolbarTimer !== null) {
+        clearTimeout(_hideToolbarTimer);
+        _hideToolbarTimer = null;
+    }
     floatToolbar.classList.add('visible');
 }
 
 function hideToolbar() {
+    _hideToolbarTimer = null;
     floatToolbar.classList.remove('visible');
     activeEditor = null;
     closeAllFlyouts();
@@ -3150,7 +3372,7 @@ document.addEventListener('mousedown', e => {
         return;
     }
     if (t.closest('.ql-editor')) return; // Quill focus will call setActiveEditor
-    setTimeout(hideToolbar, 150);
+    _hideToolbarTimer = setTimeout(hideToolbar, 150);
 });
 
 // ============================================================
@@ -5417,11 +5639,13 @@ const qEditors  = {}; // qId  → Quill
 const sqEditors = {}; // subId → Quill
 let subQCount = 0;
 
-function addQuestion(autoFocus = true) {
+function addQuestion(autoFocus = true, listId = 'questionsList') {
     questionCount++;
     const id   = 'q-' + questionCount;
     const edId = 'q-ed-' + questionCount;
-    const num  = document.querySelectorAll('.ca-q-row').length + 1;
+    const listEl = document.getElementById(listId);
+    if (!listEl) return;
+    const num  = listEl.querySelectorAll('.ca-q-row').length + 1;
     const div  = document.createElement('div');
     div.className = 'ca-q-row';
     div.id = id;
@@ -5435,7 +5659,7 @@ function addQuestion(autoFocus = true) {
         <div class="ca-proc-row-menu">
             <button class="ca-proc-dots-btn" onclick="_toggleProcMenu('${id}',this)" title="Question options">⋯</button>
             <div class="ca-tbl-dropdown" id="${id}-menu">
-                <div class="ca-tbl-dd-item" onclick="_procMenuAction('${id}',()=>addQuestionAfter('${id}'))">
+                <div class="ca-tbl-dd-item" onclick="_procMenuAction('${id}',()=>addQuestionAfter('${id}','${listId}'))">
                     <i class="ph-bold ph-plus"></i> Add Question After
                 </div>
                 <div class="ca-tbl-dd-item" onclick="_procMenuAction('${id}',()=>addSubQuestion('${id}'))">
@@ -5445,12 +5669,12 @@ function addQuestion(autoFocus = true) {
                     <i class="ph-bold ph-table"></i> Insert Table
                 </div>
                 <div class="ca-tbl-dd-sep"></div>
-                <div class="ca-tbl-dd-item del" onclick="_procMenuAction('${id}',()=>removeQuestion('${id}'))">
+                <div class="ca-tbl-dd-item del" onclick="_procMenuAction('${id}',()=>removeQuestion('${id}','${listId}'))">
                     <i class="ph-bold ph-trash"></i> Remove Question
                 </div>
             </div>
         </div>`;
-    document.getElementById('questionsList').appendChild(div);
+    listEl.appendChild(div);
 
     const qq = new Quill('#' + edId, {
         theme: 'snow', modules: QUILL_MODULES, placeholder: 'Question ' + num + '...'
@@ -5507,11 +5731,12 @@ function addSubQuestion(qId, autoFocus = true, customLabel = null) {
     if (autoFocus) setTimeout(() => sq.focus(), 30);
 }
 
-function addQuestionAfter(qId) {
+function addQuestionAfter(qId, listId = 'questionsList') {
     questionCount++;
     const id   = 'q-' + questionCount;
     const edId = 'q-ed-' + questionCount;
-    const num  = document.querySelectorAll('.ca-q-row').length + 1;
+    const listEl = document.getElementById(listId);
+    const num  = listEl ? listEl.querySelectorAll('.ca-q-row').length + 1 : 1;
     const div  = document.createElement('div');
     div.className = 'ca-q-row';
     div.id = id;
@@ -5525,7 +5750,7 @@ function addQuestionAfter(qId) {
         <div class="ca-proc-row-menu">
             <button class="ca-proc-dots-btn" onclick="_toggleProcMenu('${id}',this)" title="Question options">⋯</button>
             <div class="ca-tbl-dropdown" id="${id}-menu">
-                <div class="ca-tbl-dd-item" onclick="_procMenuAction('${id}',()=>addQuestionAfter('${id}'))">
+                <div class="ca-tbl-dd-item" onclick="_procMenuAction('${id}',()=>addQuestionAfter('${id}','${listId}'))">
                     <i class="ph-bold ph-plus"></i> Add Question After
                 </div>
                 <div class="ca-tbl-dd-item" onclick="_procMenuAction('${id}',()=>addSubQuestion('${id}'))">
@@ -5535,7 +5760,7 @@ function addQuestionAfter(qId) {
                     <i class="ph-bold ph-table"></i> Insert Table
                 </div>
                 <div class="ca-tbl-dd-sep"></div>
-                <div class="ca-tbl-dd-item del" onclick="_procMenuAction('${id}',()=>removeQuestion('${id}'))">
+                <div class="ca-tbl-dd-item del" onclick="_procMenuAction('${id}',()=>removeQuestion('${id}','${listId}'))">
                     <i class="ph-bold ph-trash"></i> Remove Question
                 </div>
             </div>
@@ -5547,7 +5772,7 @@ function addQuestionAfter(qId) {
     qEditors[id] = qq;
     registerEditor(id, qq);
     setTimeout(() => qq.focus(), 30);
-    updateQuestionNumbers();
+    updateQuestionNumbers(listId);
 }
 
 function addSubQuestionAfter(subId, qId) {
@@ -5609,7 +5834,7 @@ function updateSubQuestionLabels(qId) {
     });
 }
 
-function removeQuestion(id) {
+function removeQuestion(id, listId = 'questionsList') {
     const el = document.getElementById(id);
     if (el) {
         el.querySelectorAll('.ca-q-sub-row').forEach(sub => {
@@ -5621,11 +5846,13 @@ function removeQuestion(id) {
     delete qEditors[id];
     delete editors[id];
     if (activeEditor === id) hideToolbar();
-    updateQuestionNumbers();
+    updateQuestionNumbers(listId);
 }
 
-function updateQuestionNumbers() {
-    document.querySelectorAll('.ca-q-row').forEach((row, i) => {
+function updateQuestionNumbers(listId = null) {
+    const container = listId ? document.getElementById(listId) : document;
+    if (!container) return;
+    container.querySelectorAll('.ca-q-row').forEach((row, i) => {
         const n = row.querySelector('.ca-q-num');
         if (n) n.textContent = (i + 1) + '.';
     });
@@ -5735,6 +5962,540 @@ function toggleProfGroup(membersId, headerEl) {
 }
 
 // ============================================================
+// SECTION MANAGEMENT (Phase 1: Add / Remove)
+// ============================================================
+
+// Single-instance section keys (can only have one at a time)
+const _SINGLE_INSTANCE_SECTIONS = new Set(['materials', 'procedures', 'datasheet']);
+
+// Map section key → wrapper element
+function _getSectionWrapper(key) {
+    return document.querySelector(`#ca-optional-sections [data-section-key="${key}"]`);
+}
+
+// Hide all optional sections (used for new activities)
+function _initNewActivitySections() {
+    document.querySelectorAll('#ca-optional-sections .ca-optional-section').forEach(el => {
+        el.style.display = 'none';
+    });
+}
+
+// Show a section wrapper (used when adding from modal or restoring from sections_config)
+function _showSectionWrapper(key) {
+    const wrap = _getSectionWrapper(key);
+    if (wrap) {
+        wrap.style.display = '';
+        // Ensure the section body is expanded
+        const bodyId = wrap.querySelector('.ca-section-body')?.id;
+        if (bodyId) {
+            const body = document.getElementById(bodyId);
+            if (body) body.classList.remove('hidden');
+        }
+        // Attach drag handle if DnD is already set up
+        if (_dropIndicator) _addSectionDragHandle(wrap);
+    }
+}
+
+// Open the Add Section modal, marking already-added single-instance tiles
+function openAddSectionModal() {
+    const overlay = document.getElementById('addSectionOverlay');
+    if (!overlay) return;
+    // Update tile states for single-instance sections
+    overlay.querySelectorAll('.ca-addsec-tile').forEach(tile => {
+        const key = tile.dataset.addsecKey;
+        if (_SINGLE_INSTANCE_SECTIONS.has(key)) {
+            const wrap = _getSectionWrapper(key);
+            const isAdded = wrap && wrap.style.display !== 'none';
+            tile.classList.toggle('ca-addsec-tile-added', isAdded);
+            const sub = tile.querySelector('.ca-addsec-tile-sub');
+            if (sub) sub.textContent = isAdded ? 'Already added' : 'Single instance';
+        }
+    });
+    overlay.style.display = 'flex';
+}
+
+function closeAddSectionModal() {
+    const overlay = document.getElementById('addSectionOverlay');
+    if (overlay) overlay.style.display = 'none';
+}
+
+// Handle tile click in modal
+function _addSectionTileClick(key) {
+    if (_SINGLE_INSTANCE_SECTIONS.has(key)) {
+        // Single-instance: just show/hide
+        const wrap = _getSectionWrapper(key);
+        if (wrap && wrap.style.display !== 'none') return; // already added
+        _showSectionWrapper(key);
+    } else if (_MULTI_INSTANCE_KEYS && _MULTI_INSTANCE_KEYS.has(key)) {
+        // Multi-instance: show instance 1 if hidden, otherwise create a new duplicate
+        const firstWrap = _getSectionWrapper(key); // finds instance 1 (first in DOM)
+        if (!firstWrap || firstWrap.style.display === 'none') {
+            _showSectionWrapper(key);
+        } else {
+            // Create a new duplicate and insert before the drop indicator
+            const instanceId = _getNextInstance(key);
+            const newWrap = _createDuplicateSection(key, instanceId);
+            if (newWrap) {
+                const zone = document.getElementById('ca-optional-sections');
+                if (_dropIndicator && zone.contains(_dropIndicator)) {
+                    zone.insertBefore(newWrap, _dropIndicator);
+                } else {
+                    zone.appendChild(newWrap);
+                }
+                _addSectionDragHandle(newWrap);
+            }
+        }
+    } else {
+        _showSectionWrapper(key);
+    }
+    closeAddSectionModal();
+}
+
+// Default label for each section key — used to reset after remove
+const _SECTION_DEFAULT_NAMES = {
+    'introduction':    'Introduction',
+    'outcomes':        'Target Learning Outcomes',
+    'materials':       'Materials',
+    'procedures':      'Procedures',
+    'datasheet':       'Data Sheet',
+    'guide-questions': 'Guide Questions',
+    'references':      'References',
+};
+
+// Clear all content from a first-instance section so it starts blank when re-added
+function _clearSectionContent(key) {
+    switch (key) {
+        case 'introduction': {
+            // Remove any dynamic table + chunk elements, reset Quill, reset mode
+            const iew = document.getElementById('intro-editor-wrap');
+            if (iew) {
+                Array.from(iew.children).forEach(el => {
+                    if (el.id !== 'editor-introduction' && !el.classList.contains('intro-add-tbl-bar'))
+                        el.remove();
+                });
+            }
+            introQ.setContents([]);
+            _introChunkEditors = [introQ];
+            _introParsedContent = null;
+            _introEditMode = false;
+            _introSetEditMode(false);
+            const ip = document.getElementById('intro-preview');
+            if (ip) ip.innerHTML = '';
+            break;
+        }
+        case 'outcomes': {
+            outcomesQ.setContents([]);
+            _outcomesSetEditMode(false);
+            const op = document.getElementById('outcomes-preview');
+            if (op) op.innerHTML = '';
+            break;
+        }
+        case 'references': {
+            refsQ.setContents([]);
+            _refsSetEditMode(false);
+            const rp = document.getElementById('refs-preview');
+            if (rp) rp.innerHTML = '';
+            break;
+        }
+        case 'guide-questions': {
+            const ql = document.getElementById('questionsList');
+            if (ql) ql.innerHTML = '';
+            _gqSetEditMode(false);
+            const gqp = document.getElementById('gq-preview');
+            if (gqp) { gqp.innerHTML = ''; gqp.style.display = 'none'; }
+            break;
+        }
+        case 'materials': {
+            const ml = document.getElementById('materialsList');
+            if (ml) ml.innerHTML = '';
+            break;
+        }
+        case 'procedures': {
+            const pl = document.getElementById('proceduresList');
+            if (pl) pl.innerHTML = '';
+            _procSetEditMode(false);
+            const pp = document.getElementById('proc-preview');
+            if (pp) { pp.innerHTML = ''; pp.style.display = 'none'; }
+            break;
+        }
+        case 'datasheet': {
+            const dt = document.getElementById('ds-tbls');
+            if (dt) dt.innerHTML = '';
+            _dsSetEditMode(false);
+            break;
+        }
+    }
+}
+
+// Remove a section (called from the trash button inside the header)
+function removeSection(btn) {
+    const wrap = btn.closest('.ca-optional-section');
+    if (!wrap) return;
+    const key = wrap.dataset.sectionKey;
+    const instance = parseInt(wrap.dataset.sectionInstance || '1');
+    if (instance > 1) {
+        // Duplicate: remove from DOM and clean up editors
+        const tid = `${key}-${instance}`;
+        if (key === 'guide-questions') {
+            // Clean up all question/sub-question Quill instances in this duplicate
+            const listEl = document.getElementById(`dup-qlist-${tid}`);
+            if (listEl) {
+                listEl.querySelectorAll('.ca-q-row').forEach(row => {
+                    row.querySelectorAll('.ca-q-sub-row').forEach(sub => {
+                        delete sqEditors[sub.id];
+                        delete editors[sub.id];
+                    });
+                    delete qEditors[row.id];
+                    delete editors[row.id];
+                });
+            }
+        } else {
+            delete _dupQuills[tid];
+            delete editors[tid];
+            // Clean up intro chunk Quill instances if any were created by Add Table
+            if (_dupIntroChunks[tid]) {
+                _dupIntroChunks[tid].forEach(q => {
+                    const k = Object.keys(editors).find(key => editors[key] === q);
+                    if (k) delete editors[k];
+                });
+                delete _dupIntroChunks[tid];
+            }
+            delete _dupActiveChunkEl[tid];
+        }
+        wrap.remove();
+    } else {
+        // First instance: clear content + reset label, then hide
+        _clearSectionContent(key);
+        const labelEl = wrap.querySelector('.ca-section-label');
+        if (labelEl && _SECTION_DEFAULT_NAMES[key]) {
+            labelEl.textContent = _SECTION_DEFAULT_NAMES[key];
+        }
+        wrap.style.display = 'none';
+    }
+}
+
+// ============================================================
+// SECTION RENAME (Phase 2)
+// ============================================================
+
+// Inline rename: double-click on a section label starts editing
+function startSectionRename(e, labelEl) {
+    e.stopPropagation();
+    if (labelEl.querySelector('input')) return; // already editing
+    const currentName = labelEl.textContent.trim();
+    labelEl.dataset.prevName = currentName;
+    labelEl.textContent = '';
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'ca-section-rename-input';
+    input.value = currentName;
+    input.size = Math.max(currentName.length + 2, 10);
+    labelEl.appendChild(input);
+    input.focus();
+    input.select();
+    input.addEventListener('keydown', function(ev) {
+        if (ev.key === 'Enter')  { ev.preventDefault(); finishSectionRename(input, labelEl); }
+        if (ev.key === 'Escape') { cancelSectionRename(input, labelEl); }
+        ev.stopPropagation();
+    });
+    input.addEventListener('blur', function() { finishSectionRename(input, labelEl); });
+    input.addEventListener('click', function(ev) { ev.stopPropagation(); });
+}
+
+function finishSectionRename(input, labelEl) {
+    if (!labelEl.contains(input)) return; // already finished
+    const newName = input.value.trim() || labelEl.dataset.prevName;
+    labelEl.textContent = newName;
+    delete labelEl.dataset.prevName;
+}
+
+function cancelSectionRename(input, labelEl) {
+    if (!labelEl.contains(input)) return;
+    labelEl.textContent = labelEl.dataset.prevName || '';
+    delete labelEl.dataset.prevName;
+}
+
+// Keyboard shortcut: Escape closes the modal
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeAddSectionModal();
+});
+
+// ============================================================
+// SECTION DRAG-AND-DROP (Phase 3)
+// ============================================================
+
+let _dragSrcEl    = null;
+let _dropIndicator = null;
+
+function _setupSectionDnd() {
+    const zone = document.getElementById('ca-optional-sections');
+    if (!zone) return;
+
+    // Add drag handles to all currently-present optional sections
+    zone.querySelectorAll('.ca-optional-section').forEach(_addSectionDragHandle);
+
+    // Create reusable drop-indicator bar
+    _dropIndicator = document.createElement('div');
+    _dropIndicator.className = 'ca-section-drop-indicator';
+    _dropIndicator.style.display = 'none';
+    zone.appendChild(_dropIndicator);
+
+    // Delegate drag events on the zone
+    zone.addEventListener('dragstart', _onSectionDragStart);
+    zone.addEventListener('dragover',  _onSectionDragOver);
+    zone.addEventListener('dragleave', _onSectionDragLeave);
+    zone.addEventListener('drop',      _onSectionDrop);
+    zone.addEventListener('dragend',   _onSectionDragEnd);
+}
+
+// Add a drag handle to a single section wrapper (idempotent)
+function _addSectionDragHandle(wrap) {
+    if (wrap.querySelector('.ca-section-drag-handle')) return;
+    const header = wrap.querySelector('.ca-section-header');
+    if (!header) return;
+    const handle = document.createElement('div');
+    handle.className = 'ca-section-drag-handle';
+    handle.title = 'Drag to reorder';
+    handle.innerHTML = '<i class="ph-bold ph-dots-six-vertical"></i>';
+    // Only become draggable while the handle is held down
+    handle.addEventListener('mousedown', () => {
+        wrap.setAttribute('draggable', 'true');
+        document.addEventListener('mouseup', () => wrap.removeAttribute('draggable'), { once: true });
+    });
+    handle.addEventListener('click', e => e.stopPropagation());
+    header.insertBefore(handle, header.firstChild);
+}
+
+function _onSectionDragStart(e) {
+    _dragSrcEl = e.target.closest('.ca-optional-section');
+    if (!_dragSrcEl) return;
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', ''); // required for Firefox
+    setTimeout(() => { if (_dragSrcEl) _dragSrcEl.classList.add('ca-dragging'); }, 0);
+}
+
+function _onSectionDragOver(e) {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+    if (!_dragSrcEl || !_dropIndicator) return;
+
+    const zone = document.getElementById('ca-optional-sections');
+    const siblings = Array.from(zone.querySelectorAll(
+        '.ca-optional-section:not(.ca-dragging)'
+    ));
+
+    // Find which sibling the cursor is above the midpoint of
+    let insertBefore = null;
+    for (const sec of siblings) {
+        const rect = sec.getBoundingClientRect();
+        if (e.clientY < rect.top + rect.height / 2) {
+            insertBefore = sec;
+            break;
+        }
+    }
+
+    // Place the indicator
+    _dropIndicator.style.display = 'block';
+    if (insertBefore) {
+        zone.insertBefore(_dropIndicator, insertBefore);
+    } else {
+        // Append after last sibling (before the indicator itself if already there)
+        const lastSibling = siblings[siblings.length - 1];
+        if (lastSibling) {
+            lastSibling.after(_dropIndicator);
+        } else {
+            zone.appendChild(_dropIndicator);
+        }
+    }
+}
+
+function _onSectionDragLeave(e) {
+    const zone = document.getElementById('ca-optional-sections');
+    if (_dropIndicator && !zone.contains(e.relatedTarget)) {
+        _dropIndicator.style.display = 'none';
+    }
+}
+
+function _onSectionDrop(e) {
+    e.preventDefault();
+    if (!_dragSrcEl || !_dropIndicator) return;
+    const zone = document.getElementById('ca-optional-sections');
+    // Insert the dragged element where the indicator is
+    zone.insertBefore(_dragSrcEl, _dropIndicator);
+    _dropIndicator.style.display = 'none';
+}
+
+function _onSectionDragEnd(e) {
+    if (_dragSrcEl) {
+        _dragSrcEl.classList.remove('ca-dragging');
+        _dragSrcEl.removeAttribute('draggable');
+        _dragSrcEl = null;
+    }
+    if (_dropIndicator) _dropIndicator.style.display = 'none';
+}
+
+// ============================================================
+// DUPLICATE SECTIONS (Phase 4)
+// ============================================================
+
+// Section keys that allow multiple instances
+const _MULTI_INSTANCE_KEYS = new Set(['introduction', 'outcomes', 'guide-questions', 'references']);
+
+// Stores Quill instances for duplicates: key = `${sectionKey}-${instanceId}`
+const _dupQuills = {};
+// Tracks multiple Quill chunks per intro duplicate (after Add Table splits content)
+const _dupIntroChunks = {};     // tid → Quill[]
+const _dupActiveChunkEl = {};   // tid → currently-focused .intro-chunk-editor element
+
+// Tracks the highest instance number used per key
+const _instanceCounters = {};
+
+// Visual config per key (icon, color, default name) for building duplicate HTML
+const _DUP_SECTION_CFG = {
+    'introduction':    { icon: 'ph-book-open', color: 'ca-icon-purple', name: 'Introduction' },
+    'outcomes':        { icon: 'ph-target',    color: 'ca-icon-green',  name: 'Target Learning Outcomes' },
+    'guide-questions': { icon: 'ph-question',  color: 'ca-icon-rose',   name: 'Guide Questions' },
+    'references':      { icon: 'ph-books',     color: 'ca-icon-slate',  name: 'References' },
+};
+
+function _getNextInstance(key) {
+    // Find the current max instance in DOM (handles restored activities too)
+    let max = 1;
+    document.querySelectorAll(`#ca-optional-sections [data-section-key="${key}"]`).forEach(el => {
+        const n = parseInt(el.dataset.sectionInstance || '1');
+        if (n > max) max = n;
+    });
+    _instanceCounters[key] = max + 1;
+    return _instanceCounters[key];
+}
+
+// Build a duplicate section element (Quill-based rich text, edit/preview pattern)
+function _createDuplicateSection(key, instanceId) {
+    const cfg = _DUP_SECTION_CFG[key];
+    if (!cfg) return null;
+    const tid = `${key}-${instanceId}`; // toggleId
+    const wrap = document.createElement('div');
+    wrap.className = 'ca-section-wrapper ca-optional-section';
+    wrap.dataset.sectionKey      = key;
+    wrap.dataset.sectionInstance = String(instanceId);
+    wrap.innerHTML = `
+        <div class="ca-section-header" onclick="toggleSection('${tid}')">
+            <div class="ca-section-header-left">
+                <div class="ca-section-icon ${cfg.color}"><i class="ph-bold ${cfg.icon}"></i></div>
+                <span class="ca-section-label" ondblclick="startSectionRename(event,this)" title="Double-click to rename">${cfg.name}</span>
+            </div>
+            <div class="intro-header-actions" onclick="event.stopPropagation()">
+                <i class="ph-bold ph-caret-down ca-toggle-icon open" id="toggle-${tid}" onclick="toggleSection('${tid}')" style="cursor:pointer;"></i>
+                <button class="ca-intro-edit-btn"    id="dup-edit-${tid}"   onclick="_dupSetEditMode('${tid}',true)"  title="Edit"><i class="ph-bold ph-pencil-simple"></i></button>
+                <button class="ca-intro-cancel-btn"  id="dup-cancel-${tid}" onclick="_dupSetEditMode('${tid}',false)" title="Cancel" style="display:none;"><i class="ph-bold ph-x"></i></button>
+                <button class="ca-btn-done-intro"    id="dup-done-${tid}"   onclick="_dupDoneEdit('${tid}')"         title="Done"   style="display:none;"><i class="ph-bold ph-check"></i></button>
+                <button class="ca-section-remove-btn" onclick="removeSection(this)" title="Remove section"><i class="ph-bold ph-trash"></i></button>
+            </div>
+        </div>
+        <div class="ca-section-body" id="body-${tid}">
+            ${key === 'guide-questions' ? `
+            <div id="dup-gq-preview-${tid}" class="intro-preview-wrap" style="display:none;"></div>
+            <div id="dup-gq-editor-${tid}">
+                <div class="ca-items-body">
+                    <div id="dup-qlist-${tid}"></div>
+                    <button class="ca-btn-add" onclick="addQuestion(true,'dup-qlist-${tid}')"><i class="ph-bold ph-plus"></i> Add Question</button>
+                </div>
+            </div>` : key === 'introduction' ? `
+            <div id="dup-preview-${tid}" class="intro-preview-wrap"></div>
+            <div id="dup-editor-${tid}" style="display:none;">
+                <div id="dup-quill-${tid}" class="intro-chunk-editor"></div>
+                <div class="intro-add-tbl-bar">
+                    <button class="ds-btn-add-table" onclick="_addDupIntroTable('${tid}')"><i class="ph-bold ph-table"></i> Add Table</button>
+                </div>
+            </div>` : `
+            <div id="dup-preview-${tid}" class="intro-preview-wrap"></div>
+            <div id="dup-editor-${tid}" style="display:none;">
+                <div id="dup-quill-${tid}"></div>
+            </div>`}
+        </div>`;
+    // GQ duplicates use a different edit-mode handler
+    if (key === 'guide-questions') {
+        wrap.querySelector(`#dup-edit-${tid}`)   ?.setAttribute('onclick', `_dupGqSetEditMode('${tid}',true)`);
+        wrap.querySelector(`#dup-cancel-${tid}`) ?.setAttribute('onclick', `_dupGqSetEditMode('${tid}',false)`);
+        wrap.querySelector(`#dup-done-${tid}`)   ?.setAttribute('onclick', `_dupGqDoneEdit('${tid}')`);
+    }
+    return wrap;
+}
+
+// Lazily initialize Quill for a duplicate section
+function _ensureDupQuill(tid) {
+    if (_dupQuills[tid]) return _dupQuills[tid];
+    const el = document.getElementById(`dup-quill-${tid}`);
+    if (!el) return null;
+    const q = new Quill(el, { theme: 'snow', modules: QUILL_MODULES });
+    _bindTabIndent(q);
+    registerEditor(tid, q);
+    _dupQuills[tid] = q;
+    // For intro duplicates: track chunks for Add Table support
+    if (el.classList.contains('intro-chunk-editor')) {
+        if (!_dupIntroChunks[tid]) _dupIntroChunks[tid] = [];
+        _dupIntroChunks[tid].push(q);
+        q.root.addEventListener('focus', () => { _dupActiveChunkEl[tid] = el; });
+    }
+    return q;
+}
+
+// Toggle edit/preview for a duplicate section
+function _dupSetEditMode(tid, editing) {
+    const editBtn   = document.getElementById(`dup-edit-${tid}`);
+    const cancelBtn = document.getElementById(`dup-cancel-${tid}`);
+    const doneBtn   = document.getElementById(`dup-done-${tid}`);
+    const preview   = document.getElementById(`dup-preview-${tid}`);
+    const editor    = document.getElementById(`dup-editor-${tid}`);
+    if (!editor) return;
+    if (editing) {
+        const q = _ensureDupQuill(tid);
+        editor.style.display  = '';
+        if (preview)   preview.style.display   = 'none';
+        if (editBtn)   editBtn.style.display   = 'none';
+        if (cancelBtn) cancelBtn.style.display = '';
+        if (doneBtn)   doneBtn.style.display   = '';
+        if (q) q.focus();
+    } else {
+        editor.style.display  = 'none';
+        if (preview)   preview.style.display   = '';
+        if (editBtn)   editBtn.style.display   = '';
+        if (cancelBtn) cancelBtn.style.display = 'none';
+        if (doneBtn)   doneBtn.style.display   = 'none';
+    }
+}
+
+// Render preview and exit edit mode for a duplicate section
+function _dupDoneEdit(tid) {
+    const q       = _dupQuills[tid];
+    const preview = document.getElementById(`dup-preview-${tid}`);
+    if (q && preview) {
+        const html = _applyKatexToHtml(_quillToDisplay(q.root.innerHTML));
+        preview.innerHTML = html || '<p class="intro-preview-empty">No content yet. Click Edit to add.</p>';
+    }
+    _dupSetEditMode(tid, false);
+}
+
+// Edit-mode toggle for Guide Questions duplicate sections
+function _dupGqSetEditMode(tid, editing) {
+    const editBtn   = document.getElementById(`dup-edit-${tid}`);
+    const cancelBtn = document.getElementById(`dup-cancel-${tid}`);
+    const doneBtn   = document.getElementById(`dup-done-${tid}`);
+    const preview   = document.getElementById(`dup-gq-preview-${tid}`);
+    const editor    = document.getElementById(`dup-gq-editor-${tid}`);
+    if (editBtn)   editBtn.style.display   = editing ? 'none' : '';
+    if (cancelBtn) cancelBtn.style.display = editing ? '' : 'none';
+    if (doneBtn)   doneBtn.style.display   = editing ? '' : 'none';
+    if (preview)   preview.style.display   = editing ? 'none' : '';
+    if (editor)    editor.style.display    = editing ? '' : 'none';
+    if (!editing) renderGqPreview(`dup-qlist-${tid}`, `dup-gq-preview-${tid}`);
+}
+
+function _dupGqDoneEdit(tid) {
+    _dupGqSetEditMode(tid, false); // renders preview internally
+}
+
+// ============================================================
 // DEFAULTS
 // ============================================================
 addMaterial();
@@ -5761,11 +6522,17 @@ document.addEventListener('DOMContentLoaded', function() {
         if (editId) {
             await prefillFromEdit(editId);
         } else if (fromDocx) {
+            // DOCX import — show all sections (parser fills in what it finds)
             await prefillFromDocx(fromDocx);
         } else {
+            // New manual activity — hide all optional sections
+            _initNewActivitySections();
             restoreLocalDraft();
             document.getElementById('activityTitleInput').focus();
         }
+
+        // Set up drag-and-drop for section reordering
+        _setupSectionDnd();
 
         // Start auto-save every 10 seconds
         startAutoSaveDraft();
@@ -5870,6 +6637,75 @@ function _introGetHtml() {
     // Fallback: no-DOCX case, single introQ
     if (!html && introQ) html = introQ.root.innerHTML;
     return html;
+}
+
+// Collect HTML from a duplicate Introduction section (chunks + inline tables)
+function _dupIntroGetHtml(tid) {
+    const container = document.getElementById(`dup-editor-${tid}`);
+    if (!container) { const q = _dupQuills[tid]; return q ? q.root.innerHTML : ''; }
+    const chunks = _dupIntroChunks[tid] || [];
+    let html = '', tblIdx = 0;
+    container.querySelectorAll(':scope > *').forEach(node => {
+        if (node.classList.contains('intro-chunk-editor')) {
+            const q = chunks.find(q => q.root.closest('.intro-chunk-editor') === node);
+            if (q) html += q.root.innerHTML;
+        } else if (node.classList.contains('ca-proc-tables-container')) {
+            node.querySelectorAll('.ca-proc-table-wrap').forEach(wrap => {
+                html += _serializeProcTableWrap(wrap, tblIdx++);
+            });
+        }
+    });
+    if (!html) { const q = _dupQuills[tid]; if (q) html = q.root.innerHTML; }
+    return html;
+}
+
+// Add Table inside a duplicate Introduction section (mirrors addIntroTable)
+function _addDupIntroTable(tid) {
+    const editorWrap = document.getElementById(`dup-editor-${tid}`);
+    if (!editorWrap) return;
+    const chunks = _dupIntroChunks[tid] || [];
+    let activeChunkEl = (_dupActiveChunkEl[tid] && editorWrap.contains(_dupActiveChunkEl[tid]))
+        ? _dupActiveChunkEl[tid] : null;
+    if (!activeChunkEl) {
+        const all = editorWrap.querySelectorAll('.intro-chunk-editor');
+        activeChunkEl = all.length ? all[all.length - 1] : null;
+    }
+    if (!activeChunkEl) return;
+    const activeQ = chunks.find(q => q.root.closest('.intro-chunk-editor') === activeChunkEl);
+    let splitIdx = activeQ ? activeQ.getLength() - 1 : 0;
+    if (activeQ) {
+        const live = activeQ.getSelection();
+        if (live !== null) splitIdx = live.index;
+        else if (_savedRange && _savedEditorKey && editors[_savedEditorKey] === activeQ) splitIdx = _savedRange.index;
+    }
+    let afterDelta = null;
+    if (activeQ) {
+        const full = activeQ.getContents();
+        afterDelta = full.slice(splitIdx);
+        activeQ.setContents(full.slice(0, splitIdx), 'silent');
+    }
+    const tblContId = `dup-tbl-${tid}-${_introChunkCounter++}`;
+    const tblContainer = document.createElement('div');
+    tblContainer.className = 'ca-proc-tables-container';
+    tblContainer.style.margin = '0';
+    tblContainer.id = tblContId + '-tbls';
+    activeChunkEl.after(tblContainer);
+    insertProcTable(tblContId, 3, 3, '');
+    const chunkId = `dup-chunk-${tid}-${_introChunkCounter++}`;
+    const newChunkDiv = document.createElement('div');
+    newChunkDiv.className = 'intro-chunk-editor';
+    newChunkDiv.id = chunkId;
+    tblContainer.after(newChunkDiv);
+    const newQ = makeQuill('#' + chunkId, '  Continue writing...');
+    registerEditor(chunkId, newQ);
+    newQ.root.addEventListener('focus', () => { _dupActiveChunkEl[tid] = newChunkDiv; });
+    if (!_dupIntroChunks[tid]) _dupIntroChunks[tid] = [];
+    _dupIntroChunks[tid].push(newQ);
+    _dupActiveChunkEl[tid] = newChunkDiv;
+    if (afterDelta) newQ.setContents(afterDelta, 'silent');
+    const bar = editorWrap.querySelector('.intro-add-tbl-bar');
+    if (bar) editorWrap.appendChild(bar);
+    setTimeout(() => { newQ.focus(); newQ.setSelection(0, 0, 'silent'); }, 50);
 }
 
 // Check if any intro chunk has content
@@ -6185,11 +7021,12 @@ function doneGqEdit() {
     renderGqPreview();
 }
 
-function renderGqPreview() {
-    const preview = document.getElementById('gq-preview');
-    if (!preview) return;
+function renderGqPreview(listId = 'questionsList', previewId = 'gq-preview') {
+    const preview = document.getElementById(previewId);
+    const listEl  = document.getElementById(listId);
+    if (!preview || !listEl) return;
     const questions = [];
-    document.querySelectorAll('.ca-q-row').forEach((row, i) => {
+    listEl.querySelectorAll('.ca-q-row').forEach((row, i) => {
         const q = qEditors[row.id];
         if (!q || q.root.innerHTML.replace(/<[^>]*>/g, '').trim().length === 0) return;
         const inlineTables = _collectProcTables(row.id);
@@ -6636,6 +7473,85 @@ async function prefillFromDocx(activityId, suppressToast = false, forceReparse =
         const procs    = data.sections?.find(s => s.type === 'procedures');
         const qs       = data.sections?.find(s => s.type === 'guide_questions');
         const refs     = data.sections?.find(s => s.type === 'references');
+
+        // Restore sections_config: show only saved sections, or fall back to showing
+        // all sections that have content (backwards compat for activities without sections_config)
+        const sectionsConfig = data.sections_config || null;
+        if (sectionsConfig && Array.isArray(sectionsConfig) && sectionsConfig.length) {
+            // New-style: restore exactly what was saved
+            _initNewActivitySections();
+            // Build a lookup for extra_sections content: (key, instance) → html
+            const extraLookup = {};
+            (data.extra_sections || []).forEach(es => {
+                extraLookup[`${es.key}-${es.instance}`] = es.html || '';
+            });
+
+            sectionsConfig.forEach(cfg => {
+                const instance = cfg.instance || 1;
+                if (instance === 1) {
+                    // First instance: show the existing wrapper
+                    _showSectionWrapper(cfg.key);
+                    if (cfg.name) {
+                        const wrap    = _getSectionWrapper(cfg.key);
+                        const labelEl = wrap?.querySelector('.ca-section-label');
+                        if (labelEl) labelEl.textContent = cfg.name;
+                    }
+                } else {
+                    // Duplicate instance: create a new section element
+                    const newWrap = _createDuplicateSection(cfg.key, instance);
+                    if (newWrap) {
+                        const zone = document.getElementById('ca-optional-sections');
+                        zone.appendChild(newWrap);
+                        _addSectionDragHandle(newWrap);
+                        // Restore name
+                        if (cfg.name) {
+                            const labelEl = newWrap.querySelector('.ca-section-label');
+                            if (labelEl) labelEl.textContent = cfg.name;
+                        }
+                        // Restore content (after a tick so Quill can init)
+                        const html = extraLookup[`${cfg.key}-${instance}`];
+                        if (html) {
+                            setTimeout(() => {
+                                const tid = `${cfg.key}-${instance}`;
+                                const q   = _ensureDupQuill(tid);
+                                if (q) {
+                                    q.root.innerHTML = _htmlForQuill(html);
+                                    _dupDoneEdit(tid); // render preview and switch to preview mode
+                                }
+                            }, 100);
+                        }
+                    }
+                }
+            });
+
+            // Restore section ORDER in DOM
+            const zone = document.getElementById('ca-optional-sections');
+            if (zone) {
+                sectionsConfig.forEach(cfg => {
+                    const instance = cfg.instance || 1;
+                    let wrap;
+                    if (instance === 1) {
+                        wrap = _getSectionWrapper(cfg.key);
+                    } else {
+                        wrap = zone.querySelector(
+                            `[data-section-key="${cfg.key}"][data-section-instance="${instance}"]`
+                        );
+                    }
+                    if (wrap) zone.appendChild(wrap);
+                });
+                if (_dropIndicator) zone.appendChild(_dropIndicator);
+            }
+        } else {
+            // Legacy / DOCX import: show all sections that have content
+            if (intro?.content?.length)   _showSectionWrapper('introduction');
+            if (outcomes?.content?.length) _showSectionWrapper('outcomes');
+            if (mats?.content?.length)    _showSectionWrapper('materials');
+            if (procs?.content?.length)   _showSectionWrapper('procedures');
+            // Data sheet: always show if any tables exist (data sheet is always saved)
+            _showSectionWrapper('datasheet');
+            if (qs?.content?.length)      _showSectionWrapper('guide-questions');
+            if (refs?.content?.length)    _showSectionWrapper('references');
+        }
 
         // Lab number & title
         if (labTitle) {
@@ -7360,7 +8276,8 @@ function collectActivityData() {
     const allTables = _collectProcTables('ds');
 
     const questions = [];
-    document.querySelectorAll('.ca-q-row').forEach((row, i) => {
+    const _gqListEl = document.getElementById('questionsList');
+    if (_gqListEl) _gqListEl.querySelectorAll('.ca-q-row').forEach((row, i) => {
         const q = qEditors[row.id];
         if (!q || q.getText().trim().length === 0) return;
         const inlineTables = _collectProcTables(row.id);
@@ -7405,6 +8322,51 @@ function collectActivityData() {
         return result;
     }
 
+    // Build sections_config: visible optional sections in DOM order (includes instance number)
+    const sections_config = [];
+    const extra_sections  = [];
+    document.querySelectorAll('#ca-optional-sections .ca-optional-section').forEach(wrap => {
+        if (wrap.style.display === 'none') return;
+        const key      = wrap.dataset.sectionKey;
+        const instance = parseInt(wrap.dataset.sectionInstance || '1');
+        const name     = wrap.querySelector('.ca-section-label')?.textContent?.trim() || '';
+        if (!key) return;
+        sections_config.push({ key, name, instance });
+        // Collect content for duplicate instances (instance > 1)
+        if (instance > 1) {
+            const tid = `${key}-${instance}`;
+            if (key === 'introduction') {
+                extra_sections.push({ key, name, instance, html: _dupIntroGetHtml(tid) || '' });
+            } else if (key === 'guide-questions') {
+                // Collect questions from the duplicate question builder and render to HTML
+                const dupListEl = document.getElementById(`dup-qlist-${tid}`);
+                const dupQs = [];
+                if (dupListEl) dupListEl.querySelectorAll('.ca-q-row').forEach((row, i) => {
+                    const q = qEditors[row.id];
+                    if (!q || q.getText().trim().length === 0) return;
+                    const inlineTables = _collectProcTables(row.id);
+                    const qObj = { question_number: i + 1, question: _quillToDisplay(q.root.innerHTML) };
+                    if (inlineTables.length) qObj.inline_tables = inlineTables;
+                    const subObjs = [];
+                    row.querySelectorAll('.ca-q-sub-row').forEach((subRow, si) => {
+                        const sq = sqEditors[subRow.id];
+                        if (!sq || sq.getText().trim().length === 0) return;
+                        const subTables = _collectProcTables(subRow.id);
+                        const subObj = { label: String.fromCharCode(97 + si), question: _quillToDisplay(sq.root.innerHTML) };
+                        if (subTables.length) subObj.inline_tables = subTables;
+                        subObjs.push(subObj);
+                    });
+                    if (subObjs.length) qObj.sub_questions = subObjs;
+                    dupQs.push(qObj);
+                });
+                extra_sections.push({ key, name, instance, html: _snapGuideQuestions(dupQs) || '' });
+            } else {
+                const q = _dupQuills[tid];
+                extra_sections.push({ key, name, instance, html: q ? q.root.innerHTML : '' });
+            }
+        }
+    });
+
     return {
         lab_number: document.getElementById('labNumber').value.trim(),
         lab_title:  document.getElementById('labExperimentTitle').value.trim(),
@@ -7424,6 +8386,8 @@ function collectActivityData() {
             guide_questions_view_html: _snapGuideQuestions(questions),
             materials_view_html:       _snapMaterials(materials),
             datasheet_view_html:       _snapDataSheet(allTables),
+            sections_config,
+            extra_sections,
             student_info: {
                 members,
                 section: document.getElementById('sectionSelect')?.value || '',

@@ -1989,6 +1989,23 @@
             font-family: 'DM Sans', sans-serif;
         }
 
+        .av-data-table td.av-tbl-inline-input {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 8px;
+        }
+        .av-tbl-label-prefix {
+            white-space: nowrap;
+            font-size: 12px;
+            color: var(--text-2);
+            font-family: 'DM Sans', sans-serif;
+        }
+        .av-tbl-inline-input input.data-table-input {
+            flex: 1;
+            min-width: 60px;
+        }
+
         .av-data-table td {
             border: 1px solid var(--border);
             background: var(--surface);
@@ -4438,12 +4455,24 @@
             const editBtn = document.getElementById('editActivityBtn');
             if (editBtn) editBtn.style.display = role === 'professor' ? 'inline-flex' : 'none';
 
-            // Order sections
-            const sectionMap = {};
-            data.sections.forEach(s => { sectionMap[s.type] = s; });
-            const ordered = [];
-            SECTION_ORDER.forEach(t => { if (sectionMap[t]) ordered.push(sectionMap[t]); });
-            data.sections.forEach(s => { if (!SECTION_ORDER.includes(s.type)) ordered.push(s); });
+            // Render sections in backend order (sections_config controls order for manual
+            // activities; SECTION_ORDER fallback only for legacy/DOCX with no config).
+            const hasSectionsConfig = Array.isArray(data.sections_config) && data.sections_config.length > 0;
+            let ordered;
+            if (hasSectionsConfig) {
+                // Trust backend order — supports custom drag order + duplicate sections
+                ordered = data.sections;
+            } else {
+                // Legacy / DOCX: re-sort by SECTION_ORDER for backwards compatibility
+                const sectionMap = {};
+                data.sections.forEach(s => {
+                    if (!sectionMap[s.type]) sectionMap[s.type] = [];
+                    sectionMap[s.type].push(s);
+                });
+                ordered = [];
+                SECTION_ORDER.forEach(t => { (sectionMap[t] || []).forEach(s => ordered.push(s)); });
+                data.sections.forEach(s => { if (!SECTION_ORDER.includes(s.type)) ordered.push(s); });
+            }
 
             ordered.forEach((section, idx) => {
                 const tables = section.type === 'data_sheet' ? data.tables : null;
@@ -4703,7 +4732,7 @@
                 return wrapper;
             }
 
-            const label = meta.label || section.title;
+            const label = section.title || meta.label;
 
             // Header
             const header = document.createElement('div');
@@ -5397,8 +5426,16 @@
                     const span = (obj && obj.colspan > 1) ? ` colspan="${obj.colspan}"` : '';
                     const hasLatex = raw.includes('\\(') || raw.includes('\\[');
                     const rendered = hasLatex ? renderEqToHtml(raw) : raw;
-                    if (isPreview || (obj && obj.type === 'header') || (hasLatex && raw)) {
+                    const isLabelInput = /=\s*$/.test(raw.replace(/&quot;/g, '"'));
+                    if (isPreview || (obj && obj.type === 'header')) {
                         html += `<th${span} class="av-tbl-readonly-cell"><span class="av-tbl-header-text">${rendered}</span></th>`;
+                    } else if (isLabelInput) {
+                        html += `<td${span} class="av-tbl-label-cell av-tbl-inline-input">
+                    <span class="av-tbl-label-prefix">${rendered}</span>
+                    <input type="text" class="data-table-input"
+                        data-row="${rIdx}" data-col="${cIdx}" data-tbl="${idx}"
+                        value="" placeholder=""
+                        onkeydown="handleTableEnter(event,this)"></td>`;
                     } else if (obj && obj.type === 'text' && raw) {
                         html += `<td${span} class="av-tbl-label-cell"><span>${rendered}</span></td>`;
                     } else {
