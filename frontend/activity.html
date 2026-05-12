@@ -4809,6 +4809,8 @@
             const root = doc.body.firstChild;
             let tblIdx = 0;
             root.querySelectorAll('table').forEach(tbl => {
+                // Skip tables already formatted by _serializeProcTableWrap (av-table-block wrapper)
+                if (tbl.closest('.av-table-block')) return;
                 // Check if previous sibling is a title paragraph
                 let title = '';
                 const prev = tbl.previousElementSibling;

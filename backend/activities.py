@@ -478,8 +478,15 @@ def build_sections_from_manual(data):
     })
 
     # Introduction
+    intro_structured = sec.get('introduction_structured', None)
     intro = sec.get('introduction', '')
-    if intro:
+    if intro_structured and isinstance(intro_structured, list) and intro_structured:
+        sections.append({
+            'type': 'introduction',
+            'title': 'INTRODUCTION',
+            'content': intro_structured
+        })
+    elif intro:
         sections.append({
             'type': 'introduction',
             'title': 'INTRODUCTION',

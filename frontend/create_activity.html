@@ -5877,6 +5877,41 @@ function _introHasText() {
     return _introChunkEditors.some(q => q.getText().trim().length > 1);
 }
 
+// Collect introduction as structured array (text chunks + table items) for edit restoration
+function _collectIntroStructured() {
+    const container = document.getElementById('intro-editor-wrap') || document.getElementById('body-introduction');
+    if (!container) {
+        const html = introQ ? introQ.root.innerHTML : '';
+        return html ? [{ type: 'intro_html', text: html }] : [];
+    }
+    const items = [];
+    container.querySelectorAll(':scope > *').forEach(node => {
+        if (node.classList.contains('intro-chunk-editor')) {
+            const q = _introChunkEditors.find(q => q.root.closest('.intro-chunk-editor') === node);
+            if (q && q.getText().trim()) items.push({ type: 'intro_html', text: q.root.innerHTML });
+        } else if (node.classList.contains('ca-proc-tables-container')) {
+            node.querySelectorAll('.ca-proc-table-wrap').forEach(wrap => {
+                const title = wrap.querySelector('.ca-proc-table-toolbar input[type="text"]')?.value?.trim() || '';
+                const tbl   = wrap.querySelector('.ca-proc-inline-tbl');
+                if (!tbl) return;
+                const rows = [];
+                tbl.querySelectorAll('tr').forEach((tr, ri) => {
+                    const cells = Array.from(tr.querySelectorAll('td')).map(td => {
+                        const v        = (td.querySelector('textarea')?.value || '').trim();
+                        const isHeader = td.classList.contains('ca-tbl-header-cell');
+                        const obj = { type: isHeader ? 'header' : (v ? 'text' : 'input'), value: v };
+                        if (td.colSpan > 1) obj.colspan = td.colSpan;
+                        return obj;
+                    });
+                    if (cells.length) rows.push(cells);
+                });
+                if (rows.length) items.push({ type: 'table', title, rows });
+            });
+        }
+    });
+    return items;
+}
+
 // ============================================================
 // INTRODUCTION — Add Table button
 // ============================================================
@@ -6673,6 +6708,9 @@ async function prefillFromDocx(activityId, suppressToast = false, forceReparse =
                     } else if (item.type === 'sub_header') {
                         const hAlign = item.align ? ` style="text-align:${item.align};"` : '';
                         html += `<h3${hAlign}>${item.text}</h3>`;
+                    } else if (item.type === 'intro_html') {
+                        // Raw Quill HTML from manual activity — include directly
+                        html += item.text;
                     } else if (item.text) {
                         const align  = item.align || 'justify';
                         const indent = item.indent ? 'text-indent:2em;' : '';
@@ -7372,6 +7410,7 @@ function collectActivityData() {
         lab_title:  document.getElementById('labExperimentTitle').value.trim(),
         sections: {
             introduction:              _introGetHtml(),
+            introduction_structured:   _collectIntroStructured(),
             introduction_tables:       collectInlineTables('body-introduction'),
             outcomes:                  outcomesQ.root.innerHTML,
             outcomes_tables:           collectInlineTables('body-outcomes'),
