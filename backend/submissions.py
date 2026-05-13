@@ -14,7 +14,10 @@ def _ph(dt):
 
 submissions = Blueprint('submissions', __name__)
 
-UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'uploads')
+UPLOAD_FOLDER = os.environ.get(
+    'UPLOAD_FOLDER',
+    os.path.join(os.path.dirname(__file__), 'uploads')
+)
 
 
 def _migrate_uploaded_files_column():

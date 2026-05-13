@@ -15,7 +15,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>Class Detail — PHYSLAB</title>
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Abril+Fatface&display=swap" rel="stylesheet">
-        <script src="https://unpkg.com/@phosphor-icons/web"></script>
+        <script src="https://unpkg.com/@phosphor-icons/web" defer></script>
         <link rel="stylesheet" href="static/style.css">
         <style>
             *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -4700,6 +4700,11 @@
     // ─── REAL-TIME via Socket.IO ───────────────────────────────────
     const _streamSocket = io('');
     let _streamReloading = false;
+
+    // Join the class-scoped feed room so feed_event is delivered only to this class
+    _streamSocket.on('connect', () => {
+        _streamSocket.emit('join_class_room', { class_id: classId });
+    });
 
     // Student accepted invite → refresh students list + pending invites
     _streamSocket.on('student_joined', ev => {

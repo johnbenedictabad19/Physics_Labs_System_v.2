@@ -72,6 +72,7 @@ class ClassMember(db.Model):
     enrollment_status = db.Column(db.String(20), default='approved')  # approved, pending, rejected
 
     __table_args__ = (
+        db.UniqueConstraint('class_id', 'student_id', name='uq_class_members_class_student'),
         db.Index('ix_class_members_class_student', 'class_id', 'student_id'),
         db.Index('ix_class_members_student',       'student_id'),
     )

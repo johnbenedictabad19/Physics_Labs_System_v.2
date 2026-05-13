@@ -1,10 +1,22 @@
 from flask import Blueprint, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
+from flask_socketio import join_room
 from database import db
 from models import FeedEvent, User, Class, ClassMember
 from extensions import socketio
 
 feed_bp = Blueprint('feed', __name__)
+
+
+def register_feed_socket(sio):
+    """Register Socket.IO events for feed room management."""
+
+    @sio.on('join_class_room')
+    def on_join_class_room(data):
+        d = data or {}
+        class_id = d.get('class_id')
+        if class_id:
+            join_room(f'class_{class_id}')
 
 
 def emit_feed(class_id, event_type, actor_name, actor_role, message):
@@ -27,7 +39,7 @@ def emit_feed(class_id, event_type, actor_name, actor_role, message):
             'role':     actor_role,
             'message':  message,
             'ts':       ev.created_at.isoformat() + 'Z'
-        }, namespace='/')
+        }, room=f'class_{class_id}', namespace='/')
     except Exception as e:
         print(f'[feed] emit error: {e}')
 

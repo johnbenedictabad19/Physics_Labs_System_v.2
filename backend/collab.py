@@ -5,6 +5,8 @@ from models import User
 
 # room_id → { users: {sid: info}, fields: {field_key: sid} }
 _rooms = {}
+# sid → room_id — reverse lookup so disconnect is O(1) instead of O(n_rooms)
+_sid_to_room: dict = {}
 
 COLORS = ['#667eea', '#f59e0b', '#10b981', '#ef4444', '#3b82f6', '#8b5cf6', '#ec4899', '#14b8a6']
 
@@ -56,6 +58,7 @@ def register_collab(socketio):
 
         room = _rid(activity_id, group_id)
         join_room(room)
+        _sid_to_room[request.sid] = room
 
         is_first = room not in _rooms or len(_rooms[room]['users']) == 0
         if room not in _rooms:
@@ -173,13 +176,13 @@ def register_collab(socketio):
 
     @socketio.on('disconnect')
     def on_disconnect():
-        for room_id, rd in list(_rooms.items()):
-            if request.sid not in rd['users']:
-                continue
-            rd['users'].pop(request.sid)
-            rd['fields'] = {k: v for k, v in rd['fields'].items() if v != request.sid}
-            if not rd['users']:
-                del _rooms[room_id]
-            else:
-                emit('presence_update', _presence(room_id), to=room_id)
-            break
+        room_id = _sid_to_room.pop(request.sid, None)
+        if room_id is None or room_id not in _rooms:
+            return
+        rd = _rooms[room_id]
+        rd['users'].pop(request.sid, None)
+        rd['fields'] = {k: v for k, v in rd['fields'].items() if v != request.sid}
+        if not rd['users']:
+            del _rooms[room_id]
+        else:
+            emit('presence_update', _presence(room_id), to=room_id)

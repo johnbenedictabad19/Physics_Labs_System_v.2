@@ -83,6 +83,7 @@ def get_stream(class_id):
     posts = (StreamPost.query
              .filter_by(class_id=class_id)
              .order_by(StreamPost.created_at.desc())
+             .limit(50)
              .all())
     return jsonify([format_post(p, user_id) for p in posts]), 200
 

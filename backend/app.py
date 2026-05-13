@@ -2,6 +2,7 @@ from gevent import monkey
 monkey.patch_all()
 
 from flask import Flask, send_from_directory, render_template
+from flask_compress import Compress
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager
 from flask_migrate import Migrate
@@ -31,6 +32,7 @@ _origins_list = _origins if _origins == '*' else _origins.split(',')
 CORS(app, resources={r"/*": {"origins": _origins_list}})
 socketio.init_app(app, cors_allowed_origins=_origins_list, async_mode='gevent')
 limiter.init_app(app)
+Compress(app)  # gzip all responses ≥500 bytes — reduces 300KB HTML to ~40KB
 
 # Configuration
 app.config['SQLALCHEMY_DATABASE_URI'] = os.environ.get('DATABASE_URL')
@@ -45,6 +47,7 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
     'pool_recycle': 300,   # recycle connections every 5 minutes
     'pool_pre_ping': True, # test connection before use — prevents stale connection errors on Railway
 }
+app.config['MAX_CONTENT_LENGTH'] = 65 * 1024 * 1024  # 65 MB — covers 5 submission files × 12 MB each
 
 # Initialize extensions
 db.init_app(app)
@@ -55,6 +58,26 @@ Migrate(app, db)
 @jwt.token_in_blocklist_loader
 def check_if_token_revoked(jwt_header, jwt_payload):
     return jwt_payload.get('jti') in revoked_tokens  # dict key lookup, O(1)
+
+# ── Global error handlers — always return JSON, never HTML ──────────────────
+@app.errorhandler(413)
+def request_too_large(e):
+    return jsonify({'message': 'Request too large. Maximum upload size is 65 MB.'}), 413
+
+@app.errorhandler(500)
+def internal_error(e):
+    import traceback
+    traceback.print_exc()
+    return jsonify({'message': 'An unexpected server error occurred. Please try again.'}), 500
+
+@app.errorhandler(Exception)
+def unhandled_exception(e):
+    from werkzeug.exceptions import HTTPException
+    if isinstance(e, HTTPException):
+        return e  # pass through 404, 405, etc. unchanged
+    import traceback
+    traceback.print_exc()
+    return jsonify({'message': 'An unexpected server error occurred. Please try again.'}), 500
 
 # Register blueprints
 from auth import auth
@@ -75,6 +98,8 @@ app.register_blueprint(admin, url_prefix='/api')
 
 from collab import register_collab
 register_collab(socketio)
+from feed import register_feed_socket
+register_feed_socket(socketio)
 
 # ===== PWA =====
 @app.route('/manifest.json')

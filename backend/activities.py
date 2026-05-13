@@ -6,7 +6,6 @@ import os
 import json
 from datetime import datetime
 
-# Load .env for ANTHROPIC_API_KEY
 try:
     from dotenv import load_dotenv
     load_dotenv()
@@ -15,7 +14,10 @@ except ImportError:
 
 activities = Blueprint('activities', __name__)
 
-UPLOAD_FOLDER = os.path.join(os.path.dirname(__file__), 'uploads')
+UPLOAD_FOLDER = os.environ.get(
+    'UPLOAD_FOLDER',
+    os.path.join(os.path.dirname(__file__), 'uploads')
+)
 ALLOWED_EXTENSIONS = {'docx', 'pdf'}
 
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
@@ -118,6 +120,7 @@ def upload_activity(class_id):
 @jwt_required()
 def get_activities(class_id):
     from sqlalchemy import exists
+    from sqlalchemy.orm import load_only
     user_id = get_jwt_identity()
     user = User.query.get(user_id)
     # Students must be approved members to see activities
@@ -127,7 +130,12 @@ def get_activities(class_id):
         ).first()
         if not membership or membership.enrollment_status != 'approved':
             return jsonify([]), 200
-    acts = Activity.query.filter_by(class_id=class_id)\
+    acts = Activity.query\
+        .options(load_only(
+            Activity.id, Activity.title, Activity.file_type,
+            Activity.created_at, Activity.due_date
+        ))\
+        .filter_by(class_id=class_id)\
         .filter(exists().where(StreamPost.activity_id == Activity.id))\
         .order_by(Activity.created_at.desc()).all()
     return jsonify([format_activity(a) for a in acts]), 200
