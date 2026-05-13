@@ -59,6 +59,7 @@ def attach_image(activity_id):
 
 # ===== SERVE UPLOADED FILE =====
 @submissions.route('/file/<filename>', methods=['GET'])
+@jwt_required()
 def serve_uploaded_file(filename):
     if '/' in filename or '\\' in filename or '..' in filename:
         return jsonify({'message': 'Invalid filename'}), 400
@@ -420,11 +421,26 @@ def grade_submission(submission_id):
     sub = Submission.query.get(submission_id)
     if not sub:
         return jsonify({'message': 'Submission not found!'}), 404
+    from classes import _is_class_prof
+    act = Activity.query.get(sub.activity_id)
+    if not act or not _is_class_prof(act.class_id, user_id):
+        return jsonify({'message': 'Not authorized to grade this submission!'}), 403
 
-    data = request.get_json()
+    data = request.get_json() or {}
     grade    = data.get('grade')
     feedback = data.get('feedback', '')
     now      = datetime.utcnow()
+
+    if grade is None:
+        return jsonify({'message': 'Grade is required!'}), 400
+    try:
+        grade = float(grade)
+    except (TypeError, ValueError):
+        return jsonify({'message': 'Grade must be a number!'}), 400
+    if grade < 0 or grade > 100:
+        return jsonify({'message': 'Grade must be between 0 and 100!'}), 400
+    if len(feedback) > 2000:
+        return jsonify({'message': 'Feedback cannot exceed 2000 characters!'}), 400
 
     sub.grade      = grade
     sub.feedback   = feedback

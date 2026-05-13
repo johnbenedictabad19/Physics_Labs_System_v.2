@@ -125,7 +125,16 @@ function checkAuth(expectedRole) {
 }
 
 // ===== LOGOUT =====
-function logout() {
+async function logout() {
+    const token = localStorage.getItem('token');
+    if (token) {
+        try {
+            await fetch('/api/auth/logout', {
+                method: 'POST',
+                headers: { 'Authorization': 'Bearer ' + token }
+            });
+        } catch (_) {}
+    }
     _clearSession();
     window.location.href = '/login';
 }

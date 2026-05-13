@@ -2,19 +2,36 @@ from flask import Blueprint, request, jsonify
 from database import db
 from models import User
 from flask_bcrypt import Bcrypt
-from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity
+from flask_jwt_extended import create_access_token, jwt_required, get_jwt_identity, get_jwt
 from extensions import limiter
+import re
 
 auth = Blueprint('auth', __name__)
 bcrypt = Bcrypt()
+
+
+def _validate_password(password):
+    """Returns an error message string, or None if password is valid."""
+    if len(password) < 8:
+        return 'Password must be at least 8 characters!'
+    if not re.search(r'[A-Z]', password):
+        return 'Password must contain at least one uppercase letter!'
+    if not re.search(r'[a-z]', password):
+        return 'Password must contain at least one lowercase letter!'
+    if not re.search(r'[0-9]', password):
+        return 'Password must contain at least one number!'
+    if not re.search(r'[^A-Za-z0-9]', password):
+        return 'Password must contain at least one special character!'
+    return None
 
 
 # ============================================================
 # REGISTER
 # ============================================================
 @auth.route('/register', methods=['POST'])
+@limiter.limit("10 per hour")
 def register():
-    data = request.get_json()
+    data = request.get_json() or {}
 
     last_name      = (data.get('last_name')      or '').strip()
     first_name     = (data.get('first_name')     or '').strip()
@@ -30,8 +47,9 @@ def register():
     # Validation
     if not last_name or not first_name:
         return jsonify({'message': 'Last name and first name are required!'}), 400
-    if not password or len(password) < 6:
-        return jsonify({'message': 'Password must be at least 6 characters!'}), 400
+    pw_error = _validate_password(password)
+    if pw_error:
+        return jsonify({'message': pw_error}), 400
     if role not in ('student', 'professor'):
         return jsonify({'message': 'Invalid role!'}), 400
 
@@ -80,6 +98,7 @@ def register():
 # DUPLICATE CHECKS (used by registration Step 3)
 # ============================================================
 @auth.route('/check-student-number', methods=['POST'])
+@limiter.limit("20 per minute")
 def check_student_number():
     data = request.get_json() or {}
     sn = (data.get('student_number') or '').strip()
@@ -90,6 +109,7 @@ def check_student_number():
 
 
 @auth.route('/check-email', methods=['POST'])
+@limiter.limit("20 per minute")
 def check_email():
     data = request.get_json() or {}
     email = (data.get('email') or '').strip().lower()
@@ -105,7 +125,7 @@ def check_email():
 @auth.route('/login', methods=['POST'])
 @limiter.limit("5 per minute")
 def login():
-    data = request.get_json()
+    data = request.get_json() or {}
     password = data.get('password', '')
 
     # Try student number first, then email
@@ -153,15 +173,16 @@ def login():
 @auth.route('/forgot-password', methods=['POST'])
 @limiter.limit("3 per hour")
 def forgot_password():
-    data           = request.get_json()
+    data           = request.get_json() or {}
     student_number = (data.get('student_number') or '').strip()
     birthday       = (data.get('birthday')       or '').strip()  # 'YYYY-MM-DD'
     new_password   = data.get('new_password', '')
 
     if not student_number or not birthday or not new_password:
         return jsonify({'message': 'All fields are required!'}), 400
-    if len(new_password) < 6:
-        return jsonify({'message': 'New password must be at least 6 characters!'}), 400
+    pw_error = _validate_password(new_password)
+    if pw_error:
+        return jsonify({'message': pw_error}), 400
 
     user = User.query.filter_by(student_number=student_number, role='student').first()
 
@@ -213,7 +234,7 @@ def update_profile():
     if not user:
         return jsonify({'message': 'User not found!'}), 404
 
-    data           = request.get_json()
+    data           = request.get_json() or {}
     last_name      = (data.get('last_name')      or '').strip()
     first_name     = (data.get('first_name')     or '').strip()
     middle_initial = (data.get('middle_initial') or '').strip()
@@ -256,7 +277,7 @@ def update_preferences():
     user    = User.query.get(user_id)
     if not user:
         return jsonify({'message': 'User not found!'}), 404
-    data = request.get_json()
+    data = request.get_json() or {}
     if 'notifications_enabled' in data:
         user.notifications_enabled = bool(data['notifications_enabled'])
     db.session.commit()
@@ -267,6 +288,7 @@ def update_preferences():
 # CHANGE PASSWORD
 # ============================================================
 @auth.route('/change-password', methods=['PUT'])
+@limiter.limit("5 per minute")
 @jwt_required()
 def change_password():
     user_id = get_jwt_identity()
@@ -275,7 +297,7 @@ def change_password():
     if not user:
         return jsonify({'message': 'User not found!'}), 404
 
-    data             = request.get_json()
+    data             = request.get_json() or {}
     current_password = data.get('current_password', '')
     new_password     = data.get('new_password', '')
 
@@ -283,8 +305,9 @@ def change_password():
         return jsonify({'message': 'All fields are required!'}), 400
     if not bcrypt.check_password_hash(user.password, current_password):
         return jsonify({'message': 'Current password is incorrect!'}), 401
-    if len(new_password) < 6:
-        return jsonify({'message': 'New password must be at least 6 characters!'}), 400
+    pw_error = _validate_password(new_password)
+    if pw_error:
+        return jsonify({'message': pw_error}), 400
 
     user.password = bcrypt.generate_password_hash(new_password).decode('utf-8')
     db.session.commit()
@@ -296,6 +319,7 @@ def change_password():
 # UPLOAD AVATAR
 # ============================================================
 @auth.route('/upload-avatar', methods=['POST'])
+@limiter.limit("10 per minute")
 @jwt_required()
 def upload_avatar():
     user_id = get_jwt_identity()
@@ -303,7 +327,7 @@ def upload_avatar():
     if not user:
         return jsonify({'message': 'User not found!'}), 404
 
-    data   = request.get_json()
+    data   = request.get_json() or {}
     avatar = data.get('avatar', '').strip()
 
     if not avatar:
@@ -317,6 +341,18 @@ def upload_avatar():
     db.session.commit()
 
     return jsonify({'message': 'Avatar updated successfully!', 'avatar': user.avatar}), 200
+
+
+# ============================================================
+# LOGOUT — revoke token server-side
+# ============================================================
+@auth.route('/logout', methods=['POST'])
+@jwt_required()
+def logout():
+    from extensions import revoked_tokens
+    jti = get_jwt()['jti']
+    revoked_tokens.add(jti)
+    return jsonify({'message': 'Logged out successfully!'}), 200
 
 
 # ============================================================

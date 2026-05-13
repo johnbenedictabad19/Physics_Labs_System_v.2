@@ -53,10 +53,18 @@ def upload_activity(class_id):
 
     if not title:
         return jsonify({'message': 'Please provide an activity title!'}), 400
+    if len(title) > 200:
+        return jsonify({'message': 'Activity title cannot exceed 200 characters!'}), 400
     if file.filename == '':
         return jsonify({'message': 'No file selected!'}), 400
     if not allowed_file(file.filename):
         return jsonify({'message': 'Only DOCX and PDF files are allowed!'}), 400
+
+    file.stream.seek(0, 2)
+    file_size = file.stream.tell()
+    file.stream.seek(0)
+    if file_size > 20 * 1024 * 1024:
+        return jsonify({'message': 'File too large. Maximum size is 20MB.'}), 400
 
     file_ext = file.filename.rsplit('.', 1)[1].lower()
     safe_filename = f"class{class_id}_{int(__import__('time').time())}.{file_ext}"
@@ -146,6 +154,9 @@ def reparse_activity(activity_id):
     activity = Activity.query.get(activity_id)
     if not activity:
         return jsonify({'message': 'Activity not found!'}), 404
+    from classes import _is_class_prof
+    if not _is_class_prof(activity.class_id, int(user_id)):
+        return jsonify({'message': 'Not authorized!'}), 403
     if activity.file_type != 'docx':
         return jsonify({'message': 'Re-parse is only available for DOCX files.'}), 400
     filepath = os.path.join(UPLOAD_FOLDER, activity.filename)
@@ -176,6 +187,9 @@ def delete_activity(activity_id):
     activity = Activity.query.get(activity_id)
     if not activity:
         return jsonify({'message': 'Activity not found!'}), 404
+    from classes import _is_class_prof
+    if not _is_class_prof(activity.class_id, int(user_id)):
+        return jsonify({'message': 'Not authorized!'}), 403
 
     from models import Submission, EditedContent
     Submission.query.filter_by(activity_id=activity.id).delete()
@@ -204,7 +218,14 @@ def save_edit(activity_id):
     if user.role != 'professor':
         return jsonify({'message': 'Only professors can edit activities!'}), 403
 
-    data = request.get_json()
+    activity = Activity.query.get(activity_id)
+    if not activity:
+        return jsonify({'message': 'Activity not found!'}), 404
+    from classes import _is_class_prof
+    if not _is_class_prof(activity.class_id, int(user_id)):
+        return jsonify({'message': 'Not authorized!'}), 403
+
+    data = request.get_json() or {}
     section_type = data.get('section_type')
     content_html = data.get('content_html')
 
@@ -253,7 +274,7 @@ def create_manual(class_id):
     if user.role != 'professor':
         return jsonify({'message': 'Only professors can create activities!'}), 403
 
-    data = request.get_json()
+    data = request.get_json() or {}
     if not data:
         return jsonify({'message': 'No data received!'}), 400
 
@@ -262,6 +283,8 @@ def create_manual(class_id):
 
     if not title:
         return jsonify({'message': 'Please provide a title!'}), 400
+    if len(title) > 200:
+        return jsonify({'message': 'Activity title cannot exceed 200 characters!'}), 400
 
     try:
         sec = activity_data.get('sections', {})
@@ -377,13 +400,15 @@ def update_activity(activity_id):
     if not activity:
         return jsonify({'message': 'Activity not found!'}), 404
 
-    data = request.get_json()
+    data = request.get_json() or {}
     if not data:
         return jsonify({'message': 'No data received!'}), 400
 
     title = data.get('title', '').strip()
     if not title:
         return jsonify({'message': 'Please provide a title!'}), 400
+    if len(title) > 200:
+        return jsonify({'message': 'Activity title cannot exceed 200 characters!'}), 400
 
     # Always update title
     activity.title = title
@@ -450,7 +475,7 @@ def set_due_date(activity_id):
     if not activity:
         return jsonify({'message': 'Activity not found!'}), 404
 
-    data = request.get_json()
+    data = request.get_json() or {}
     due_date_str = data.get('due_date')
 
     if due_date_str:

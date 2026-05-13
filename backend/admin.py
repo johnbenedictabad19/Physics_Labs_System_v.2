@@ -282,11 +282,13 @@ def reset_password(user_id):
     if not target:
         return jsonify({'message': 'User not found!'}), 404
 
-    data         = request.get_json()
+    data         = request.get_json() or {}
     new_password = data.get('new_password', '').strip()
 
-    if not new_password or len(new_password) < 6:
-        return jsonify({'message': 'Password must be at least 6 characters!'}), 400
+    from auth import _validate_password
+    pw_error = _validate_password(new_password)
+    if pw_error:
+        return jsonify({'message': pw_error}), 400
 
     target.password = bcrypt.generate_password_hash(new_password).decode('utf-8')
     db.session.commit()
@@ -385,7 +387,10 @@ def seed_admin(app):
         existing = User.query.filter_by(role='admin').first()
         if not existing:
             import os
-            admin_password = os.environ.get('ADMIN_PASSWORD', 'admin123')
+            admin_password = os.environ.get('ADMIN_PASSWORD')
+            if not admin_password:
+                print('[seed_admin] ADMIN_PASSWORD not set — skipping admin seed')
+                return
             hashed = bcrypt.generate_password_hash(admin_password).decode('utf-8')
             admin_user = User(
                 last_name      = 'Admin',

@@ -12,7 +12,7 @@ from stream import stream
 import os
 from dotenv import load_dotenv
 from admin import admin, seed_admin
-from extensions import socketio, limiter
+from extensions import socketio, limiter, revoked_tokens
 
 load_dotenv()
 
@@ -48,8 +48,12 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
 # Initialize extensions
 db.init_app(app)
 bcrypt.init_app(app)
-JWTManager(app)
+jwt = JWTManager(app)
 Migrate(app, db)
+
+@jwt.token_in_blocklist_loader
+def check_if_token_revoked(jwt_header, jwt_payload):
+    return jwt_payload.get('jti') in revoked_tokens
 
 # Register blueprints
 from auth import auth

@@ -569,6 +569,14 @@ async function handleLogin(e) {
             method:'POST', headers:{'Content-Type':'application/json'},
             body: JSON.stringify(body)
         });
+
+        if (res.status === 429) {
+            showAlert('loginError', 'Too many login attempts. Please wait a moment and try again.', 'error');
+            btn.querySelector('.button_text').innerHTML = '<i class="ph-bold ph-sign-in"></i> Sign In';
+            btn.disabled = false;
+            return;
+        }
+
         const data = await res.json();
 
         if (res.ok) {
@@ -696,6 +704,14 @@ async function handleForgot(e) {
             method:'POST', headers:{'Content-Type':'application/json'},
             body: JSON.stringify({ student_number, birthday, new_password })
         });
+
+        if (res.status === 429) {
+            showAlert('loginError', 'Too many attempts. Please try again later.', 'error');
+            btn.querySelector('.button_text').innerHTML = '<i class="ph-bold ph-lock-key"></i> Reset Password';
+            btn.disabled = false;
+            return;
+        }
+
         const data = await res.json();
 
         if (res.ok) {

@@ -96,13 +96,15 @@ def create_post(class_id):
     if user.role != 'professor':
         return jsonify({'message': 'Only professors can post!'}), 403
 
-    data        = request.get_json()
+    data        = request.get_json() or {}
     message     = (data.get('message') or '').strip()
     activity_id = data.get('activity_id')
     post_type   = data.get('post_type', 'announcement')
 
     if not message and not activity_id:
         return jsonify({'message': 'Post must have a message or an activity!'}), 400
+    if message and len(message) > 2000:
+        return jsonify({'message': 'Post message cannot exceed 2000 characters!'}), 400
 
     if activity_id:
         act = Activity.query.get(activity_id)
@@ -151,7 +153,7 @@ def update_post(class_id, post_id):
     if not cls or not _is_class_prof(class_id, user_id):
         return jsonify({'message': 'Not authorized!'}), 403
  
-    data = request.get_json()
+    data = request.get_json() or {}
     new_message = data.get('message', '').strip()
  
     # Allow empty message (null) but not just whitespace
@@ -204,10 +206,12 @@ def add_comment(class_id, post_id):
     if not post or post.class_id != class_id:
         return jsonify({'message': 'Post not found!'}), 404
 
-    data    = request.get_json()
+    data    = request.get_json() or {}
     message = (data.get('message') or '').strip()
     if not message:
         return jsonify({'message': 'Comment cannot be empty!'}), 400
+    if len(message) > 1000:
+        return jsonify({'message': 'Comment cannot exceed 1000 characters!'}), 400
 
     comment = StreamComment(post_id=post_id, user_id=user_id, message=message)
     db.session.add(comment)

@@ -37,7 +37,10 @@ def upload_banner():
     f = request.files['file']
     if not f or not _allowed_banner(f.filename):
         return jsonify({'message': 'Invalid file type. Use JPG or PNG.'}), 400
-    if f.content_length and f.content_length > 5 * 1024 * 1024:
+    f.stream.seek(0, 2)
+    banner_size = f.stream.tell()
+    f.stream.seek(0)
+    if banner_size > 5 * 1024 * 1024:
         return jsonify({'message': 'File too large. Max 5MB.'}), 400
 
     os.makedirs(BANNER_UPLOAD_DIR, exist_ok=True)
@@ -69,7 +72,7 @@ def create_class():
     if user.role != 'professor':
         return jsonify({'message': 'Only professors can create classes!'}), 403
 
-    data = request.get_json()
+    data = request.get_json() or {}
     class_name = data.get('class_name')
     subject = data.get('subject')
     section = data.get('section')
@@ -219,7 +222,7 @@ def join_class():
     if user.role != 'student':
         return jsonify({'message': 'Only students can join classes!'}), 403
 
-    data = request.get_json()
+    data = request.get_json() or {}
     class_code = data.get('class_code', '').strip().upper()
 
     c = Class.query.filter_by(class_code=class_code).first()
@@ -345,7 +348,7 @@ def toggle_auto_accept(class_id):
     c = Class.query.get(class_id)
     if not c or not _is_class_prof(c.id, user_id):
         return jsonify({'message': 'Unauthorized'}), 403
-    data = request.get_json()
+    data = request.get_json() or {}
     c.auto_accept = bool(data.get('auto_accept', True))
     db.session.commit()
     return jsonify({'auto_accept': c.auto_accept}), 200
@@ -389,7 +392,7 @@ def update_class(class_id):
     if not _is_class_prof(c.id, user.id):
         return jsonify({'message': 'Not authorized!'}), 403
 
-    data = request.get_json()
+    data = request.get_json() or {}
     if 'class_name'   in data: c.class_name   = data['class_name']
     if 'subject'      in data: c.subject      = data['subject']
     if 'section'      in data: c.section      = data['section']
@@ -477,11 +480,15 @@ def post_announcement(class_id):
 
     if user.role != 'professor':
         return jsonify({'message': 'Only professors can post announcements!'}), 403
+    if not _is_class_prof(class_id, int(user_id)):
+        return jsonify({'message': 'Not authorized!'}), 403
 
-    data = request.get_json()
+    data = request.get_json() or {}
     message = data.get('message')
     if not message:
         return jsonify({'message': 'Message cannot be empty!'}), 400
+    if len(message) > 1000:
+        return jsonify({'message': 'Announcement cannot exceed 1000 characters!'}), 400
 
     new_announcement = Announcement(
         class_id=class_id,
@@ -548,8 +555,10 @@ def create_group(class_id):
 
     if user.role != 'professor':
         return jsonify({'message': 'Only professors can create groups!'}), 403
+    if not _is_class_prof(class_id, int(user_id)):
+        return jsonify({'message': 'Not authorized!'}), 403
 
-    data = request.get_json()
+    data = request.get_json() or {}
     name = data.get('name', '').strip()
     leader_id = data.get('leader_id')
     member_ids = data.get('member_ids', [])
@@ -596,7 +605,7 @@ def update_group(class_id, group_id):
     if not group:
         return jsonify({'message': 'Group not found!'}), 404
 
-    data = request.get_json()
+    data = request.get_json() or {}
     name = data.get('name', '').strip()
     leader_id = data.get('leader_id')
     member_ids = data.get('member_ids', [])
@@ -703,8 +712,10 @@ def create_session(class_id):
 
     if user.role != 'professor':
         return jsonify({'message': 'Only professors can record sessions!'}), 403
+    if not _is_class_prof(class_id, int(user_id)):
+        return jsonify({'message': 'Not authorized!'}), 403
 
-    data = request.get_json()
+    data = request.get_json() or {}
     session_date = data.get('session_date', '')
     attendance_records = data.get('attendance', [])
 
@@ -741,7 +752,7 @@ def update_session(class_id, session_id):
     if not session:
         return jsonify({'message': 'Session not found!'}), 404
 
-    data = request.get_json()
+    data = request.get_json() or {}
     attendance_records = data.get('attendance', [])
 
     if 'session_date' in data:
@@ -797,13 +808,19 @@ def grade_group_submission(class_id, group_id):
     if user.role != 'professor':
         return jsonify({'message': 'Only professors can grade!'}), 403
 
-    data = request.get_json()
+    data = request.get_json() or {}
     activity_id = data.get('activity_id')
     grade = data.get('grade')
     feedback = data.get('feedback', '')
 
     if grade is None:
         return jsonify({'message': 'Grade is required!'}), 400
+    try:
+        grade = float(grade)
+    except (TypeError, ValueError):
+        return jsonify({'message': 'Grade must be a number!'}), 400
+    if grade < 0 or grade > 100:
+        return jsonify({'message': 'Grade must be between 0 and 100!'}), 400
 
     group = Group.query.filter_by(id=group_id, class_id=class_id).first()
     if not group:
@@ -1267,7 +1284,7 @@ def send_invite(class_id):
     if not c or not _is_class_prof(c.id, user.id):
         return jsonify({'message': 'Not authorized!'}), 403
 
-    data = request.get_json()
+    data = request.get_json() or {}
     student_id = data.get('student_id')
     if not student_id:
         return jsonify({'message': 'Student ID required!'}), 400
@@ -1381,7 +1398,7 @@ def send_teacher_invite(class_id):
         return jsonify({'message': 'Only professors can invite teachers!'}), 403
     if not _is_class_prof(class_id, user.id):
         return jsonify({'message': 'Not authorized!'}), 403
-    data = request.get_json()
+    data = request.get_json() or {}
     teacher_id = data.get('teacher_id')
     teacher = User.query.get(teacher_id)
     if not teacher or teacher.role != 'professor':
@@ -1445,7 +1462,7 @@ def respond_invite(invite_id):
     if invite.status != 'pending':
         return jsonify({'message': 'This invite has already been responded to.'}), 400
 
-    data = request.get_json()
+    data = request.get_json() or {}
     action = data.get('action')
     if action not in ('accept', 'decline'):
         return jsonify({'message': 'Invalid action!'}), 400

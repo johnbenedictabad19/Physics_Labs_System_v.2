@@ -1106,6 +1106,14 @@ async function handleSubmit() {
             method:'POST', headers:{'Content-Type':'application/json'},
             body: JSON.stringify(body)
         });
+
+        if (res.status === 429) {
+            showAlert('Too many registration attempts. Please try again later.');
+            btnText.innerHTML = orig;
+            updateSubmitBtn();
+            return;
+        }
+
         const data = await res.json();
         if (res.ok) {
             btnText.innerHTML = '<i class="ph-bold ph-check-circle"></i> Success!';
