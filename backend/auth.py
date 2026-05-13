@@ -349,9 +349,9 @@ def upload_avatar():
 @auth.route('/logout', methods=['POST'])
 @jwt_required()
 def logout():
-    from extensions import revoked_tokens
-    jti = get_jwt()['jti']
-    revoked_tokens.add(jti)
+    from extensions import revoke_token
+    payload = get_jwt()
+    revoke_token(payload['jti'], payload['exp'])
     return jsonify({'message': 'Logged out successfully!'}), 200
 
 

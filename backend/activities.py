@@ -71,31 +71,44 @@ def upload_activity(class_id):
     filepath = os.path.join(UPLOAD_FOLDER, safe_filename)
     file.save(filepath)
 
-    parsed_data = None
-    if file_ext == 'docx':
-        try:
-            from parser import parse_docx
-            parsed_data = parse_docx(filepath)
-        except Exception as e:
-            import traceback
-            print(f"Parser error: {e}")
-            traceback.print_exc()
-
     new_activity = Activity(
         class_id=class_id,
         uploaded_by=user.id,
         title=title,
         filename=safe_filename,
         file_type=file_ext,
-        parsed_content=json.dumps(parsed_data) if parsed_data else None
+        parsed_content=None  # set by background parser for docx
     )
     db.session.add(new_activity)
     db.session.commit()
+    activity_id = new_activity.id
+
+    if file_ext == 'docx':
+        from flask import current_app
+        import gevent
+        _app = current_app._get_current_object()
+
+        def _parse_in_background():
+            with _app.app_context():
+                try:
+                    from parser import parse_docx
+                    parsed_data = parse_docx(filepath)
+                    if parsed_data:
+                        act = Activity.query.get(activity_id)
+                        if act:
+                            act.parsed_content = json.dumps(parsed_data)
+                            db.session.commit()
+                except Exception as e:
+                    import traceback
+                    print(f"[background parser] error: {e}")
+                    traceback.print_exc()
+
+        gevent.spawn(_parse_in_background)
 
     return jsonify({
         'message': 'Activity uploaded successfully!',
-        'id': new_activity.id,
-        'parsed': parsed_data is not None,
+        'id': activity_id,
+        'parsed': file_ext == 'docx',
         'file_type': file_ext
     }), 201
 
@@ -163,9 +176,17 @@ def reparse_activity(activity_id):
     if not os.path.exists(filepath):
         return jsonify({'message': 'Original file not found on server. Please re-upload.'}), 404
     try:
-        from parser import parse_docx
-        parsed_data = parse_docx(filepath)
-        activity.parsed_content = json.dumps(parsed_data) if parsed_data else None
+        import threading
+        result = {}
+        def _do_reparse():
+            from parser import parse_docx
+            result['data'] = parse_docx(filepath)
+        t = threading.Thread(target=_do_reparse)
+        t.start()
+        t.join()  # yields to gevent event loop while CPU-bound parse runs
+        if 'data' not in result:
+            return jsonify({'message': 'Parse error: no data returned'}), 500
+        activity.parsed_content = json.dumps(result['data']) if result['data'] else None
         db.session.commit()
         return jsonify({'message': 'Activity re-parsed successfully!'}), 200
     except Exception as e:

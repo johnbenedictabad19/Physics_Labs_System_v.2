@@ -43,6 +43,7 @@ app.config['SQLALCHEMY_ENGINE_OPTIONS'] = {
     'pool_size':    10,    # max simultaneous DB connections
     'pool_timeout': 20,    # seconds to wait for a connection
     'pool_recycle': 300,   # recycle connections every 5 minutes
+    'pool_pre_ping': True, # test connection before use — prevents stale connection errors on Railway
 }
 
 # Initialize extensions
@@ -53,7 +54,7 @@ Migrate(app, db)
 
 @jwt.token_in_blocklist_loader
 def check_if_token_revoked(jwt_header, jwt_payload):
-    return jwt_payload.get('jti') in revoked_tokens
+    return jwt_payload.get('jti') in revoked_tokens  # dict key lookup, O(1)
 
 # Register blueprints
 from auth import auth

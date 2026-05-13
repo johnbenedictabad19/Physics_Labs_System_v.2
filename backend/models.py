@@ -71,6 +71,11 @@ class ClassMember(db.Model):
     is_archived = db.Column(db.Boolean, default=False)  # student soft-archive
     enrollment_status = db.Column(db.String(20), default='approved')  # approved, pending, rejected
 
+    __table_args__ = (
+        db.Index('ix_class_members_class_student', 'class_id', 'student_id'),
+        db.Index('ix_class_members_student',       'student_id'),
+    )
+
 
 class Announcement(db.Model):
     __tablename__ = 'announcements'
@@ -95,6 +100,10 @@ class Activity(db.Model):
     due_date = db.Column(db.DateTime, nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    __table_args__ = (
+        db.Index('ix_activities_class_id', 'class_id'),
+    )
+
 
 class EditedContent(db.Model):
     __tablename__ = 'edited_contents'
@@ -104,6 +113,10 @@ class EditedContent(db.Model):
     section_type = db.Column(db.String(50), nullable=False)
     content_html = db.Column(db.Text, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+
+    __table_args__ = (
+        db.Index('ix_edited_contents_activity_id', 'activity_id'),
+    )
 
 
 class Submission(db.Model):
@@ -139,6 +152,11 @@ class Submission(db.Model):
     status = db.Column(db.String(20), default='submitted')  # submitted, graded
     submitted_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    __table_args__ = (
+        db.Index('ix_submissions_activity_student', 'activity_id', 'student_id'),
+        db.Index('ix_submissions_student_id',       'student_id'),
+    )
+
 
 # ============================================================
 # STREAM
@@ -156,6 +174,10 @@ class StreamPost(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     comments = db.relationship('StreamComment', backref='post', lazy=True, cascade='all, delete-orphan')
+
+    __table_args__ = (
+        db.Index('ix_stream_posts_class_id', 'class_id'),
+    )
 
 
 class StreamComment(db.Model):
@@ -193,6 +215,11 @@ class GroupMember(db.Model):
     student_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     joined_at = db.Column(db.DateTime, default=datetime.utcnow)
 
+    __table_args__ = (
+        db.Index('ix_group_members_group_id',   'group_id'),
+        db.Index('ix_group_members_student_id', 'student_id'),
+    )
+
 
 # ============================================================
 # SESSION ATTENDANCE
@@ -219,6 +246,10 @@ class SessionAttendance(db.Model):
     student_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     status = db.Column(db.String(10), nullable=False, default='present')  # 'present' | 'absent'
 
+    __table_args__ = (
+        db.Index('ix_session_attendance_session_id', 'session_id'),
+    )
+
 
 # ============================================================
 # FEED EVENTS
@@ -234,6 +265,10 @@ class Notification(db.Model):
     notif_type = db.Column(db.String(30),  nullable=False)  # post|comment|submit|grade|joined
     is_read    = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        db.Index('ix_notifications_user_read', 'user_id', 'is_read'),
+    )
 
 
 class ClassInvite(db.Model):
@@ -256,6 +291,10 @@ class ClassTeacher(db.Model):
     teacher_id = db.Column(db.Integer, db.ForeignKey('users.id'),   nullable=False)
     joined_at  = db.Column(db.DateTime, default=datetime.utcnow)
 
+    __table_args__ = (
+        db.Index('ix_class_teachers_class_teacher', 'class_id', 'teacher_id'),
+    )
+
 
 class FeedEvent(db.Model):
     __tablename__ = 'feed_events'
@@ -267,3 +306,7 @@ class FeedEvent(db.Model):
     actor_role = db.Column(db.String(20),  nullable=True)   # student|professor
     message    = db.Column(db.String(250), nullable=True)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
+
+    __table_args__ = (
+        db.Index('ix_feed_events_class_id', 'class_id'),
+    )
