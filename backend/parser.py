@@ -787,37 +787,109 @@ def _is_subsection_header(text):
 
 def _parse_table_rows(table):
     """
-    Parse a docx Table into structured rows.
+    Parse a docx Table into structured rows with colspan/rowspan support.
 
     Each cell dict:
-      {'type': 'text',  'value': '...'}  — cell has visible content
-      {'type': 'input', 'value': ''}     — cell is blank → student fill-in
+      {'type': 'text',  'value': '...', 'colspan': N, 'rowspan': N}
+      {'type': 'input', 'value': '',    'colspan': N, 'rowspan': N}
 
     Returns None if the table contains no visible content at all.
     """
-    rows = []
+    def _get_colspan(tc):
+        tcPr = tc.find(qn('w:tcPr'))
+        if tcPr is not None:
+            gs = tcPr.find(qn('w:gridSpan'))
+            if gs is not None:
+                try:
+                    return int(gs.get(qn('w:val'), '1'))
+                except (ValueError, TypeError):
+                    pass
+        return 1
+
+    def _get_vmerge(tc):
+        """Return 'restart', 'continue', or None for vertical merge status."""
+        tcPr = tc.find(qn('w:tcPr'))
+        if tcPr is not None:
+            vm = tcPr.find(qn('w:vMerge'))
+            if vm is not None:
+                val = vm.get(qn('w:val'), '')
+                return 'restart' if val == 'restart' else 'continue'
+        return None
+
+    # First pass: build raw grid (dedup horizontal merges, capture colspan/vmerge)
+    raw_grid = []
     for row in table.rows:
-        row_cells = []
-        seen_tc_ids = set()
+        seen = set()
+        raw_row = []
         for cell in row.cells:
-            # python-docx returns the same cell object multiple times when cells are
-            # merged across columns (colspan). Skip duplicates using the underlying
-            # XML element identity so merged cells are counted only once.
-            tc_id = id(cell._tc)
-            if tc_id in seen_tc_ids:
+            tc = cell._tc
+            if id(tc) in seen:
                 continue
-            seen_tc_ids.add(tc_id)
+            seen.add(id(tc))
+            raw_row.append((cell, _get_colspan(tc), _get_vmerge(tc)))
+        raw_grid.append(raw_row)
+
+    num_rows = len(raw_grid)
+
+    # Build column-start position for each raw cell in each row
+    col_pos_map = []
+    for raw_row in raw_grid:
+        positions = []
+        col = 0
+        for (_, cs, _vm) in raw_row:
+            positions.append(col)
+            col += cs
+        col_pos_map.append(positions)
+
+    # Compute rowspan for each 'restart' cell by counting consecutive 'continue' rows below
+    rowspan_map = {}  # (ri, rj) -> rowspan count
+    for ri, raw_row in enumerate(raw_grid):
+        for rj, (_, cs, vm) in enumerate(raw_row):
+            if vm == 'restart':
+                col_start = col_pos_map[ri][rj]
+                span = 1
+                for ri2 in range(ri + 1, num_rows):
+                    found = any(
+                        col_pos_map[ri2][rj2] == col_start and vm2 == 'continue'
+                        for rj2, (_, _cs2, vm2) in enumerate(raw_grid[ri2])
+                    )
+                    if found:
+                        span += 1
+                    else:
+                        break
+                rowspan_map[(ri, rj)] = span
+
+    # Build set of grid positions that are legitimate vertical merge continuations
+    valid_continues = set()
+    for (ri, rj), span in rowspan_map.items():
+        col_start = col_pos_map[ri][rj]
+        for ri2 in range(ri + 1, ri + span):
+            valid_continues.add((ri2, col_start))
+
+    # Build output rows, skipping only legitimate 'continue' cells (covered by rowspan from above)
+    rows = []
+    for ri, raw_row in enumerate(raw_grid):
+        row_cells = []
+        for rj, (cell, cs, vm) in enumerate(raw_row):
+            col_s = col_pos_map[ri][rj]
+            if vm == 'continue' and (ri, col_s) in valid_continues:
+                continue
             parts = []
             for para in cell.paragraphs:
                 t = get_full_para_text(para)
                 if t:
                     parts.append(render_inline_equations(t))
             cell_text = ' '.join(parts).strip()
-            if not cell_text or re.match(r'^[_\-\s]*$', cell_text):
-                row_cells.append({'type': 'input', 'value': ''})
-            else:
-                row_cells.append({'type': 'text', 'value': cell_text})
+            rowspan = rowspan_map.get((ri, rj), 1)
+            is_blank = not cell_text or bool(re.match(r'^[_\-\s]*$', cell_text))
+            row_cells.append({
+                'type':    'input' if is_blank else 'text',
+                'value':   '' if is_blank else cell_text,
+                'colspan': cs,
+                'rowspan': rowspan,
+            })
         rows.append(row_cells)
+
     if not any(c.get('value') for row in rows for c in row):
         return None
     return rows
@@ -1345,9 +1417,10 @@ def parse_docx(filepath):
     save_section()
 
     # Rebuild tables_data from data_sheet section only (backward compat for create_activity.html)
+    # Use rich cell objects (with colspan/rowspan) so merged cells render correctly.
     ds = next((s for s in sections if s['type'] == 'data_sheet'), None)
     tables_data = [
-        {'rows': _rows_to_plain(item['rows']), 'title': item.get('title', '')}
+        {'rows': item['rows'], 'title': item.get('title', '')}
         for item in (ds['content'] if ds else [])
         if item.get('type') == 'table'
     ]

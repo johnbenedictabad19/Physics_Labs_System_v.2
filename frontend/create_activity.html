@@ -992,15 +992,15 @@
 .av-table-block { margin: 10px auto; border-radius: 10px; border: 1.5px solid var(--border); display: block; width: fit-content; max-width: 100%; overflow-x: auto; }
 .av-table-bar { background: var(--surface-2); padding: 6px 12px; font-size: 12px; font-weight: 600; color: var(--text-2); font-family: 'DM Sans', sans-serif; }
 .av-table-scroll { overflow-x: auto; }
-.av-data-table { border-collapse: collapse; width: auto; }
+.av-data-table { border-collapse: collapse; width: auto; min-width: 100%; }
 .av-data-table th { background: #0A66C2; color: white; font-size: 12px; font-weight: 700; padding: 0; border: 1.5px solid #5a6fd6; }
 .av-data-table th input { background: transparent; border: none; outline: none; color: white; font-weight: 700; font-size: 12px; width: 100%; min-width: 80px; padding: 7px 10px; font-family: 'DM Sans', sans-serif; box-sizing: border-box; }
 .av-data-table th .av-tbl-header-text { display: block; padding: 7px 10px; min-width: 80px; color: white; font-weight: 700; font-size: 12px; font-family: 'DM Sans', sans-serif; }
 .av-data-table th .av-tbl-header-text .katex { color: white; }
-.av-data-table th.av-tbl-readonly-cell { background: var(--surface); border-color: var(--border); font-weight: 400; }
-.av-data-table th.av-tbl-readonly-cell .av-tbl-header-text { color: var(--text); font-weight: 400; }
+.av-data-table th.av-tbl-readonly-cell { background: var(--surface); border-color: var(--border); font-weight: 400; min-width: 80px; }
+.av-data-table th.av-tbl-readonly-cell .av-tbl-header-text { color: var(--text); font-weight: 400; display: block; padding: 7px 10px; }
 .av-data-table th.av-tbl-readonly-cell .av-tbl-header-text .katex { color: var(--text); }
-.av-data-table td { border: 1px solid var(--border); background: var(--surface); padding: 0; vertical-align: middle; }
+.av-data-table td { border: 1px solid var(--border); background: var(--surface); padding: 0; vertical-align: middle; min-height: 32px; }
 .av-data-table td input { width: 100%; min-width: 80px; border: none; outline: none; padding: 6px 10px; font-size: 12px; color: var(--text-2); font-family: 'DM Sans', sans-serif; background: transparent; box-sizing: border-box; }
 .av-data-table td.av-tbl-label-cell { background: var(--surface-2); }
 .av-data-table td.av-tbl-label-cell span { display: block; padding: 6px 10px; font-size: 12px; color: var(--text-2); font-family: 'DM Sans', sans-serif; }
@@ -5281,6 +5281,7 @@ function _collectProcTables(procId) {
                 const isHeader = td.classList.contains('ca-tbl-header-cell');
                 const obj = { type: isHeader ? 'header' : (v ? 'text' : 'input'), value: v };
                 if (td.colSpan > 1) obj.colspan = td.colSpan;
+                if (td.rowSpan > 1) obj.rowspan = td.rowSpan;
                 return obj;
             }));
         });
@@ -5613,6 +5614,8 @@ function _trimEmptyRowsCols(rows) {
     while (r.length > 0) {
         const last = r[r.length - 1];
         const allEmpty = last.every(cell => {
+            // Input cells are intentional blank data-entry rows — never trim them
+            if (typeof cell === 'object' && cell !== null && cell.type === 'input') return false;
             const v = typeof cell === 'object' ? String(cell.value || '') : String(cell || '');
             return v.replace(/<[^>]*>/g, '').trim() === '';
         });
@@ -6602,7 +6605,7 @@ function _serializeProcTableWrap(wrap, tblIdx = 0) {
     const tbl   = wrap.querySelector('.ca-proc-inline-tbl');
     if (!tbl) return '';
     let html = `<div class="av-table-block" data-table-index="${tblIdx}">`;
-    if (title) html += `<div class="av-table-bar"><span class="av-table-title-text">${title}</span></div>`;
+    if (title) html += `<div class="av-table-bar"><span class="av-table-title-text">${renderEqToHtml(title)}</span></div>`;
     html += '<div class="av-table-scroll"><table class="av-data-table">';
     tbl.querySelectorAll('tr').forEach(tr => {
         html += '<tr>';
@@ -7362,6 +7365,30 @@ function cancelRefsEdit()  { _refsSetEditMode(false); renderRefsPreview(); }
 function doneRefsEdit()    { _refsSetEditMode(false); renderRefsPreview(); }
 
 // ============================================================
+// HELPER — compute actual grid column count from rows with colspan/rowspan
+// ============================================================
+function _computeNumCols(rows) {
+    let maxCol = 0;
+    const occ = {};
+    rows.forEach((rowData, ri) => {
+        let ci = 0;
+        (rowData || []).forEach(cell => {
+            while (occ[`${ri},${ci}`]) ci++;
+            const cs = (cell?.colspan || 1);
+            const rs = (cell?.rowspan || 1);
+            for (let r = ri; r < ri + rs; r++) {
+                for (let c = ci; c < ci + cs; c++) {
+                    occ[`${r},${c}`] = true;
+                    if (c + 1 > maxCol) maxCol = c + 1;
+                }
+            }
+            ci += cs;
+        });
+    });
+    return maxCol || 3;
+}
+
+// ============================================================
 // HELPER — load parsed inline tables into a ca-proc-tables-container
 // ============================================================
 async function _loadInlineTables(parentId, tablesList) {
@@ -7369,7 +7396,7 @@ async function _loadInlineTables(parentId, tablesList) {
     for (const tbl of tablesList) {
         const rows = Array.isArray(tbl) ? tbl : (tbl.rows || []);
         if (!rows.length) continue;
-        const numCols = (rows[0] || []).length || 3;
+        const numCols = _computeNumCols(rows);
         insertProcTable(parentId, rows.length, numCols);
         await new Promise(r => setTimeout(r, 60));
 
@@ -7384,12 +7411,54 @@ async function _loadInlineTables(parentId, tablesList) {
         const titleInput = wrap.querySelector('.ca-proc-table-toolbar input[type="text"]');
         if (titleInput && title) titleInput.value = title;
 
-        // Fill all rows — restore header class and apply render+edit for pre-filled cells
-        wrap.querySelectorAll('tbody tr').forEach((tr, ri) => {
-            const rowData = rows[ri];
-            if (!rowData) return;
-            tr.querySelectorAll('td').forEach((td, ci) => {
-                const cell     = rowData[ci];
+        // Apply colspan/rowspan to the uniform DOM grid, then fill cell content.
+        // The uniform grid created by insertProcTable has numCols TDs per row.
+        // We restructure it to match the actual merged cell layout.
+        const trs = Array.from(wrap.querySelectorAll('tbody tr'));
+        const occupied = {};  // key: "ri,ci" -> true (covered by a rowspan from above)
+
+        rows.forEach((rowData, ri) => {
+            const tr = trs[ri];
+            if (!tr) return;
+            const allTds = Array.from(tr.querySelectorAll('td'));
+            let domIdx = 0;
+            let gridCol = 0;
+
+            (rowData || []).forEach(cell => {
+                const cs = cell?.colspan || 1;
+                const rs = cell?.rowspan || 1;
+
+                // Remove TDs at positions covered by rowspans from above rows
+                while (occupied[`${ri},${gridCol}`]) {
+                    if (allTds[domIdx]) allTds[domIdx].remove();
+                    domIdx++;
+                    gridCol++;
+                }
+
+                const td = allTds[domIdx];
+                if (!td) { gridCol += cs; return; }
+                domIdx++;
+
+                // Apply colspan: set attribute and remove extra TDs
+                if (cs > 1) {
+                    td.colSpan = cs;
+                    for (let k = 1; k < cs; k++) {
+                        if (allTds[domIdx]) allTds[domIdx].remove();
+                        domIdx++;
+                    }
+                }
+
+                // Apply rowspan: set attribute and mark future positions as occupied
+                if (rs > 1) {
+                    td.rowSpan = rs;
+                    for (let rr = 1; rr < rs; rr++) {
+                        for (let cc = gridCol; cc < gridCol + cs; cc++) {
+                            occupied[`${ri + rr},${cc}`] = true;
+                        }
+                    }
+                }
+
+                // Fill cell content
                 const isObj    = typeof cell === 'object' && cell !== null;
                 const val      = isObj ? String(cell.value || '') : String(cell || '');
                 const ta       = td.querySelector('textarea');
@@ -7398,14 +7467,24 @@ async function _loadInlineTables(parentId, tablesList) {
                 const isFilled = isObj && cell.type === 'text' && cleanVal;
 
                 if (isHeader) td.classList.add('ca-tbl-header-cell');
-
                 if (ta) { ta.value = cleanVal; _autoResizeTa(ta); }
-
-                // Show rendered overlay for all pre-filled/header cells (DS and Procedure)
                 if (cleanVal && (isHeader || isFilled)) {
                     _applyTblCellRender(td, ta, cleanVal, isHeader);
                 }
+
+                gridCol += cs;
             });
+
+            // Remove any trailing TDs that are covered by rowspans from above
+            while (domIdx < allTds.length) {
+                if (occupied[`${ri},${gridCol}`]) {
+                    if (allTds[domIdx]) allTds[domIdx].remove();
+                    domIdx++;
+                    gridCol++;
+                } else {
+                    break;
+                }
+            }
         });
     }
 }
@@ -7852,11 +7931,15 @@ async function prefillFromDocx(activityId, suppressToast = false, forceReparse =
                     const tblTitle = Array.isArray(tbl) ? (_tblTitles[i] || '') : (tbl.title || _tblTitles[i] || '');
                     const rawRows = plainRows.map((row, ri) =>
                         row.map(cell => {
-                            const rawVal = (typeof cell === 'object' && cell !== null)
-                                ? String(cell.value || '')
-                                : String(cell || '');
+                            const isObj = typeof cell === 'object' && cell !== null;
+                            const rawVal = isObj ? String(cell.value || '') : String(cell || '');
                             const v = rawVal.replace(/<[^>]*>/g, '').trim();
-                            return { type: ri === 0 ? 'header' : (v ? 'text' : 'input'), value: v };
+                            const inferredType = ri === 0 ? 'header' : (v ? 'text' : 'input');
+                            const type = isObj && (cell.type === 'header' || cell.type === 'text' || cell.type === 'input') ? cell.type : inferredType;
+                            const cellObj = { type, value: v };
+                            if (isObj && (cell.colspan || 1) > 1) cellObj.colspan = cell.colspan;
+                            if (isObj && (cell.rowspan || 1) > 1) cellObj.rowspan = cell.rowspan;
+                            return cellObj;
                         })
                     );
                     return { title: tblTitle, rows: _trimEmptyRowsCols(rawRows) };
@@ -8061,7 +8144,7 @@ function _snapTable(tbl, idx, isPreview = false) {
     const title = Array.isArray(tbl) ? '' : (tbl.title || '');
     if (!rows.length) return '';
     let html = `<div class="av-table-block" data-table-index="${idx}">
-        ${title ? `<div class="av-table-bar"><span class="av-table-title-text">${title}</span></div>` : ''}
+        ${title ? `<div class="av-table-bar"><span class="av-table-title-text">${renderEqToHtml(title)}</span></div>` : ''}
 
         <div class="av-table-scroll"><table class="av-data-table">`;
     rows.forEach((row, rIdx) => {
@@ -8070,7 +8153,7 @@ function _snapTable(tbl, idx, isPreview = false) {
         cells.forEach((cell, cIdx) => {
             const obj  = (cell && typeof cell === 'object') ? cell : null;
             const raw  = (obj ? String(obj.value || '') : String(cell || '')).replace(/"/g, '&quot;');
-            const span = (obj && obj.colspan > 1) ? ` colspan="${obj.colspan}"` : '';
+            const span = [(obj && obj.colspan > 1 ? ` colspan="${obj.colspan}"` : ''), (obj && obj.rowspan > 1 ? ` rowspan="${obj.rowspan}"` : '')].join('');
             const hasLatex = raw.includes('\\(') || raw.includes('\\[');
             const rendered = hasLatex ? renderEqToHtml(raw) : raw;
             if (isPreview) {
@@ -8086,7 +8169,7 @@ function _snapTable(tbl, idx, isPreview = false) {
                 } else {
                     html += `<td${span}><input type="text" class="data-table-input"
                         data-row="${rIdx}" data-col="${cIdx}" data-tbl="${idx}"
-                        value="${raw}" placeholder=""
+                        value="${raw}" placeholder="—"
                         onkeydown="handleTableEnter(event,this)"></td>`;
                 }
             }
