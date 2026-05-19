@@ -20,8 +20,8 @@ def _validate_password(password):
         return 'Password must contain at least one lowercase letter!'
     if not re.search(r'[0-9]', password):
         return 'Password must contain at least one number!'
-    if not re.search(r'[^A-Za-z0-9]', password):
-        return 'Password must contain at least one special character!'
+    if not re.search(r'[!@#$%]', password):
+        return 'Password must contain at least one special character (!@#$%)!'
     return None
 
 
@@ -36,6 +36,7 @@ def register():
     last_name      = (data.get('last_name')      or '').strip()
     first_name     = (data.get('first_name')     or '').strip()
     middle_initial = (data.get('middle_initial') or '').strip()
+    name_extension = (data.get('name_extension') or '').strip()
     password       = data.get('password', '')
     role           = data.get('role', '')         # 'student' | 'professor'
 
@@ -74,6 +75,7 @@ def register():
         last_name      = last_name,
         first_name     = first_name,
         middle_initial = middle_initial or None,
+        name_extension = name_extension or None,
         student_number = student_number or None,
         email          = email or None,
         birthday       = birthday or None,
@@ -238,6 +240,7 @@ def update_profile():
     last_name      = (data.get('last_name')      or '').strip()
     first_name     = (data.get('first_name')     or '').strip()
     middle_initial = (data.get('middle_initial') or '').strip()
+    name_extension = (data.get('name_extension') or '').strip()
 
     if not last_name or not first_name:
         return jsonify({'message': 'Last name and first name are required!'}), 400
@@ -255,6 +258,7 @@ def update_profile():
     user.last_name      = last_name
     user.first_name     = first_name
     user.middle_initial = middle_initial or None
+    user.name_extension = name_extension or None
     db.session.commit()
 
     return jsonify({

@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from database import db
-from models import Class, ClassMember, ClassTeacher, User, Group, GroupMember, ClassSession, SessionAttendance, ClassInvite
+from models import Class, ClassMember, ClassTeacher, User, Group, GroupMember, ClassSession, SessionAttendance, ClassInvite, Submission
 from datetime import datetime
 import random
 import string
@@ -648,9 +648,81 @@ def delete_group(class_id, group_id):
     if not group:
         return jsonify({'message': 'Group not found!'}), 404
 
+    # Null out group_id on any submissions referencing this group
+    Submission.query.filter_by(group_id=group_id).update({'group_id': None}, synchronize_session=False)
+
     db.session.delete(group)
     db.session.commit()
     return jsonify({'message': 'Group deleted!'}), 200
+
+
+@classes.route('/<int:class_id>/groups/shuffle', methods=['POST'])
+@jwt_required()
+def shuffle_groups(class_id):
+    """Randomly redistribute all enrolled students across N groups (professor only)."""
+    user_id = get_jwt_identity()
+    user    = User.query.get(int(user_id))
+
+    if user.role != 'professor':
+        return jsonify({'message': 'Only professors can shuffle groups!'}), 403
+
+    cls = Class.query.get(class_id)
+    if not cls:
+        return jsonify({'message': 'Class not found!'}), 404
+
+    data      = request.get_json() or {}
+    num_groups = int(data.get('num_groups', 0))
+
+    # Enrolled + approved students
+    members = ClassMember.query.filter_by(
+        class_id=class_id, enrollment_status='approved', is_archived=False
+    ).all()
+    student_ids = [m.student_id for m in members]
+
+    if not student_ids:
+        return jsonify({'message': 'No enrolled students to shuffle!'}), 400
+    if num_groups < 1:
+        return jsonify({'message': 'Number of groups must be at least 1!'}), 400
+    if num_groups > len(student_ids):
+        return jsonify({'message': f'Cannot create more groups ({num_groups}) than students ({len(student_ids)})!'}), 400
+
+    # Existing groups ordered by creation
+    existing = Group.query.filter_by(class_id=class_id).order_by(Group.created_at.asc()).all()
+
+    # Adjust group count
+    if num_groups > len(existing):
+        for i in range(len(existing), num_groups):
+            new_g = Group(class_id=class_id, name=f'Group {i + 1}')
+            db.session.add(new_g)
+        db.session.flush()
+        existing = Group.query.filter_by(class_id=class_id).order_by(Group.created_at.asc()).all()
+    elif num_groups < len(existing):
+        for g in existing[num_groups:]:
+            db.session.delete(g)
+        db.session.flush()
+        existing = existing[:num_groups]
+
+    # Clear all current members from kept groups
+    for g in existing:
+        GroupMember.query.filter_by(group_id=g.id).delete()
+        g.leader_id = None
+
+    # Shuffle and split
+    random.shuffle(student_ids)
+    chunks = [student_ids[i::num_groups] for i in range(num_groups)]
+
+    for g, chunk in zip(existing, chunks):
+        for sid in chunk:
+            db.session.add(GroupMember(group_id=g.id, student_id=sid))
+        g.leader_id = random.choice(chunk)
+
+    db.session.commit()
+
+    updated = Group.query.filter_by(class_id=class_id).order_by(Group.created_at.asc()).all()
+    return jsonify({
+        'message': f'Groups shuffled! {len(student_ids)} students distributed across {num_groups} groups.',
+        'groups': [_serialize_group(g, group_number=idx + 1) for idx, g in enumerate(updated)]
+    }), 200
 
 
 @classes.route('/<int:class_id>/my-group', methods=['GET'])
@@ -965,24 +1037,27 @@ def delete_class(class_id):
         return jsonify({'message': 'Not authorized!'}), 403
     # Cascade delete all related records
     from models import Activity, Submission, EditedContent, StreamPost, StreamComment, FeedEvent, Group, ClassSession, Announcement
-    # Sessions + groups (cascade via relationship handles children)
-    for s in ClassSession.query.filter_by(class_id=class_id).all():
-        db.session.delete(s)
-    for g in Group.query.filter_by(class_id=class_id).all():
-        db.session.delete(g)
-    # Delete stream posts first (they reference activities via activity_id FK)
+    # 1. Submissions first — has FK to both activities and groups
+    activity_ids = [a.id for a in Activity.query.filter_by(class_id=class_id).with_entities(Activity.id).all()]
+    if activity_ids:
+        Submission.query.filter(Submission.activity_id.in_(activity_ids)).delete(synchronize_session=False)
+        EditedContent.query.filter(EditedContent.activity_id.in_(activity_ids)).delete(synchronize_session=False)
+    # 2. Stream posts + comments (cascade via relationship)
     for post in StreamPost.query.filter_by(class_id=class_id).all():
         db.session.delete(post)
-    db.session.flush()
-    # Delete submissions + edited content for each activity
-    for act in Activity.query.filter_by(class_id=class_id).all():
-        Submission.query.filter_by(activity_id=act.id).delete()
-        EditedContent.query.filter_by(activity_id=act.id).delete()
-        db.session.delete(act)
+    # 3. Activities (submissions already gone)
+    Activity.query.filter_by(class_id=class_id).delete(synchronize_session=False)
+    # 4. Groups + members (cascade via relationship); submissions already deleted so no FK conflict
+    for g in Group.query.filter_by(class_id=class_id).all():
+        db.session.delete(g)
+    # 5. Sessions + attendance (cascade via relationship)
+    for s in ClassSession.query.filter_by(class_id=class_id).all():
+        db.session.delete(s)
     # Delete remaining related tables
     Announcement.query.filter_by(class_id=class_id).delete()
     ClassMember.query.filter_by(class_id=class_id).delete()
     ClassInvite.query.filter_by(class_id=class_id).delete()
+    ClassTeacher.query.filter_by(class_id=class_id).delete()
     FeedEvent.query.filter_by(class_id=class_id).delete()
     db.session.delete(c)
     db.session.commit()

@@ -125,12 +125,17 @@
         .pw-rule.met { color:#6ee7b7; }
         [data-theme="dark"] select option { background:#22272b; color:#fff; }
         [data-theme="light"] select option { background:#fff; color:#1B1F23; }
-        .sn-boxes { display:flex; align-items:center; gap:5px; }
+        .sn-type-toggle { display:flex; gap:8px; margin-bottom:10px; }
+        .sn-type-label { display:flex; align-items:center; gap:6px; font-size:12px; font-weight:600; color:var(--text-3); cursor:pointer; padding:6px 14px; border:1.5px solid var(--border); border-radius:999px; transition:all 0.2s; user-select:none; }
+        .sn-type-label input[type=radio] { display:none; }
+        .sn-type-label:has(input:checked) { border-color:var(--primary); background:rgba(10,102,194,0.08); color:var(--primary); }
+        .sn-boxes { display:flex; align-items:center; justify-content:center; gap:5px; }
         .sn-box { width:36px; height:42px; text-align:center; font-size:15px; font-weight:600; padding:0; background:var(--input-bg); border:1.5px solid var(--border); border-radius:8px; color:var(--text); outline:none; transition:border-color 0.2s, box-shadow 0.2s; text-transform:uppercase; }
         .sn-box:focus { border-color:var(--border-f); background:var(--input-bg-f); box-shadow:0 0 0 3px rgba(10,102,194,0.12); }
         .sn-box.error { border-color:#ef4444; box-shadow:0 0 0 3px rgba(239,68,68,0.12); }
         .sn-dash { font-size:18px; font-weight:700; color:var(--text-3); margin:0 2px; }
         .input-row.cols-3 { grid-template-columns:1fr 1fr 80px; }
+        .input-row.cols-4 { grid-template-columns:1fr 1fr 62px 82px; }
         .input-row.cols-2 { grid-template-columns:1fr 1fr; }
         .input-group { position:relative; }
         .input-label { font-size:11px; font-weight:700; color:var(--text-3); letter-spacing:0.4px; text-transform:uppercase; margin-bottom:5px; display:block; }
@@ -154,6 +159,16 @@
         [data-theme="dark"] .input-group input:-webkit-autofill { -webkit-box-shadow:0 0 0 999px #22272B inset !important; -webkit-text-fill-color:#fff !important; }
         [data-theme="light"] .input-group input:-webkit-autofill { -webkit-box-shadow:0 0 0 999px #F0F0F0 inset !important; -webkit-text-fill-color:#1B1F23 !important; }
         .toggle-pw { position:absolute; right:12px; bottom:12px; cursor:pointer; color:var(--text-3); font-size:15px; transition:color 0.2s; }
+        .input-group select {
+            width:100%; padding:11px 32px 11px 14px;
+            background:var(--input-bg); border:1.5px solid var(--border);
+            border-radius:12px; font-size:13px; font-family:'Inter',sans-serif;
+            color:var(--text); outline:none; transition:all 0.25s;
+            appearance:none; -webkit-appearance:none;
+            background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+            background-repeat:no-repeat; background-position:right 12px center;
+            cursor:pointer; }
+        .input-group select:focus { border-color:var(--border-f); background-color:var(--input-bg-f); box-shadow:0 0 0 3px rgba(10,102,194,0.12); }
         .toggle-pw:hover { color:var(--primary-l); }
         .field-hint { font-size:11px; color:var(--text-3); margin-top:4px; line-height:1.5; }
 
@@ -295,6 +310,9 @@
         @media (max-width:520px) {
             .input-row.cols-3 { grid-template-columns:1fr 1fr; }
             .input-row.cols-3 .input-group:last-child { grid-column:span 2; max-width:120px; }
+            .input-row.cols-4 { grid-template-columns:1fr 1fr; }
+            .input-row.cols-4 .input-group:nth-child(3) { max-width:62px; }
+            .input-row.cols-4 .input-group:nth-child(4) { max-width:82px; }
             .card { padding:28px 20px 24px; }
             .role-cards { grid-template-columns:1fr 1fr; }
             .step-label { display:none; }
@@ -390,16 +408,18 @@
         <div class="step-panel" id="step-2">
             <div class="step-title">Your name</div>
             <div class="step-sub">Enter your full name as it appears on your school records.</div>
-            <div class="input-row cols-3">
+            <div class="input-row cols-4">
                 <div class="input-group">
                     <label class="input-label">Last Name</label>
                     <input type="text" id="last_name" placeholder="Dela Cruz" required autocomplete="family-name"
+                        maxlength="60"
                         oninput="this.value=this.value.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ\s\-']/g,'')">
                     <i class="ph-bold ph-user input-icon"></i>
                 </div>
                 <div class="input-group">
                     <label class="input-label">First Name</label>
                     <input type="text" id="first_name" placeholder="Juan" required autocomplete="given-name"
+                        maxlength="60"
                         oninput="this.value=this.value.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ\s\-']/g,'')">
                     <i class="ph-bold ph-user input-icon"></i>
                 </div>
@@ -407,6 +427,18 @@
                     <label class="input-label">M.I. <span class="optional-tag">(opt.)</span></label>
                     <input type="text" id="middle_initial" placeholder="A" maxlength="2" autocomplete="additional-name"
                         oninput="this.value=this.value.replace(/[^A-Za-zÀ-ÖØ-öø-ÿ]/g,'')">
+                </div>
+                <div class="input-group no-icon">
+                    <label class="input-label">Ext. <span class="optional-tag">(opt.)</span></label>
+                    <select id="name_extension">
+                        <option value="">N/A</option>
+                        <option value="Jr.">Jr.</option>
+                        <option value="Sr.">Sr.</option>
+                        <option value="II">II</option>
+                        <option value="III">III</option>
+                        <option value="IV">IV</option>
+                        <option value="V">V</option>
+                    </select>
                 </div>
             </div>
             <div class="btn-nav">
@@ -429,7 +461,18 @@
             <div id="fields-student">
                 <div style="margin-bottom:12px;">
                     <label class="input-label"><i class="ph-bold ph-identification-card" style="margin-right:4px;"></i>Student Number</label>
-                    <div class="sn-boxes">
+                    <div class="sn-type-toggle">
+                        <label class="sn-type-label">
+                            <input type="radio" name="sn_type" value="regular" checked onchange="switchSnType('regular')">
+                            Regular
+                        </label>
+                        <label class="sn-type-label">
+                            <input type="radio" name="sn_type" value="returnee" onchange="switchSnType('returnee')">
+                            Returnee
+                        </label>
+                    </div>
+                    <!-- Regular boxes: 234-03631M -->
+                    <div class="sn-boxes" id="sn-regular">
                         <input class="sn-box" id="sn0" maxlength="1" inputmode="numeric" autocomplete="off">
                         <input class="sn-box" id="sn1" maxlength="1" inputmode="numeric" autocomplete="off">
                         <input class="sn-box" id="sn2" maxlength="1" inputmode="numeric" autocomplete="off">
@@ -440,6 +483,17 @@
                         <input class="sn-box" id="sn6" maxlength="1" inputmode="numeric" autocomplete="off">
                         <input class="sn-box" id="sn7" maxlength="1" inputmode="numeric" autocomplete="off">
                         <input class="sn-box" id="sn8" maxlength="1" inputmode="alphanumeric" autocomplete="off">
+                    </div>
+                    <!-- Returnee boxes: 224-1658 -->
+                    <div class="sn-boxes" id="sn-returnee" style="display:none;">
+                        <input class="sn-box" id="rn0" maxlength="1" inputmode="numeric" autocomplete="off">
+                        <input class="sn-box" id="rn1" maxlength="1" inputmode="numeric" autocomplete="off">
+                        <input class="sn-box" id="rn2" maxlength="1" inputmode="numeric" autocomplete="off">
+                        <span class="sn-dash">-</span>
+                        <input class="sn-box" id="rn3" maxlength="1" inputmode="numeric" autocomplete="off">
+                        <input class="sn-box" id="rn4" maxlength="1" inputmode="numeric" autocomplete="off">
+                        <input class="sn-box" id="rn5" maxlength="1" inputmode="numeric" autocomplete="off">
+                        <input class="sn-box" id="rn6" maxlength="1" inputmode="numeric" autocomplete="off">
                     </div>
                     <input type="hidden" id="student_number">
                     <p id="sn-check-msg" style="display:none;margin:4px 0 0;font-size:12px;"></p>
@@ -512,10 +566,10 @@
             <p class="field-hint" id="pw_hint" style="margin-bottom:8px;"></p>
             <div id="pw_checklist" style="margin-bottom:12px;display:none;background:var(--input-bg);border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;display:none;">
                 <div class="pw-rule" id="rule-len">  <i class="ph-bold ph-x-circle"></i> At least 8 digits</div>
-                <div class="pw-rule" id="rule-upper"><i class="ph-bold ph-x-circle"></i> One uppercase letter</div>
-                <div class="pw-rule" id="rule-lower"><i class="ph-bold ph-x-circle"></i> One lowercase letter</div>
-                <div class="pw-rule" id="rule-num">  <i class="ph-bold ph-x-circle"></i> One number</div>
-                <div class="pw-rule" id="rule-spec"> <i class="ph-bold ph-x-circle"></i> One special character (!@#$% etc.)</div>
+                <div class="pw-rule" id="rule-upper"><i class="ph-bold ph-x-circle"></i> Must have uppercase letter</div>
+                <div class="pw-rule" id="rule-lower"><i class="ph-bold ph-x-circle"></i> Must have lowercase letter</div>
+                <div class="pw-rule" id="rule-num">  <i class="ph-bold ph-x-circle"></i> Must have number</div>
+                <div class="pw-rule" id="rule-spec"> <i class="ph-bold ph-x-circle"></i> Must have special character (!@#$%)</div>
             </div>
             <div class="input-group" style="margin-bottom:4px;">
                 <label class="input-label">Confirm Password</label>
@@ -783,7 +837,9 @@ function _setCheckMsg(elId, available, takenMsg) {
 
 async function checkStudentNumber() {
     const sn = document.getElementById('student_number').value.trim();
-    const boxes = Array.from({length:9}, (_,i) => document.getElementById('sn'+i));
+    const boxes = _snType === 'regular'
+        ? Array.from({length:9}, (_,i) => document.getElementById('sn'+i))
+        : Array.from({length:7}, (_,i) => document.getElementById('rn'+i));
     if (boxes.some(b => !b.value)) { _snCheckState = null; _setCheckMsg('sn-check-msg', null); return; }
     try {
         const res = await fetch('/api/auth/check-student-number', {
@@ -844,7 +900,9 @@ function validateStep(step) {
         if (selectedRole === 'student') {
             const sn = document.getElementById('student_number').value.trim();
             const bd = document.getElementById('birthday').value;
-            const snBoxes = Array.from({length:9}, (_,i) => document.getElementById('sn'+i));
+            const snBoxes = _snType === 'regular'
+                ? Array.from({length:9}, (_,i) => document.getElementById('sn'+i))
+                : Array.from({length:7}, (_,i) => document.getElementById('rn'+i));
             if (snBoxes.some(b => !b.value)) { showAlert('Please complete your student number.'); snBoxes.filter(b=>!b.value).forEach(b=>b.classList.add('error')); return false; }
             if (!sn) { showAlert('Please enter your student number.'); return false; }
             const bdM = document.getElementById('bd_month').value;
@@ -867,70 +925,82 @@ function validateStep(step) {
         if (!/[A-Z]/.test(pw))      { showAlert('Password must contain at least one uppercase letter.'); return false; }
         if (!/[a-z]/.test(pw))      { showAlert('Password must contain at least one lowercase letter.'); return false; }
         if (!/[0-9]/.test(pw))      { showAlert('Password must contain at least one number.'); return false; }
-        if (!/[^A-Za-z0-9]/.test(pw)){ showAlert('Password must contain at least one special character.'); return false; }
+        if (!/[!@#$%]/.test(pw)){ showAlert('Password must contain at least one special character (!@#$%).'); return false; }
         if (pw !== pw2)             { showAlert('Passwords do not match.'); return false; }
     }
     return true;
 }
 
 // ── Student number boxes ──
+let _snType = 'regular';
+
+function switchSnType(type) {
+    _snType = type;
+    document.getElementById('sn-regular').style.display  = type === 'regular'  ? 'flex' : 'none';
+    document.getElementById('sn-returnee').style.display = type === 'returnee' ? 'flex' : 'none';
+    // clear all boxes + reset state
+    const regBoxes = Array.from({length:9}, (_,i) => document.getElementById('sn'+i));
+    const retBoxes = Array.from({length:7}, (_,i) => document.getElementById('rn'+i));
+    [...regBoxes, ...retBoxes].forEach(b => { b.value = ''; b.classList.remove('error'); });
+    document.getElementById('student_number').value = '';
+    _snCheckState = null;
+    _setCheckMsg('sn-check-msg', null);
+}
+
 (function() {
-    const boxes = Array.from({length:9}, (_,i) => document.getElementById('sn'+i));
     const hidden = document.getElementById('student_number');
 
-    function syncHidden() {
-        const vals = boxes.map(b => b.value.toUpperCase());
-        hidden.value = vals.slice(0,3).join('') + '-' + vals.slice(3).join('');
+    function setupBoxes(boxes, totalLen, lastAlphanumeric) {
+        function syncHidden() {
+            const vals = boxes.map(b => b.value.toUpperCase());
+            hidden.value = vals.slice(0,3).join('') + '-' + vals.slice(3).join('');
+        }
+        boxes.forEach((box, i) => {
+            box.addEventListener('keydown', e => {
+                if (e.key === 'Backspace' && !box.value && i > 0) {
+                    boxes[i-1].focus(); boxes[i-1].value = '';
+                    boxes[i-1].classList.remove('error'); syncHidden();
+                }
+            });
+            box.addEventListener('input', e => {
+                let val = box.value.toUpperCase();
+                const isLast = lastAlphanumeric && i === totalLen - 1;
+                const valid = isLast ? /^[0-9A-Z]$/.test(val) : /^[0-9]$/.test(val);
+                if (!valid) {
+                    box.value = ''; box.classList.add('error');
+                    setTimeout(() => box.classList.remove('error'), 800);
+                } else {
+                    box.value = val; box.classList.remove('error');
+                    if (i < totalLen - 1) boxes[i+1].focus();
+                }
+                syncHidden();
+                if (boxes.every(b => b.value)) checkStudentNumber();
+            });
+            box.addEventListener('paste', e => {
+                e.preventDefault();
+                const raw = (e.clipboardData.getData('text') || '').replace(/-/g,'').toUpperCase().slice(0, totalLen);
+                raw.split('').forEach((ch, j) => {
+                    if (j >= totalLen) return;
+                    const isLast = lastAlphanumeric && j === totalLen - 1;
+                    if ((isLast ? /^[0-9A-Z]$/ : /^[0-9]$/).test(ch)) boxes[j].value = ch;
+                });
+                syncHidden();
+                const next = boxes.find((b,j) => j >= raw.length && !b.value);
+                if (next) next.focus(); else boxes[totalLen-1].focus();
+                if (boxes.every(b => b.value)) checkStudentNumber();
+            });
+        });
+        boxes.forEach(box => {
+            box.addEventListener('input', () => {
+                if (!boxes.every(b => b.value)) { _snCheckState = null; _setCheckMsg('sn-check-msg', null); }
+            }, true);
+        });
     }
 
-    boxes.forEach((box, i) => {
-        box.addEventListener('keydown', e => {
-            if (e.key === 'Backspace' && !box.value && i > 0) {
-                boxes[i-1].focus();
-                boxes[i-1].value = '';
-                boxes[i-1].classList.remove('error');
-                syncHidden();
-            }
-        });
-        box.addEventListener('input', e => {
-            let val = box.value.toUpperCase();
-            const isLast = i === 8;
-            const isNum = /^[0-9]$/.test(val);
-            const isAlNum = /^[0-9A-Z]$/.test(val);
-            const valid = isLast ? isAlNum : isNum;
-            if (!valid) {
-                box.value = '';
-                box.classList.add('error');
-                setTimeout(() => box.classList.remove('error'), 800);
-            } else {
-                box.value = val;
-                box.classList.remove('error');
-                if (i < 8) boxes[i+1].focus();
-            }
-            syncHidden();
-            if (boxes.every(b => b.value)) checkStudentNumber();
-        });
-        box.addEventListener('paste', e => {
-            e.preventDefault();
-            const raw = (e.clipboardData.getData('text') || '').replace(/-/g,'').toUpperCase().slice(0,9);
-            raw.split('').forEach((ch, j) => {
-                if (j >= 9) return;
-                const isLast = j === 8;
-                if ((isLast ? /^[0-9A-Z]$/ : /^[0-9]$/).test(ch)) boxes[j].value = ch;
-            });
-            syncHidden();
-            const next = boxes.find((b,j) => j >= raw.length && !b.value);
-            if (next) next.focus(); else boxes[8].focus();
-            if (boxes.every(b => b.value)) checkStudentNumber();
-        });
-    });
-
-    // Reset check state when any box value changes
-    boxes.forEach(box => {
-        box.addEventListener('input', () => {
-            if (!boxes.every(b => b.value)) { _snCheckState = null; _setCheckMsg('sn-check-msg', null); }
-        }, true);
-    });
+    const regBoxes = Array.from({length:9}, (_,i) => document.getElementById('sn'+i));
+    const retBoxes = Array.from({length:7}, (_,i) => document.getElementById('rn'+i));
+    setupBoxes(regBoxes, 9, true);
+    setupBoxes(retBoxes, 7, false);
 })();
 
 // ── Birthday dropdowns/inputs ──
@@ -978,7 +1048,7 @@ function checkPw() {
         'rule-upper': /[A-Z]/.test(val),
         'rule-lower': /[a-z]/.test(val),
         'rule-num':   /[0-9]/.test(val),
-        'rule-spec':  /[^A-Za-z0-9]/.test(val),
+        'rule-spec':  /[!@#$%]/.test(val),
     };
     Object.entries(rules).forEach(([id, met]) => {
         const el = document.getElementById(id);
@@ -1006,8 +1076,9 @@ function buildReview() {
     const ln  = document.getElementById('last_name').value.trim();
     const fn  = document.getElementById('first_name').value.trim();
     const mi  = document.getElementById('middle_initial').value.trim();
+    const ext = document.getElementById('name_extension').value.trim();
     const miClean = mi.replace(/\.+$/, '');
-    const fullName = `${ln}, ${fn}${miClean ? ' ' + miClean + '.' : ''}`;
+    const fullName = `${ln}, ${fn}${miClean ? ' ' + miClean + '.' : ''}${ext ? ' ' + ext : ''}`;
     const badgeClass = selectedRole === 'professor' ? 'badge-professor' : 'badge-student';
     const badgeLabel = selectedRole === 'professor' ? '<i class="ph-bold ph-chalkboard-teacher"></i> Professor' : '<i class="ph-bold ph-student"></i> Student';
 
@@ -1092,6 +1163,7 @@ async function handleSubmit() {
         last_name:      document.getElementById('last_name').value.trim(),
         first_name:     document.getElementById('first_name').value.trim(),
         middle_initial: document.getElementById('middle_initial').value.trim().replace(/\.+$/, ''),
+        name_extension: document.getElementById('name_extension').value.trim(),
         password:       document.getElementById('password').value,
     };
     if (selectedRole === 'student') {

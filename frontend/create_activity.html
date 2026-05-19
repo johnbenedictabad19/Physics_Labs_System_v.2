@@ -1882,6 +1882,7 @@ body.dashboard-body {
 .ca-icon-rose   { background: rgba(244,63,94,0.15)   !important; color: #fb7185 !important; }
 .ca-icon-slate  { background: rgba(100,116,139,0.15) !important; color: #94a3b8 !important; }
 .ca-icon-violet { background: rgba(0,65,130,0.15)  !important; color: #c084fc !important; }
+.ca-icon-yellow { background: rgba(234,179,8,0.15)  !important; color: #facc15 !important; }
 
 /* ===== SECTION DRAG HANDLE (Phase 3) ===== */
 .ca-section-drag-handle {
@@ -2001,6 +2002,55 @@ body.dashboard-body {
     font-family: 'DM Sans', sans-serif; font-size: 11px;
     color: var(--text-3); line-height: 1.2;
 }
+
+/* ===== RUBRIC EDITOR ===== */
+.rubric-editor { padding: 4px 0 8px; }
+.rubric-col-row { display: flex; align-items: flex-start; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+.rubric-col-label { font-size: 12px; font-weight: 700; color: var(--text-3); margin-top: 9px; white-space: nowrap; }
+.rubric-cols-wrap { display: flex; gap: 8px; flex-wrap: wrap; flex: 1; }
+.rubric-col-card {
+    display: flex; flex-direction: column; gap: 5px;
+    background: var(--input-bg); border: 1.5px solid var(--border);
+    border-radius: 10px; padding: 8px 10px; min-width: 110px; max-width: 150px; position: relative;
+}
+.rubric-col-card input[type="text"] {
+    background: transparent; border: none; outline: none; border-bottom: 1.5px solid var(--border);
+    color: var(--text); font-size: 12px; font-weight: 700; font-family: 'DM Sans', sans-serif;
+    padding: 2px 0; width: 100%;
+}
+.rubric-col-card input[type="number"] {
+    background: transparent; border: none; outline: none; border-bottom: 1.5px solid var(--border);
+    color: var(--primary-l); font-size: 13px; font-weight: 800; font-family: 'DM Sans', sans-serif;
+    padding: 2px 0; width: 100%;
+}
+.rubric-col-card input:focus { border-bottom-color: var(--primary); }
+.rubric-col-pts-label { font-size: 10px; color: var(--text-3); }
+.rubric-col-del { position: absolute; top: 4px; right: 6px; background: none; border: none;
+    color: var(--text-3); cursor: pointer; font-size: 13px; padding: 0; line-height: 1; }
+.rubric-col-del:hover { color: #ef4444; }
+.rubric-add-col-btn { white-space: nowrap; }
+.rubric-criterion-row {
+    display: grid; gap: 8px; margin-bottom: 8px; align-items: start;
+    background: var(--card-bg); border: 1.5px solid var(--border); border-radius: 12px; padding: 12px;
+}
+.rubric-criterion-name-wrap { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.rubric-criterion-name {
+    flex: 1; background: var(--input-bg); border: 1.5px solid var(--border); border-radius: 8px;
+    padding: 7px 11px; color: var(--text); font-size: 13px; font-weight: 600;
+    font-family: 'DM Sans', sans-serif; outline: none; transition: border-color 0.2s;
+}
+.rubric-criterion-name:focus { border-color: var(--primary); }
+.rubric-criterion-del { background: none; border: none; color: var(--text-3); cursor: pointer; font-size: 16px; padding: 4px; }
+.rubric-criterion-del:hover { color: #ef4444; }
+.rubric-descs-grid { display: grid; gap: 6px; }
+.rubric-desc-cell textarea {
+    width: 100%; background: var(--input-bg); border: 1.5px solid var(--border); border-radius: 8px;
+    padding: 6px 10px; color: var(--text-2); font-size: 12px; font-family: 'DM Sans', sans-serif;
+    resize: vertical; min-height: 50px; outline: none; box-sizing: border-box; transition: border-color 0.2s;
+}
+.rubric-desc-cell textarea:focus { border-color: var(--primary); }
+.rubric-desc-col-label { font-size: 10px; font-weight: 700; color: var(--text-3); margin-bottom: 3px; }
+.rubric-max-pts { font-size: 12px; color: var(--text-3); margin-top: 10px; font-style: italic; }
 
 /* ===== FIELDS ===== */
 .ca-fields-wrap { padding: 16px !important; gap: 14px !important; }
@@ -2760,6 +2810,37 @@ body.dashboard-body {
         </div>
     </div>
 
+    <!-- RUBRIC -->
+    <div class="ca-section-wrapper ca-optional-section" data-section-key="rubric" data-section-instance="1" style="display:none;">
+        <div class="ca-section-header" onclick="toggleSection('rubric')">
+            <div class="ca-section-header-left">
+                <div class="ca-section-icon ca-icon-yellow"><i class="ph-bold ph-star-half"></i></div>
+                <span class="ca-section-label" ondblclick="startSectionRename(event,this)" title="Double-click to rename">Rubric</span>
+            </div>
+            <div class="intro-header-actions" onclick="event.stopPropagation()">
+                <i class="ph-bold ph-caret-down ca-toggle-icon open" id="toggle-rubric" onclick="toggleSection('rubric')" style="cursor:pointer;"></i>
+                <button class="ca-section-remove-btn" onclick="removeSection(this)" title="Remove section">
+                    <i class="ph-bold ph-trash"></i>
+                </button>
+            </div>
+        </div>
+        <div class="ca-section-body" id="body-rubric">
+            <div class="rubric-editor" id="rubric-editor">
+                <!-- Columns -->
+                <div class="rubric-col-row">
+                    <div class="rubric-col-label">Performance Levels</div>
+                    <div class="rubric-cols-wrap" id="rubricColsWrap"></div>
+                    <button class="ca-btn-add rubric-add-col-btn" onclick="rubricAddColumn()"><i class="ph-bold ph-plus"></i> Add Level</button>
+                </div>
+                <!-- Criteria rows -->
+                <div id="rubricCriteriaList"></div>
+                <button class="ca-btn-add" style="margin-top:8px;" onclick="rubricAddCriterion()"><i class="ph-bold ph-plus"></i> Add Criterion</button>
+                <!-- Max points display -->
+                <div class="rubric-max-pts" id="rubricMaxPts"></div>
+            </div>
+        </div>
+    </div>
+
     </div><!-- /#ca-optional-sections -->
 
     <!-- ADD SECTION BUTTON -->
@@ -2862,6 +2943,13 @@ body.dashboard-body {
                 <div class="ca-addsec-tile-info">
                     <span class="ca-addsec-tile-name">References</span>
                     <span class="ca-addsec-tile-sub">Text &amp; tables</span>
+                </div>
+            </div>
+            <div class="ca-addsec-tile" data-addsec-key="rubric" onclick="_addSectionTileClick('rubric')">
+                <div class="ca-addsec-tile-icon ca-icon-yellow"><i class="ph-bold ph-star-half"></i></div>
+                <div class="ca-addsec-tile-info">
+                    <span class="ca-addsec-tile-name">Rubric</span>
+                    <span class="ca-addsec-tile-sub">Evaluation criteria</span>
                 </div>
             </div>
         </div>
@@ -5971,7 +6059,7 @@ function toggleProfGroup(membersId, headerEl) {
 // ============================================================
 
 // Single-instance section keys (can only have one at a time)
-const _SINGLE_INSTANCE_SECTIONS = new Set(['materials', 'procedures', 'datasheet']);
+const _SINGLE_INSTANCE_SECTIONS = new Set(['materials', 'procedures', 'datasheet', 'rubric']);
 
 // Map section key → wrapper element
 function _getSectionWrapper(key) {
@@ -6065,6 +6153,7 @@ const _SECTION_DEFAULT_NAMES = {
     'datasheet':       'Data Sheet',
     'guide-questions': 'Guide Questions',
     'references':      'References',
+    'rubric':          'Rubric',
 };
 
 // Clear all content from a first-instance section so it starts blank when re-added
@@ -6100,6 +6189,12 @@ function _clearSectionContent(key) {
             _refsSetEditMode(false);
             const rp = document.getElementById('refs-preview');
             if (rp) rp.innerHTML = '';
+            break;
+        }
+        case 'rubric': {
+            _rubricColumns  = [{ label:'Excellent',points:4},{label:'Good',points:3},{label:'Fair',points:2},{label:'Poor',points:1}];
+            _rubricCriteria = [{ name:'Completeness',descriptions:['','','',''] },{ name:'Timeliness',descriptions:['','','',''] }];
+            _rubricRender();
             break;
         }
         case 'guide-questions': {
@@ -7365,6 +7460,109 @@ function cancelRefsEdit()  { _refsSetEditMode(false); renderRefsPreview(); }
 function doneRefsEdit()    { _refsSetEditMode(false); renderRefsPreview(); }
 
 // ============================================================
+// RUBRIC EDITOR
+// ============================================================
+let _rubricColumns  = [
+    { label: 'Excellent', points: 4 },
+    { label: 'Good',      points: 3 },
+    { label: 'Fair',      points: 2 },
+    { label: 'Poor',      points: 1 },
+];
+let _rubricCriteria = [
+    { name: 'Completeness', descriptions: ['', '', '', ''] },
+    { name: 'Timeliness',   descriptions: ['', '', '', ''] },
+];
+
+function _rubricRender() {
+    _rubricRenderColumns();
+    _rubricRenderCriteria();
+    _rubricUpdateMaxPts();
+}
+
+function _rubricRenderColumns() {
+    const wrap = document.getElementById('rubricColsWrap');
+    if (!wrap) return;
+    wrap.innerHTML = _rubricColumns.map((col, ci) => `
+        <div class="rubric-col-card" data-col="${ci}">
+            <button class="rubric-col-del" onclick="rubricDelColumn(${ci})" title="Remove level"><i class="ph-bold ph-x"></i></button>
+            <input type="text"   value="${col.label}" placeholder="Level name"
+                oninput="_rubricColumns[${ci}].label = this.value; _rubricRenderCriteria();">
+            <div class="rubric-col-pts-label">Points</div>
+            <input type="number" value="${col.points}" min="0" placeholder="pts"
+                oninput="_rubricColumns[${ci}].points = parseFloat(this.value)||0; _rubricUpdateMaxPts();">
+        </div>`).join('');
+}
+
+function _rubricRenderCriteria() {
+    const list = document.getElementById('rubricCriteriaList');
+    if (!list) return;
+    list.innerHTML = _rubricCriteria.map((cr, ri) => `
+        <div class="rubric-criterion-row" data-row="${ri}">
+            <div class="rubric-criterion-name-wrap">
+                <input class="rubric-criterion-name" type="text" value="${cr.name}" placeholder="Criterion name"
+                    oninput="_rubricCriteria[${ri}].name = this.value;">
+                <button class="rubric-criterion-del" onclick="rubricDelCriterion(${ri})" title="Remove"><i class="ph-bold ph-trash"></i></button>
+            </div>
+            <div class="rubric-descs-grid" style="grid-template-columns:repeat(${_rubricColumns.length},1fr);">
+                ${_rubricColumns.map((col, ci) => `
+                    <div class="rubric-desc-cell">
+                        <div class="rubric-desc-col-label">${col.label} (${col.points}pts)</div>
+                        <textarea placeholder="Description (optional)"
+                            oninput="_rubricCriteria[${ri}].descriptions[${ci}] = this.value;"
+                        >${cr.descriptions[ci] || ''}</textarea>
+                    </div>`).join('')}
+            </div>
+        </div>`).join('');
+}
+
+function _rubricUpdateMaxPts() {
+    const max = _rubricColumns.reduce((a, c) => a + (parseFloat(c.points) || 0), 0) * _rubricCriteria.length;
+    const el  = document.getElementById('rubricMaxPts');
+    if (el) el.textContent = `Max score: ${max} pts (${_rubricCriteria.length} criteria × ${_rubricColumns[0]?.points || 0} max pts each)`;
+}
+
+function rubricAddColumn() {
+    _rubricColumns.push({ label: `Level ${_rubricColumns.length + 1}`, points: 1 });
+    _rubricCriteria.forEach(cr => cr.descriptions.push(''));
+    _rubricRender();
+}
+
+function rubricDelColumn(ci) {
+    if (_rubricColumns.length <= 1) return;
+    _rubricColumns.splice(ci, 1);
+    _rubricCriteria.forEach(cr => cr.descriptions.splice(ci, 1));
+    _rubricRender();
+}
+
+function rubricAddCriterion() {
+    _rubricCriteria.push({ name: `Criterion ${_rubricCriteria.length + 1}`, descriptions: _rubricColumns.map(() => '') });
+    _rubricRender();
+}
+
+function rubricDelCriterion(ri) {
+    if (_rubricCriteria.length <= 1) return;
+    _rubricCriteria.splice(ri, 1);
+    _rubricRender();
+}
+
+function _rubricGetData() {
+    return { columns: _rubricColumns, criteria: _rubricCriteria };
+}
+
+function _rubricSetData(data) {
+    if (!data) return;
+    _rubricColumns  = data.columns  || _rubricColumns;
+    _rubricCriteria = data.criteria || _rubricCriteria;
+    _rubricCriteria.forEach(cr => {
+        while (cr.descriptions.length < _rubricColumns.length) cr.descriptions.push('');
+    });
+    _rubricRender();
+}
+
+// Init on page load
+document.addEventListener('DOMContentLoaded', () => { _rubricRender(); });
+
+// ============================================================
 // HELPER — compute actual grid column count from rows with colspan/rowspan
 // ============================================================
 function _computeNumCols(rows) {
@@ -7632,6 +7830,7 @@ async function prefillFromDocx(activityId, suppressToast = false, forceReparse =
             _showSectionWrapper('datasheet');
             if (qs?.content?.length)      _showSectionWrapper('guide-questions');
             if (refs?.content?.length)    _showSectionWrapper('references');
+            if (data.sections?.rubric)    _showSectionWrapper('rubric');
         }
 
         // Lab number & title
@@ -8111,6 +8310,11 @@ async function prefillFromDocx(activityId, suppressToast = false, forceReparse =
             }
         }
 
+        // Restore rubric
+        if (data.sections?.rubric) {
+            _rubricSetData(data.sections.rubric);
+        }
+
         renderOutcomesPreview();
         renderRefsPreview();
 
@@ -8471,6 +8675,7 @@ function collectActivityData() {
             guide_questions_view_html: _snapGuideQuestions(questions),
             materials_view_html:       _snapMaterials(materials),
             datasheet_view_html:       _snapDataSheet(allTables),
+            rubric: _getSectionWrapper('rubric')?.style.display !== 'none' ? _rubricGetData() : null,
             sections_config,
             extra_sections,
             student_info: {

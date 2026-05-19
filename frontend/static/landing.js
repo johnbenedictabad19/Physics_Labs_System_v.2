@@ -320,3 +320,12 @@ const io = new IntersectionObserver((entries) => {
   });
 }, { threshold: 0.12 });
 document.querySelectorAll('.step, .why-card, .feat, .faq-item').forEach(el => io.observe(el));
+
+// ═══ Scroll hint hide ═══
+const scrollHint = document.querySelector('.hero-scroll-hint');
+if (scrollHint) {
+  window.addEventListener('scroll', () => {
+    if (window.scrollY > 80) scrollHint.classList.add('hidden');
+    else scrollHint.classList.remove('hidden');
+  }, { passive: true });
+}

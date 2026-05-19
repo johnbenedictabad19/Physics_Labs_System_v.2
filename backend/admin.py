@@ -1,6 +1,6 @@
 from flask import Blueprint, request, jsonify
 from database import db
-from models import User, Class, Activity, Submission, ClassMember, Announcement, StreamPost, Group, ClassSession, FeedEvent, EditedContent, ClassInvite
+from models import User, Class, Activity, Submission, ClassMember, Announcement, StreamPost, Group, ClassSession, FeedEvent, EditedContent, ClassInvite, ClassTeacher
 from flask_jwt_extended import jwt_required, get_jwt_identity
 from flask_bcrypt import Bcrypt
 
@@ -349,32 +349,41 @@ def delete_class(class_id):
 
     class_name = target.class_name
 
-    # Delete all related records to avoid orphaned rows
-    # Sessions + attendance (cascade via relationship)
-    for s in ClassSession.query.filter_by(class_id=class_id).all():
-        db.session.delete(s)
+    try:
+        # 1. Submissions first — has FK to both activities and groups
+        activity_ids = [a.id for a in Activity.query.filter_by(class_id=class_id).with_entities(Activity.id).all()]
+        if activity_ids:
+            Submission.query.filter(Submission.activity_id.in_(activity_ids)).delete(synchronize_session=False)
+            EditedContent.query.filter(EditedContent.activity_id.in_(activity_ids)).delete(synchronize_session=False)
 
-    # Groups + members (cascade via relationship)
-    for g in Group.query.filter_by(class_id=class_id).all():
-        db.session.delete(g)
+        # 2. Stream posts + comments (cascade via relationship)
+        for p in StreamPost.query.filter_by(class_id=class_id).all():
+            db.session.delete(p)
 
-    # Stream posts + comments (cascade via relationship)
-    for p in StreamPost.query.filter_by(class_id=class_id).all():
-        db.session.delete(p)
+        # 3. Activities (submissions already gone)
+        Activity.query.filter_by(class_id=class_id).delete(synchronize_session=False)
 
-    # Activities + their submissions and edited contents
-    for a in Activity.query.filter_by(class_id=class_id).all():
-        Submission.query.filter_by(activity_id=a.id).delete()
-        EditedContent.query.filter_by(activity_id=a.id).delete()
-        db.session.delete(a)
+        # 4. Groups + members (cascade via relationship)
+        for g in Group.query.filter_by(class_id=class_id).all():
+            db.session.delete(g)
 
-    Announcement.query.filter_by(class_id=class_id).delete()
-    ClassMember.query.filter_by(class_id=class_id).delete()
-    ClassInvite.query.filter_by(class_id=class_id).delete()
-    FeedEvent.query.filter_by(class_id=class_id).delete()
+        # 5. Sessions + attendance (cascade via relationship)
+        for s in ClassSession.query.filter_by(class_id=class_id).all():
+            db.session.delete(s)
 
-    db.session.delete(target)
-    db.session.commit()
+        Announcement.query.filter_by(class_id=class_id).delete()
+        ClassMember.query.filter_by(class_id=class_id).delete()
+        ClassInvite.query.filter_by(class_id=class_id).delete()
+        ClassTeacher.query.filter_by(class_id=class_id).delete()
+        FeedEvent.query.filter_by(class_id=class_id).delete()
+
+        db.session.delete(target)
+        db.session.commit()
+    except Exception as e:
+        db.session.rollback()
+        import traceback
+        traceback.print_exc()
+        return jsonify({'message': f'Delete failed: {str(e)}'}), 500
 
     return jsonify({'message': f'Class "{class_name}" has been deleted.'}), 200
 

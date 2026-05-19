@@ -5,6 +5,7 @@ from models import Submission, User, Activity, Class, ClassMember
 import json
 import os
 import time
+import difflib
 from datetime import datetime, timedelta
 
 _PH = timedelta(hours=8)
@@ -730,5 +731,118 @@ def format_submission(sub):
         'status': sub.status,
         'group_id': getattr(sub, 'group_id', None),
         'attendance_status': getattr(sub, 'attendance_status', None),
-        'submitted_at': _ph(sub.submitted_at)
+        'submitted_at': _ph(sub.submitted_at),
+        'analysis': sub.analysis or None,
+        'analyzed_at': _ph(sub.analyzed_at) if sub.analyzed_at else None,
+        'rubric_scores': sub.rubric_scores or None,
     }
+
+
+# ============================================================
+# SAVE RUBRIC SCORES
+# ============================================================
+@submissions.route('/<int:submission_id>/rubric', methods=['POST'])
+@jwt_required()
+def save_rubric_scores(submission_id):
+    user_id = get_jwt_identity()
+    user    = User.query.get(int(user_id))
+
+    if user.role not in ('professor', 'admin'):
+        return jsonify({'message': 'Only professors can save rubric scores!'}), 403
+
+    sub = Submission.query.get(submission_id)
+    if not sub:
+        return jsonify({'message': 'Submission not found!'}), 404
+
+    data   = request.get_json() or {}
+    scores = data.get('rubric_scores', {})  # { "0": 2, "1": 0, ... }
+
+    sub.rubric_scores = scores
+    db.session.commit()
+
+    return jsonify({'message': 'Rubric scores saved!', 'rubric_scores': sub.rubric_scores}), 200
+
+
+# ============================================================
+# ANALYZE SUBMISSION — Plagiarism Detection
+# ============================================================
+
+def _plagiarism_check(text, activity_id, exclude_submission_id):
+    """Compare text against same-activity submissions. Returns best match dict or None."""
+    if not text or not text.strip():
+        return None
+
+    peers = Submission.query.filter(
+        Submission.activity_id == activity_id,
+        Submission.id != exclude_submission_id,
+        Submission.status.in_(['submitted', 'graded'])
+    ).all()
+
+    best_ratio   = 0.0
+    best_student = None
+    best_sid     = None
+
+    for peer in peers:
+        peer_answers = peer.answers or {}
+        if isinstance(peer_answers, str):
+            try:
+                peer_answers = json.loads(peer_answers)
+            except Exception:
+                continue
+        for val in peer_answers.values():
+            if not isinstance(val, str) or not val.strip():
+                continue
+            ratio = difflib.SequenceMatcher(None, text.lower(), val.lower()).ratio()
+            if ratio > best_ratio:
+                best_ratio   = ratio
+                peer_student = User.query.get(peer.student_id)
+                best_student = peer_student.full_name if peer_student else 'Unknown'
+                best_sid     = peer.student_id
+
+    if best_ratio < 0.30:
+        return None
+    return {
+        'similarity':         round(best_ratio, 4),
+        'matched_student':    best_student,
+        'matched_student_id': best_sid,
+    }
+
+
+@submissions.route('/<int:submission_id>/analyze', methods=['POST'])
+@jwt_required()
+def analyze_submission(submission_id):
+    user_id = get_jwt_identity()
+    user    = User.query.get(int(user_id))
+
+    if user.role not in ('professor', 'admin'):
+        return jsonify({'message': 'Only professors can analyze submissions!'}), 403
+
+    sub = Submission.query.get(submission_id)
+    if not sub:
+        return jsonify({'message': 'Submission not found!'}), 404
+
+    answers = sub.answers or {}
+    if isinstance(answers, str):
+        try:
+            answers = json.loads(answers)
+        except Exception:
+            answers = {}
+
+    results = {}
+    for key, text in answers.items():
+        if not isinstance(text, str) or not text.strip():
+            results[key] = {'plagiarism': None}
+            continue
+        results[key] = {
+            'plagiarism': _plagiarism_check(text, sub.activity_id, submission_id),
+        }
+
+    sub.analysis    = results
+    sub.analyzed_at = datetime.utcnow()
+    db.session.commit()
+
+    return jsonify({
+        'message':     'Plagiarism check complete.',
+        'analysis':    results,
+        'analyzed_at': _ph(sub.analyzed_at),
+    }), 200

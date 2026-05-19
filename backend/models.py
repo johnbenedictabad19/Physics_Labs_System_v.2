@@ -10,6 +10,7 @@ class User(db.Model):
     last_name      = db.Column(db.String(60),  nullable=False)
     first_name     = db.Column(db.String(60),  nullable=False)
     middle_initial = db.Column(db.String(5),   nullable=True)   # optional
+    name_extension = db.Column(db.String(10),  nullable=True)   # Jr., Sr., II, III, IV, V
 
     # Login identifier
     student_number = db.Column(db.String(30),  unique=True, nullable=True)  # students only e.g. 234-03631M
@@ -33,8 +34,9 @@ class User(db.Model):
     # Helper: full display name — "Dela Cruz, Juan A."
     @property
     def full_name(self):
-        mi = f' {self.middle_initial}.' if self.middle_initial else ''
-        return f'{self.last_name}, {self.first_name}{mi}'
+        mi  = f' {self.middle_initial}.' if self.middle_initial else ''
+        ext = f' {self.name_extension}' if self.name_extension else ''
+        return f'{self.last_name}, {self.first_name}{mi}{ext}'
 
     # Helper: login identifier
     @property
@@ -148,6 +150,13 @@ class Submission(db.Model):
 
     # Activity attendance
     attendance_status = db.Column(db.String(10), nullable=True)  # 'present' | 'absent'
+
+    # AI + Plagiarism analysis results
+    analysis = db.Column(db.JSON, nullable=True)
+    analyzed_at = db.Column(db.DateTime, nullable=True)
+
+    # Rubric grading — { "0": 2, "1": 0 } criterion_index → column_index
+    rubric_scores = db.Column(db.JSON, nullable=True)
 
     # Status
     status = db.Column(db.String(20), default='submitted')  # submitted, graded

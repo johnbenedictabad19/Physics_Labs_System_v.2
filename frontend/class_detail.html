@@ -652,6 +652,7 @@
                 animation: modalSlideUp 0.3s cubic-bezier(0.22,1,0.36,1);
             }
             @keyframes modalSlideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+            @keyframes spin { to { transform: rotate(360deg); } }
 
             .modal-box h3 {
                 font-family: 'Inter', sans-serif;
@@ -1978,7 +1979,7 @@
                 <div id="people-groups" style="display:none;">
                     <div class="grp-create-bar" style="margin-bottom:16px;">
                         <div class="grp-summary" id="grpSummary"></div>
-                        <div id="createGroupSection" style="display:none;">
+                        <div id="createGroupSection" style="display:none;gap:8px;flex-wrap:wrap;">
                             <button class="btn-anim" style="--bsa-color:#0A66C2;--bsa-border:rgba(10,102,194,0.3);" onclick="openGroupModal()">
                                 <span class="bsa-span"></span>
                                 <div class="bsa-inner">
@@ -1986,6 +1987,14 @@
                                     <div class="bsa-hover"><i class="ph-bold ph-plus"></i> Create New Group</div>
                                 </div>
                                 <span class="bsa-sizer"><i class="ph-bold ph-plus"></i> Create New Group</span>
+                            </button>
+                            <button class="btn-anim" style="--bsa-color:#7c3aed;--bsa-border:rgba(124,58,237,0.3);" onclick="openShuffleModal()">
+                                <span class="bsa-span"></span>
+                                <div class="bsa-inner">
+                                    <div class="bsa-default"><i class="ph-bold ph-shuffle"></i> Shuffle Groups</div>
+                                    <div class="bsa-hover"><i class="ph-bold ph-shuffle"></i> Shuffle Groups</div>
+                                </div>
+                                <span class="bsa-sizer"><i class="ph-bold ph-shuffle"></i> Shuffle Groups</span>
                             </button>
                         </div>
                     </div>
@@ -2082,6 +2091,35 @@
                     <i class="ph-bold ph-floppy-disk"></i> Save Group
                 </button>
                 <button class="btn-modal-cancel" onclick="closeGroupModal()">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- SHUFFLE GROUPS MODAL -->
+    <div class="modal-overlay" id="shuffleModal">
+        <div class="modal-box" style="max-width:95vw;width:420px;">
+            <h3>
+                <span style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:10px;background:rgba(124,58,237,0.15);flex-shrink:0;">
+                    <i class="ph-bold ph-shuffle" style="color:#a78bfa;font-size:16px;"></i>
+                </span>
+                Shuffle Groups
+            </h3>
+            <p class="cd-modal-subtitle">Randomly distribute all enrolled students equally across groups and assign leaders.</p>
+
+            <label class="modal-label">Number of Groups</label>
+            <input class="modal-input" type="number" id="shuffleNumGroups" min="1" placeholder="e.g. 5" oninput="updateShuffleHint()" style="margin-bottom:6px;">
+            <p id="shuffleHint" style="font-size:12px;color:var(--text-3);min-height:18px;margin-bottom:14px;"></p>
+
+            <div style="display:flex;gap:9px;align-items:flex-start;background:rgba(239,68,68,0.08);border:1.5px solid rgba(239,68,68,0.18);border-radius:12px;padding:11px 14px;margin-bottom:4px;">
+                <i class="ph-bold ph-warning" style="color:#fca5a5;font-size:15px;flex-shrink:0;margin-top:1px;"></i>
+                <span style="font-size:12px;color:#fca5a5;line-height:1.5;">This will <strong>clear all current group assignments</strong> and reassign everyone. Leaders will be picked randomly.</span>
+            </div>
+
+            <div class="modal-actions">
+                <button class="btn-modal-cancel" onclick="closeShuffleModal()">Cancel</button>
+                <button class="btn-modal-primary" id="shuffleConfirmBtn" style="background:linear-gradient(135deg,#7c3aed,#6d28d9);" onclick="submitShuffle()">
+                    <i class="ph-bold ph-shuffle"></i> Shuffle
+                </button>
             </div>
         </div>
     </div>
@@ -2284,7 +2322,7 @@
 
     if (role === 'professor') {
         document.getElementById('streamComposeBox').style.display = 'block';
-        document.getElementById('createGroupSection').style.display = 'block';
+        document.getElementById('createGroupSection').style.display = 'flex';
         document.getElementById('btnNewSession').style.display = 'inline-flex';
         document.getElementById('sessionHistoryCard').style.display = 'block';
         document.getElementById('btnInviteStudent').style.display = 'inline-flex';
@@ -3746,6 +3784,74 @@
             if (res.ok) { showToast('Group deleted!', 'info'); loadGroups(); }
             else showToast('Cannot delete group!', 'error');
         } catch { showToast('Cannot connect to server!', 'error'); }
+    }
+
+    // ============================================================
+    // SHUFFLE GROUPS
+    // ============================================================
+    function openShuffleModal() {
+        const currentCount = (window.allGroups || []).length;
+        const studentCount = (window.allStudents || []).filter(s => s.enrollment_status === 'approved').length;
+        const input = document.getElementById('shuffleNumGroups');
+        input.value = currentCount > 0 ? currentCount : 1;
+        input.max   = studentCount || 999;
+        updateShuffleHint();
+        document.getElementById('shuffleModal').classList.add('active');
+    }
+
+    function closeShuffleModal() {
+        document.getElementById('shuffleModal').classList.remove('active');
+    }
+
+    function updateShuffleHint() {
+        const n = parseInt(document.getElementById('shuffleNumGroups').value) || 0;
+        const studentCount = (window.allStudents || []).filter(s => s.enrollment_status === 'approved').length;
+        const hint = document.getElementById('shuffleHint');
+        if (!n || n < 1) { hint.textContent = ''; return; }
+        if (n > studentCount) {
+            hint.textContent = `⚠ Can't have more groups than students (${studentCount}).`;
+            hint.style.color = '#fca5a5';
+        } else {
+            const base = Math.floor(studentCount / n);
+            const rem  = studentCount % n;
+            const desc = rem === 0
+                ? `${base} student${base !== 1 ? 's' : ''} per group`
+                : `${n - rem} group${n - rem !== 1 ? 's' : ''} of ${base}, ${rem} group${rem !== 1 ? 's' : ''} of ${base + 1}`;
+            hint.textContent = `${studentCount} students → ${desc}`;
+            hint.style.color = 'var(--text-3)';
+        }
+    }
+
+    async function submitShuffle() {
+        const n = parseInt(document.getElementById('shuffleNumGroups').value);
+        const studentCount = (window.allStudents || []).filter(s => s.enrollment_status === 'approved').length;
+        if (!n || n < 1)           { showToast('Enter a valid number of groups!', 'warning'); return; }
+        if (n > studentCount)      { showToast(`Cannot create more groups than students (${studentCount})!`, 'warning'); return; }
+
+        const btn = document.getElementById('shuffleConfirmBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="ph-bold ph-circle-notch" style="animation:spin 0.8s linear infinite"></i> Shuffling...';
+
+        try {
+            const res = await fetch(`/api/classes/${classId}/groups/shuffle`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                body: JSON.stringify({ num_groups: n })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                closeShuffleModal();
+                window.allGroups = data.groups;
+                renderGroups(data.groups);
+                showToast(data.message, 'success');
+            } else {
+                showToast(data.message || 'Shuffle failed!', 'error');
+            }
+        } catch { showToast('Cannot connect to server!', 'error'); }
+        finally {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="ph-bold ph-shuffle"></i> Shuffle';
+        }
     }
 
     // ============================================================

@@ -1019,6 +1019,11 @@
             color: #a78bfa;
         }
 
+        .av-icon-yellow {
+            background: rgba(234, 179, 8, 0.15);
+            color: #facc15;
+        }
+
         .av-icon-grad {
             background: #0A66C2;
             color: white;
@@ -1359,7 +1364,7 @@
 
         /* ===== CONTENT VIEW AREAS ===== */
         .av-view-content {
-            font-family: "Lucida Calligraphy", "Apple Chancery", cursive;
+            font-family:'DM Sans',sans-serif;
             font-size: 14px;
             line-height: 1.8;
             color: var(--text-2);
@@ -1872,6 +1877,19 @@
             margin-top: 7px;
         }
 
+        /* ===== RUBRIC ===== */
+        .av-rubric-wrap { overflow-x: auto; margin: 4px 0 8px; }
+        .av-rubric-table { width: 100%; border-collapse: collapse; font-size: 13px; font-family: 'DM Sans', sans-serif; }
+        .av-rubric-th { background: var(--surface-2, #f1f5f9); padding: 8px 10px; border: 1.5px solid var(--border); font-weight: 700; text-align: center; color: var(--text-1); }
+        .av-rubric-th .av-rubric-pts-label { font-size: 10px; font-weight: 500; color: var(--primary); }
+        .av-rubric-td { padding: 8px 10px; border: 1.5px solid var(--border); vertical-align: top; color: var(--text-1); }
+        .av-rubric-criteria-col { width: 140px; min-width: 110px; }
+        .av-rubric-criteria-name { font-weight: 600; color: var(--text-1); }
+        .av-rubric-desc { color: var(--text-2); font-size: 12px; text-align: left; }
+        .av-rubric-total-label { font-weight: 700; background: var(--surface-2, #f1f5f9); color: var(--text-1); }
+        .av-rubric-total-pts { text-align: center; font-weight: 700; background: var(--surface-2, #f1f5f9); color: var(--primary); }
+        .av-rubric-total-note { font-size: 11px; color: var(--text-3); margin-top: 6px; font-style: italic; }
+
         /* ===== DATA SHEET TABLES (matches create_activity ca-proc-table-wrap) ===== */
         .av-table-block {
             margin: 10px auto;
@@ -2017,15 +2035,17 @@
             background: var(--surface);
             transition: background 0.15s;
             padding: 0;
-            vertical-align: middle;
+            vertical-align: top;
             min-height: 32px;
+            position: relative;
         }
 
         .av-data-table td:hover {
             background: var(--card-tint);
         }
 
-        .av-data-table td input {
+        .av-data-table td input,
+        .av-data-table td textarea {
             width: 100%;
             min-width: 80px;
             border: none;
@@ -2038,14 +2058,35 @@
             box-sizing: border-box;
         }
 
-        .av-data-table td input:focus {
+        .av-data-table td textarea {
+            resize: none;
+            overflow: hidden;
+            min-height: 32px;
+            display: block;
+            line-height: 1.5;
+        }
+
+        .av-data-table td input:focus,
+        .av-data-table td textarea:focus {
             background: var(--input-bg-f);
         }
 
         .av-data-table td input:disabled,
-        .av-data-table th input:disabled {
+        .av-data-table th input:disabled,
+        .av-data-table td textarea:disabled {
             cursor: default;
         }
+
+        .av-tbl-col-resize {
+            position: absolute; top: 0; right: 0; width: 5px; height: 100%;
+            cursor: col-resize; z-index: 3; background: transparent; user-select: none;
+        }
+        .av-tbl-row-resize {
+            position: absolute; bottom: 0; left: 0; width: 100%; height: 5px;
+            cursor: row-resize; z-index: 2; background: transparent; user-select: none;
+        }
+        .av-tbl-col-resize:hover, .av-tbl-col-resize.resizing { background: rgba(10,102,194,0.25); }
+        .av-tbl-row-resize:hover, .av-tbl-row-resize.resizing { background: rgba(10,102,194,0.25); }
 
         .av-table-notes-area {
             width: 100%;
@@ -2660,6 +2701,64 @@
             cursor: not-allowed;
             pointer-events: none;
         }
+
+        /* Contribution tracker */
+        .av-contrib-stat {
+            display: flex; flex-direction: column; gap: 3px;
+            min-width: 130px; flex-shrink: 0;
+            cursor: pointer;
+        }
+        .av-contrib-stat:hover .av-contrib-label { text-decoration: underline dotted; }
+        .av-contrib-bar-wrap {
+            height: 5px; border-radius: 3px;
+            background: var(--border); overflow: hidden; width: 100%;
+        }
+        .av-contrib-bar {
+            height: 100%; border-radius: 3px; width: 0%;
+            transition: width 0.4s ease, background 0.3s ease;
+        }
+        .av-contrib-label {
+            font-size: 11px; font-weight: 600;
+            font-family: 'DM Sans', sans-serif; color: var(--text-3);
+        }
+        /* Inline badge for locked/submitted view */
+        .av-contrib-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            font-size: 10px; font-weight: 700;
+            font-family: 'DM Sans', sans-serif; margin-left: 4px;
+        }
+        /* Contribution log popover */
+        .av-contrib-popover {
+            position: fixed; z-index: 9999;
+            background: var(--surface, #fff);
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            box-shadow: 0 6px 24px rgba(0,0,0,0.13);
+            padding: 12px 14px;
+            min-width: 220px; max-width: 300px;
+            font-family: 'DM Sans', sans-serif;
+            font-size: 13px;
+            animation: av-pop-in 0.12s ease;
+        }
+        @keyframes av-pop-in {
+            from { opacity: 0; transform: translateY(-4px) scale(0.97); }
+            to   { opacity: 1; transform: none; }
+        }
+        .av-contrib-popover-title {
+            font-size: 11px; font-weight: 700; letter-spacing: 0.04em;
+            text-transform: uppercase; color: var(--text-3);
+            margin-bottom: 8px; padding-bottom: 6px;
+            border-bottom: 1px solid var(--border);
+        }
+        .av-contrib-log-row {
+            display: flex; justify-content: space-between; align-items: center;
+            gap: 12px; padding: 5px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .av-contrib-log-row:last-child { border-bottom: none; }
+        .av-contrib-log-section { color: var(--text-1, #111); font-weight: 500; }
+        .av-contrib-log-count { color: var(--text-3); font-size: 12px; white-space: nowrap; }
+        .av-contrib-log-empty { color: var(--text-3); font-size: 12px; text-align: center; padding: 6px 0; }
 
         /* Group select dropdown (student view) */
         .av-grp-select-wrap {
@@ -4307,6 +4406,7 @@
             guide_questions: { icon: '<i class="ph-bold ph-question"></i>', iconClass: 'av-icon-rose', label: 'Guide Questions' },
             references: { icon: '<i class="ph-bold ph-books"></i>', iconClass: 'av-icon-slate', label: 'References' },
             student_info: { icon: '<i class="ph-bold ph-note-pencil"></i>', iconClass: 'av-icon-violet', label: 'Student Information' },
+            rubric: { icon: '<i class="ph-bold ph-check-square"></i>', iconClass: 'av-icon-yellow', label: 'Rubric' },
         };
 
         // ============================================================
@@ -4502,6 +4602,28 @@
             // If server already sent a draft payload, keep that as source of truth.
             if (role === 'student' && !submissionLocked() && !hasServerWorkState()) {
                 restoreDraft();
+            }
+
+            // Initialize all textarea heights (in case saved values were pre-filled)
+            container.querySelectorAll('textarea.data-table-input').forEach(ta => _autoResizeTa(ta));
+
+            // Contribution tracking — count fields and attach delegated listener (once only)
+            if (role === 'student') {
+                _countTotalFields();
+                if (!container._contribListener) {
+                    container._contribListener = e => {
+                        if (submissionLocked()) return;
+                        const f = _fieldKeyOf(e.target);
+                        if (f) _trackContrib(_getMyUserId(), f.ft, f.fid, e.target.value);
+                    };
+                    container.addEventListener('input', container._contribListener, true);
+                }
+                // Always restore from localStorage first (real field keys → log detail works)
+                _loadContribFromStorage();
+                // Then fill any gaps using server-saved counts (e.g. teammates with no local data)
+                if (existingSubmission?.student_info?.contributions) {
+                    _restoreContribs(existingSubmission.student_info.contributions);
+                }
             }
         }
 
@@ -5270,6 +5392,40 @@
                 ).join('')}</div>`;
             }
 
+            if (type === 'rubric') {
+                const rd = section.rubric;
+                if (!rd || !rd.columns?.length || !rd.criteria?.length) return '<p class="av-text-block" style="color:var(--text-3);">No rubric data.</p>';
+                const cols = rd.columns;
+                const crit = rd.criteria;
+                const maxTotal = Math.max(...cols.map(c => Number(c.points) || 0)) * crit.length;
+
+                let th = `<th class="av-rubric-th av-rubric-criteria-col">Criteria</th>`;
+                cols.forEach(c => {
+                    th += `<th class="av-rubric-th">${c.label || ''}<br><span class="av-rubric-pts-label">${c.points} pt${c.points !== 1 ? 's' : ''}</span></th>`;
+                });
+
+                let rows = '';
+                crit.forEach((cr, ri) => {
+                    let tds = `<td class="av-rubric-td av-rubric-criteria-name">${cr.name || ''}</td>`;
+                    cols.forEach((_, ci) => {
+                        tds += `<td class="av-rubric-td av-rubric-desc">${(cr.descriptions || [])[ci] || ''}</td>`;
+                    });
+                    rows += `<tr>${tds}</tr>`;
+                });
+
+                return `<div class="av-rubric-wrap">
+                    <table class="av-rubric-table">
+                        <thead><tr>${th}</tr></thead>
+                        <tbody>${rows}</tbody>
+                        <tfoot><tr>
+                            <td class="av-rubric-td av-rubric-total-label">Max Points</td>
+                            ${cols.map(c => `<td class="av-rubric-td av-rubric-total-pts">${c.points}</td>`).join('')}
+                        </tr></tfoot>
+                    </table>
+                    <div class="av-rubric-total-note">Total: ${maxTotal} point${maxTotal !== 1 ? 's' : ''} (converted to /100 by professor)</div>
+                </div>`;
+            }
+
             if (type === 'student_info') {
                 return buildStudentInfoHtml(content, section);
             }
@@ -5355,8 +5511,10 @@
                     ?? td?.[String(tbl)]?.[row]?.[col]  // old plain key (backward compat)
                     ?? '';
                 inp.value = saved;
+                if (inp.tagName === 'TEXTAREA') _autoResizeTa(inp);
                 if (isDisabled) inp.disabled = true;
             });
+            if (!isDisabled) _initTblResizeHandles(el);
         }
 
         // ============================================================
@@ -5450,11 +5608,12 @@
                     } else if (obj && obj.type === 'text' && raw) {
                         html += `<td${span} class="av-tbl-label-cell"><span>${rendered}</span></td>`;
                     } else {
-                        html += `<td${span}><input type="text" class="data-table-input"
+                        html += `<td${span}><textarea class="data-table-input"
                     data-row="${rIdx}" data-col="${cIdx}" data-tbl="${idx}"
-                    value="${raw}" placeholder="—"
+                    placeholder="—"
                     ${isDisabled ? 'disabled' : ''}
-                    onkeydown="handleTableEnter(event,this)"></td>`;
+                    oninput="_autoResizeTa(this)"
+                    onkeydown="handleTableEnter(event,this)">${raw}</textarea></td>`;
                     }
                 });
                 html += '</tr>';
@@ -5464,14 +5623,70 @@
         }
 
         function handleTableEnter(e, cell) {
-            if (e.key !== 'Enter') return;
+            if (e.key !== 'Enter' || e.shiftKey) return; // Shift+Enter = newline in textarea
             e.preventDefault();
             const tr = cell.closest('tr');
             const nextRow = tr?.nextElementSibling;
             if (nextRow) {
                 const idx = Array.from(tr.cells).indexOf(cell.closest('td'));
-                nextRow.cells[idx]?.querySelector('input')?.focus();
+                nextRow.cells[idx]?.querySelector('textarea, input')?.focus();
             }
+        }
+
+        function _autoResizeTa(ta) {
+            ta.style.height = 'auto';
+            ta.style.height = ta.scrollHeight + 'px';
+        }
+
+        function _initTblResizeHandles(el) {
+            el.querySelectorAll('.av-data-table td').forEach(td => {
+                if (td.querySelector('.av-tbl-col-resize')) return;
+                const colH = document.createElement('div');
+                colH.className = 'av-tbl-col-resize';
+                colH.addEventListener('mousedown', e => { e.stopPropagation(); _startTblColResize(e, td); });
+                td.appendChild(colH);
+                const rowH = document.createElement('div');
+                rowH.className = 'av-tbl-row-resize';
+                rowH.addEventListener('mousedown', e => { e.stopPropagation(); _startTblRowResize(e, td); });
+                td.appendChild(rowH);
+            });
+        }
+
+        function _startTblColResize(e, td) {
+            e.preventDefault();
+            const tbl = td.closest('table');
+            if (!tbl) return;
+            const firstRow = tbl.querySelector('tr');
+            if (firstRow) Array.from(firstRow.cells).forEach(c => { c.style.width = c.offsetWidth + 'px'; });
+            const colIdx = td.cellIndex;
+            const startX = e.clientX;
+            const startW = td.offsetWidth;
+            const handle = e.currentTarget;
+            handle.classList.add('resizing');
+            function onMove(ev) {
+                const newW = Math.max(60, startW + (ev.clientX - startX));
+                tbl.querySelectorAll('tr').forEach(tr => { const c = tr.cells[colIdx]; if (c) c.style.width = newW + 'px'; });
+            }
+            function onUp() { handle.classList.remove('resizing'); document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); }
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
+        }
+
+        function _startTblRowResize(e, td) {
+            e.preventDefault();
+            const tr = td.parentElement;
+            const startY = e.clientY;
+            const startH = tr.offsetHeight;
+            const handle = e.currentTarget;
+            handle.classList.add('resizing');
+            function onMove(ev) {
+                const newH = Math.max(28, startH + (ev.clientY - startY));
+                tr.style.height = newH + 'px';
+                tr.querySelectorAll('textarea').forEach(ta => { ta.style.height = Math.max(22, newH - 8) + 'px'; ta.style.overflowY = 'auto'; });
+            }
+            function onUp() { handle.classList.remove('resizing'); document.removeEventListener('mousemove', onMove); document.removeEventListener('mouseup', onUp); }
+            document.addEventListener('mousemove', onMove);
+            document.addEventListener('mouseup', onUp);
         }
 
         // ============================================================
@@ -5505,10 +5720,24 @@
                 }
                 html += `<div class="av-student-grid">`;
                 members.forEach((m, i) => {
-                    const name = typeof m === 'string' ? m : (m.full_name || m.name || 'Unknown');
-                    const avatar = typeof m === 'object' ? (m.avatar || null) : null;
+                    const name     = typeof m === 'string' ? m : (m.full_name || m.name || 'Unknown');
+                    const avatar   = typeof m === 'object' ? (m.avatar || null) : null;
+                    const memberId = typeof m === 'object' ? m.id : null;
                     const isLeader = sub.student_info?.leader_index === i;
-                    const hasAmbag = sub.student_info?.attendance?.[i] !== 'absent';
+                    const contribData = memberId ? sub.student_info?.contributions?.[String(memberId)] : null;
+                    const hasAmbag    = sub.student_info?.attendance?.[i] !== 'absent';
+                    let contribBadge;
+                    if (contribData) {
+                        const c = contribData.count || 0, p = contribData.pct || 0;
+                        const col = p >= 30 ? '#22c55e' : p > 0 ? '#f59e0b' : 'var(--text-3)';
+                        contribBadge = `<span class="av-contrib-badge" style="color:${col};">
+                            <i class="ph-bold ph-chart-bar"></i> ${c} field${c !== 1 ? 's' : ''} (${p}%)
+                        </span>`;
+                    } else {
+                        contribBadge = `<span class="av-att-btn ${hasAmbag ? 'present active' : 'absent active'}" style="pointer-events:none;font-size:10px;padding:2px 8px;margin-left:4px;">
+                            <i class="ph-bold ${hasAmbag ? 'ph-check-circle' : 'ph-x-circle'}"></i> ${hasAmbag ? 'Contributed' : 'Did not contribute'}
+                        </span>`;
+                    }
                     html += `<div class="av-member-row ${isLeader ? 'is-leader' : ''}">
                 ${_makeAvatar(name, avatar, 34, '50%', 13)}
                 <div class="av-member-info">
@@ -5517,9 +5746,7 @@
                         ${isLeader
                             ? `<span class="av-badge-leader"><i class="ph-bold ph-crown-simple"></i> Leader</span>`
                             : `<span class="av-badge-member"><i class="ph-bold ph-user"></i> Member</span>`}
-                        <span class="av-att-btn ${hasAmbag ? 'present active' : 'absent active'}" style="pointer-events:none;font-size:10px;padding:2px 8px;margin-left:4px;">
-                            <i class="ph-bold ${hasAmbag ? 'ph-check-circle' : 'ph-x-circle'}"></i> ${hasAmbag ? 'Contributed' : 'Did not contribute'}
-                        </span>
+                        ${contribBadge}
                     </div>
                 </div>
             </div>`;
@@ -5626,7 +5853,6 @@
     <div class="av-student-grid" id="student-info-grid">`;
 
             sortedMembers.forEach((member, i) => {
-                const hasAmbag = _attendance[i] !== 'absent';
                 html += `<div class="av-member-row ${member.is_leader ? 'is-leader' : ''}" id="member-row-${i}" data-member-id="${member.id}">
             ${_makeAvatar(member.full_name, member.avatar || null, 34, '50%', 13)}
             <div class="av-member-info">
@@ -5635,13 +5861,9 @@
                         ? `<span class="av-badge-leader"><i class="ph-bold ph-crown-simple"></i> Leader</span>`
                         : `<span class="av-badge-member"><i class="ph-bold ph-user"></i> Member</span>`}</div>
             </div>
-            <div class="av-attendance-btns">
-                <button class="av-att-btn present ${hasAmbag ? 'active' : ''}" onclick="toggleAttendance(${i},'present')" ${submissionLocked() || !isEditMode ? 'disabled' : ''}>
-                    <i class="ph-bold ph-check-circle"></i> Contributed
-                </button>
-                <button class="av-att-btn absent ${!hasAmbag ? 'active' : ''}" onclick="toggleAttendance(${i},'absent')" ${submissionLocked() || !isEditMode ? 'disabled' : ''}>
-                    <i class="ph-bold ph-x-circle"></i> Did not contribute
-                </button>
+            <div class="av-contrib-stat" onclick="event.stopPropagation();_showContribLog('${member.id}',this)">
+                <div class="av-contrib-bar-wrap"><div class="av-contrib-bar"></div></div>
+                <span class="av-contrib-label">No edits yet</span>
             </div>
         </div>`;
                 memberRowCount = i + 1;
@@ -5879,6 +6101,212 @@
         }
 
         // ============================================================
+        // CONTRIBUTION TRACKING
+        // ============================================================
+        const _contribMap = {};   // { uid_str: Set<fieldKey> }
+        let _totalFields  = 0;
+
+        function _getMyUserId() {
+            const v = localStorage.getItem('user_id');
+            if (v && v !== '0' && v !== 'undefined' && v !== 'null' && v !== 'NaN') {
+                const n = parseInt(v);
+                if (!isNaN(n) && n > 0) return String(n);
+            }
+            // JWT fallback
+            try {
+                const tok = localStorage.getItem('token') || '';
+                const parts = tok.split('.');
+                if (parts.length === 3) {
+                    const pl = JSON.parse(atob(parts[1]));
+                    const id = pl.sub || pl.user_id || pl.id;
+                    if (id) return String(parseInt(id));
+                }
+            } catch { /**/ }
+            return '0';
+        }
+
+        function _fieldKeyOf(el) {
+            if (el.classList.contains('answer-textarea')) {
+                const sType = el.closest('[data-section-type]')?.dataset.sectionType || '';
+                return { ft: 'answer', fid: `${sType}:${el.dataset.index}` };
+            }
+            if (el.classList.contains('data-table-input')) {
+                const sType = el.closest('[data-section-type]')?.dataset.sectionType || '';
+                return { ft: 'table', fid: `${sType}:${el.dataset.tbl}_${el.dataset.row}_${el.dataset.col}` };
+            }
+            return null;
+        }
+
+        function _countTotalFields() {
+            const c = document.getElementById('activityContent') || document.body;
+            _totalFields = c.querySelectorAll('.answer-textarea').length
+                         + c.querySelectorAll('.data-table-input').length;
+        }
+
+        function _trackContrib(uid, fieldType, fieldId, value) {
+            if (fieldType !== 'answer' && fieldType !== 'table') return;
+            const key     = String(uid);
+            const fldKey  = `${fieldType}_${fieldId}`;
+            if (!_contribMap[key]) _contribMap[key] = new Set();
+            if (value === undefined) {
+                // Collab events — value unknown, assume non-empty
+                _contribMap[key].add(fldKey);
+            } else if (String(value).trim()) {
+                _contribMap[key].add(fldKey);
+            } else {
+                _contribMap[key].delete(fldKey);
+            }
+            _updateContribDisplay();
+            _saveContribToStorage();
+        }
+
+        function _restoreContribs(contributions) {
+            if (!contributions) return;
+            Object.entries(contributions).forEach(([uid, data]) => {
+                const n = data.count || 0;
+                if (n > 0 && !(_contribMap[uid]?.size)) {
+                    _contribMap[uid] = new Set(Array.from({ length: n }, (_, i) => `_r${uid}_${i}`));
+                }
+            });
+            _updateContribDisplay();
+        }
+
+        function _updateContribDisplay() {
+            document.querySelectorAll('.av-member-row[data-member-id]').forEach(row => {
+                const uid   = String(row.dataset.memberId);
+                const count = _contribMap[uid]?.size || 0;
+                const pct   = _totalFields > 0 ? Math.round((count / _totalFields) * 100) : 0;
+                const bar   = row.querySelector('.av-contrib-bar');
+                const label = row.querySelector('.av-contrib-label');
+                if (!bar || !label) return;
+                const color = pct >= 30 ? '#22c55e' : pct > 0 ? '#f59e0b' : 'var(--text-3)';
+                bar.style.width      = `${Math.min(pct, 100)}%`;
+                bar.style.background = color;
+                label.textContent    = count > 0 ? `${count} field${count !== 1 ? 's' : ''} (${pct}%)` : 'No edits yet';
+                label.style.color    = color;
+            });
+        }
+
+        function _contribStorageKey() {
+            return `contrib_${activityId}_${_getMyUserId()}`;
+        }
+
+        function _saveContribToStorage() {
+            try {
+                const toSave = {};
+                Object.entries(_contribMap).forEach(([uid, set]) => {
+                    const keys = [...set].filter(k => !k.startsWith('_r'));
+                    if (keys.length) toSave[uid] = keys;
+                });
+                localStorage.setItem(_contribStorageKey(), JSON.stringify(toSave));
+            } catch { /* non-critical */ }
+        }
+
+        function _loadContribFromStorage() {
+            try {
+                const raw = localStorage.getItem(_contribStorageKey());
+                if (!raw) return;
+                const saved = JSON.parse(raw);
+                Object.entries(saved).forEach(([uid, keys]) => {
+                    if (!Array.isArray(keys) || !keys.length) return;
+                    if (!_contribMap[uid]) _contribMap[uid] = new Set();
+                    keys.forEach(k => _contribMap[uid].add(k));
+                });
+                _updateContribDisplay();
+            } catch { /* non-critical */ }
+        }
+
+        function _clearContribStorage() {
+            try { localStorage.removeItem(_contribStorageKey()); } catch { /* non-critical */ }
+        }
+
+        // ============================================================
+        // CONTRIBUTION LOG POPOVER
+        // ============================================================
+        const _STYPE_LABEL = {
+            procedures:      'Procedures',
+            data_sheet:      'Data Sheet',
+            guide_questions: 'Guide Questions',
+            '':              'Other',
+        };
+
+        function _showContribLog(uid, anchor) {
+            _hideContribLog();
+            uid = String(uid);
+            const keys = [...(_contribMap[uid]?.keys() || [])];
+
+            // Group by section type
+            const groups = {};
+            keys.forEach(key => {
+                if (key.startsWith('_r')) return; // synthetic restore keys
+                let sType = '', ft = '';
+                if (key.startsWith('answer_')) {
+                    ft = 'answer';
+                    const rest = key.slice('answer_'.length);
+                    sType = rest.includes(':') ? rest.split(':')[0] : '';
+                } else if (key.startsWith('table_')) {
+                    ft = 'table';
+                    const rest = key.slice('table_'.length);
+                    sType = rest.includes(':') ? rest.split(':')[0] : '';
+                }
+                if (!groups[sType]) groups[sType] = { answers: 0, tables: 0 };
+                if (ft === 'answer') groups[sType].answers++;
+                else if (ft === 'table') groups[sType].tables++;
+            });
+
+            const sectionOrder = ['procedures', 'data_sheet', 'guide_questions', ''];
+            const sorted = Object.keys(groups).sort((a, b) =>
+                (sectionOrder.indexOf(a) + 1 || 99) - (sectionOrder.indexOf(b) + 1 || 99));
+
+            let rowsHtml = '';
+            sorted.forEach(sType => {
+                const { answers, tables } = groups[sType];
+                const parts = [];
+                if (answers) parts.push(`${answers} answer${answers !== 1 ? 's' : ''}`);
+                if (tables)  parts.push(`${tables} cell${tables !== 1 ? 's' : ''}`);
+                const label = _STYPE_LABEL[sType] ?? (sType || 'Other');
+                rowsHtml += `<div class="av-contrib-log-row">
+                    <span class="av-contrib-log-section">${label}</span>
+                    <span class="av-contrib-log-count">${parts.join(' · ')}</span>
+                </div>`;
+            });
+            if (!rowsHtml) {
+                rowsHtml = `<div class="av-contrib-log-empty">No edits recorded yet.</div>`;
+            }
+
+            const pop = document.createElement('div');
+            pop.id = 'av-contrib-popover';
+            pop.className = 'av-contrib-popover';
+            pop.innerHTML = `<div class="av-contrib-popover-title">Contribution Log</div>${rowsHtml}`;
+            document.body.appendChild(pop);
+
+            // Position below the anchor using fixed coords
+            const rect = anchor.getBoundingClientRect();
+            const popW = 240;
+            let left = rect.left;
+            if (left + popW > window.innerWidth - 8) left = window.innerWidth - popW - 8;
+            pop.style.top  = `${rect.bottom + 6}px`;
+            pop.style.left = `${Math.max(8, left)}px`;
+
+            // Dismiss on next outside click or any scroll
+            setTimeout(() => {
+                document.addEventListener('click',  _hideContribLog, { once: true });
+                window.addEventListener('scroll',   _hideContribLog, { once: true, passive: true });
+                document.getElementById('activityContent')
+                    ?.addEventListener('scroll', _hideContribLog, { once: true, passive: true });
+            }, 0);
+        }
+
+        function _hideContribLog() {
+            document.removeEventListener('click',  _hideContribLog);
+            window.removeEventListener('scroll',   _hideContribLog);
+            document.getElementById('activityContent')
+                ?.removeEventListener('scroll', _hideContribLog);
+            const pop = document.getElementById('av-contrib-popover');
+            if (pop) pop.remove();
+        }
+
+        // ============================================================
         // ATTENDANCE TOGGLE
         // ============================================================
         const _attendance = {};   // { memberIndex: 'present'|'absent' }
@@ -6034,6 +6462,8 @@
                 _enterEditModeUI();
                 document.querySelectorAll('#activityContent input, #activityContent textarea, #activityContent select')
                     .forEach(el => { el.disabled = false; });
+                _countTotalFields();   // recount after enabling (snapshot-replaced inputs now active)
+                _updateContribDisplay();
                 startAutoSave();
                 if (myGroup && !collabSocket) initCollab();
             } else {
@@ -6062,6 +6492,7 @@
 
             // Now attach listeners — only user-initiated input marks dirty
             document.addEventListener('input', e => {
+                if (e.target.matches('textarea.data-table-input')) _autoResizeTa(e.target);
                 if (!_restoringDraft && e.target.closest('#activityContent')) markDirty();
             });
             document.addEventListener('change', e => {
@@ -6116,7 +6547,7 @@
                         if (typeof cols !== 'object') return;
                         Object.entries(cols).forEach(([c, val]) => {
                             const inp = document.querySelector(`.data-table-input[data-tbl="${t}"][data-row="${r}"][data-col="${c}"]`);
-                            if (inp) inp.value = val;
+                            if (inp) { inp.value = val; if (inp.tagName === 'TEXTAREA') _autoResizeTa(inp); }
                         });
                     });
                 });
@@ -6807,6 +7238,21 @@
 
             const sEl = document.getElementById('sectionSelect');
             const dEl = document.getElementById('activityDate');
+
+            // Build contributions map and auto-derive attendance
+            const contributions = {};
+            if (activeGroup) {
+                activeGroup.members.forEach((m, i) => {
+                    const uid   = String(m.id);
+                    const count = _contribMap[uid]?.size || 0;
+                    const pct   = _totalFields > 0 ? Math.round((count / _totalFields) * 100) : 0;
+                    contributions[uid] = { count, pct };
+                    if (!_attendance.hasOwnProperty(i)) {
+                        _attendance[i] = count > 0 ? 'present' : 'absent';
+                    }
+                });
+            }
+
             const studentInfo = {
                 members: memberNames,
                 section: sEl ? sEl.value : '',
@@ -6815,7 +7261,8 @@
                 group_number: activeGroup?.group_number || null,
                 group_name: activeGroup?.name || '',
                 leader_index: leaderIndex,
-                attendance: _attendance
+                attendance: _attendance,
+                contributions: contributions
             };
             return { answers, table_data: tableData, materials_checked: materialsChecked, student_info: studentInfo };
         }
@@ -6922,6 +7369,7 @@
                     if (bg) bg.style.display = 'none';
 
                     showToast('Activity submitted successfully!', 'success', 4000);
+                    _clearContribStorage();
 
                     const submitArea = document.getElementById('av-submit-area');
                     if (submitArea) {
@@ -7340,8 +7788,10 @@
         }
 
         function _collabFieldOf(el) {
-            if (el.classList.contains('answer-textarea'))
-                return { field_type: 'answer', field_id: el.dataset.index };
+            if (el.classList.contains('answer-textarea')) {
+                const sType = el.closest('[data-section-type]')?.dataset.sectionType || '';
+                return { field_type: 'answer', field_id: `${sType}:${el.dataset.index}` };
+            }
             if (el.classList.contains('data-table-input')) {
                 const sType = el.closest('[data-section-type]')?.dataset.sectionType || '';
                 return { field_type: 'table', field_id: `${sType}:${el.dataset.tbl}_${el.dataset.row}_${el.dataset.col}` };
@@ -7431,6 +7881,8 @@
             _restoringDraft = false;
             el.classList.add('collab-flash');
             setTimeout(() => el.classList.remove('collab-flash'), 600);
+            // Track this member's contribution
+            if (data.user?.id) _trackContrib(data.user.id, data.field_type, data.field_id);
         }
 
         function _onDraftSync(fields) {

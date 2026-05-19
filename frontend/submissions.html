@@ -483,6 +483,90 @@ body.dashboard-body { background:var(--bg) !important; color:var(--text); font-f
 }
 .sb-file-link:hover { opacity:0.88; }
 
+/* Analysis section */
+.sb-analyze-form {
+    background:var(--input-bg); border:1.5px solid var(--border-h);
+    border-radius:14px; padding:18px 20px; margin-top:8px; margin-bottom:8px;
+}
+.sb-analyze-title {
+    font-size:14px; font-weight:700; color:#60a5fa;
+    display:flex; align-items:center; gap:7px; margin-bottom:4px;
+    font-family:'Sora',sans-serif;
+}
+.sb-analyze-meta { font-size:11px; color:var(--text-3); margin-bottom:14px; }
+.sb-analyze-btn {
+    display:inline-flex; align-items:center; gap:7px;
+    padding:9px 18px; border:none; border-radius:10px;
+    background:linear-gradient(135deg,#2563eb,#1d4ed8);
+    color:white; font-size:13px; font-weight:600;
+    cursor:pointer; font-family:'Inter',sans-serif;
+    transition:opacity 0.2s;
+}
+.sb-analyze-btn:hover { opacity:0.88; }
+.sb-analyze-btn:disabled { opacity:0.5; cursor:not-allowed; }
+.sb-analyze-results { margin-top:14px; display:flex; flex-direction:column; gap:8px; }
+.sb-analyze-row {
+    background:var(--surface); border:1.5px solid var(--border);
+    border-radius:10px; padding:10px 14px;
+}
+.sb-analyze-q { font-size:12px; font-weight:700; color:var(--text-2); margin-bottom:6px; }
+.sb-analyze-badges { display:flex; gap:8px; flex-wrap:wrap; }
+.sb-badge {
+    display:inline-flex; align-items:center; gap:5px;
+    padding:4px 10px; border-radius:20px; font-size:11px; font-weight:700;
+    white-space:nowrap;
+}
+.sb-badge-green  { background:rgba(52,211,153,0.12); color:#34d399; border:1px solid rgba(52,211,153,0.25); }
+.sb-badge-yellow { background:rgba(251,191,36,0.12);  color:#fbbf24; border:1px solid rgba(251,191,36,0.25); }
+.sb-badge-red    { background:rgba(239,68,68,0.12);   color:#f87171; border:1px solid rgba(239,68,68,0.25); }
+.sb-badge-gray   { background:var(--input-bg);         color:var(--text-3); border:1px solid var(--border); }
+[data-theme="light"] .sb-badge-green  { background:#d1fae5; color:#059669; border-color:#a7f3d0; }
+[data-theme="light"] .sb-badge-yellow { background:#fef9c3; color:#b45309; border-color:#fde68a; }
+[data-theme="light"] .sb-badge-red    { background:#fee2e2; color:#dc2626; border-color:#fca5a5; }
+
+/* Rubric table (shared with activity.html) */
+.av-rubric-wrap { overflow-x:auto; margin:4px 0 8px; }
+.av-rubric-table { width:100%; border-collapse:collapse; font-size:13px; font-family:'DM Sans',sans-serif; }
+.av-rubric-th { background:var(--surface-2,#f1f5f9); padding:8px 10px; border:1.5px solid var(--border); font-weight:700; text-align:center; color:var(--text-1); }
+.av-rubric-th .av-rubric-pts-label { font-size:10px; font-weight:500; color:var(--primary); }
+.av-rubric-td { padding:8px 10px; border:1.5px solid var(--border); vertical-align:top; color:var(--text-1); }
+.av-rubric-criteria-col { width:140px; min-width:110px; }
+.av-rubric-criteria-name { font-weight:600; color:var(--text-1); }
+.av-rubric-desc { color:var(--text-2); font-size:12px; text-align:left; }
+.av-rubric-total-label { font-weight:700; background:var(--surface-2,#f1f5f9); color:var(--text-1); }
+.av-rubric-total-pts { text-align:center; font-weight:700; background:var(--surface-2,#f1f5f9); color:var(--primary); }
+
+/* Rubric grading (inside modal) */
+.sb-rubric-wrap { margin: 2px 0; }
+.sb-rubric-hint { font-size:11px; color:var(--text-3); margin-bottom:8px; font-style:italic; }
+.sb-rubric-cell { cursor:pointer; transition:background 0.15s, border-color 0.15s; }
+.sb-rubric-cell:hover { background:rgba(99,102,241,0.08); }
+.sb-rubric-selected { background:rgba(99,102,241,0.18) !important; border-color:var(--primary) !important; color:var(--text-1) !important; font-weight:600; }
+[data-theme="light"] .sb-rubric-selected { background:rgba(99,102,241,0.12) !important; }
+.sb-rubric-score-row { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-top:10px; }
+.sb-rubric-score-label { font-size:13px; font-weight:600; color:var(--text-2); }
+.sb-rubric-score-val { font-size:22px; font-weight:800; color:var(--primary-l); font-family:'Sora',sans-serif; }
+[data-theme="light"] .sb-rubric-score-val { color:var(--primary); }
+.sb-rubric-score-denom { font-size:14px; color:var(--text-3); }
+.sb-rubric-pct { font-size:14px; font-weight:700; color:var(--text-2); margin-left:6px; }
+.sb-rubric-apply-btn {
+    display:inline-flex; align-items:center; gap:6px;
+    padding:7px 14px; border:none; border-radius:9px;
+    background:linear-gradient(135deg,#6366f1,#4f46e5);
+    color:white; font-size:12px; font-weight:600; cursor:pointer;
+    font-family:'Inter',sans-serif; transition:opacity 0.2s; margin-left:4px;
+}
+.sb-rubric-apply-btn:hover { opacity:0.88; }
+.sb-rubric-save-btn {
+    display:inline-flex; align-items:center; gap:7px;
+    margin-top:10px; padding:9px 18px; border:none; border-radius:10px;
+    background:linear-gradient(135deg,#10b981,#059669);
+    color:white; font-size:13px; font-weight:600; cursor:pointer;
+    font-family:'Inter',sans-serif; transition:opacity 0.2s;
+}
+.sb-rubric-save-btn:hover { opacity:0.88; }
+.sb-rubric-save-btn:disabled { opacity:0.5; cursor:not-allowed; }
+
 /* Grade form (inside modal) */
 .sb-grade-form {
     background:var(--input-bg); border:1.5px solid var(--border-h);
@@ -575,6 +659,7 @@ body.dashboard-body { background:var(--bg) !important; color:var(--text); font-f
 .av-icon-teal   { background:rgba(20,184,166,0.12);  color:#2dd4bf; }
 .av-icon-violet { background:rgba(139,92,246,0.12);  color:#a78bfa; }
 .av-icon-slate  { background:var(--input-bg);        color:var(--text-3); }
+.av-icon-yellow { background:rgba(234,179,8,0.15);   color:#facc15; }
 .av-icon-grad   { background:#0A66C2; color:white; }
 [data-theme="light"] .av-icon-purple { background:#EBF3FB; color:#8b5cf6; }
 .av-view-content,.av-text-block,.intro-preview-wrap { font-family:'Merriweather',serif; font-size:14px; line-height:1.85; color:var(--text-2); }
@@ -1315,6 +1400,7 @@ const SB_SECTION_META = {
     guide_questions: { icon: '<i class="ph-bold ph-question"></i>',     iconClass: 'av-icon-violet', label: 'Guide Questions' },
     references:      { icon: '<i class="ph-bold ph-books"></i>',        iconClass: 'av-icon-slate',  label: 'References' },
     student_info:    { icon: '<i class="ph-bold ph-note-pencil"></i>',  iconClass: 'av-icon-violet', label: 'Student Information' },
+    rubric:          { icon: '<i class="ph-bold ph-check-square"></i>', iconClass: 'av-icon-yellow', label: 'Rubric' },
 };
 const SB_SECTION_ORDER = ['lab_title','introduction','outcomes','materials','procedures','data_sheet','guide_questions','references','student_info'];
 
@@ -1656,11 +1742,28 @@ function sbBuildSection(section, sub, sectionIdx) {
         }
         si += `<div class="sb-si-member-grid">`;
         members.forEach((m, i) => {
-            const name       = typeof m === 'string' ? m : (m.full_name || m.name || 'Unknown');
-            const avatarSrc  = typeof m === 'object' ? (m.avatar || null) : null;
-            const isLeader   = leaderIdx === i;
+            const name        = typeof m === 'string' ? m : (m.full_name || m.name || 'Unknown');
+            const avatarSrc   = typeof m === 'object' ? (m.avatar || null) : null;
+            const memberId    = typeof m === 'object' ? m.id : null;
+            const isLeader    = leaderIdx === i;
+            const contribData = memberId ? (info.contributions?.[String(memberId)]) : null;
             const contributed = attendance[i] !== 'absent' && attendance[String(i)] !== 'absent';
             const avatarHtml  = avatarSrc ? makePhotoAvatar(avatarSrc, 36, '50%') : makeInitialsAvatar(name, 36, '50%', 13);
+
+            let contribBadge;
+            if (contribData) {
+                const c = contribData.count || 0, p = contribData.pct || 0;
+                const col = p >= 30 ? '#22c55e' : p > 0 ? '#f59e0b' : '#94a3b8';
+                contribBadge = `<span class="sb-si-contrib" style="color:${col};background:${col}18;">
+                    <i class="ph-bold ph-chart-bar"></i> ${c} field${c !== 1 ? 's' : ''} (${p}%)
+                </span>`;
+            } else {
+                contribBadge = `<span class="sb-si-contrib ${contributed ? 'yes' : 'no'}">
+                    <i class="ph-bold ${contributed ? 'ph-check-circle' : 'ph-x-circle'}"></i>
+                    ${contributed ? 'Contributed' : 'Did not contribute'}
+                </span>`;
+            }
+
             si += `<div class="sb-si-member-row ${isLeader ? 'is-leader' : ''}">
                 ${avatarHtml}
                 <div class="sb-si-member-info">
@@ -1669,10 +1772,7 @@ function sbBuildSection(section, sub, sectionIdx) {
                         ${isLeader
                             ? `<span class="sb-si-badge-leader"><i class="ph-bold ph-crown-simple"></i> Leader</span>`
                             : `<span class="sb-si-badge-member"><i class="ph-bold ph-user"></i> Member</span>`}
-                        <span class="sb-si-contrib ${contributed ? 'yes' : 'no'}">
-                            <i class="ph-bold ${contributed ? 'ph-check-circle' : 'ph-x-circle'}"></i>
-                            ${contributed ? 'Contributed' : 'Did not contribute'}
-                        </span>
+                        ${contribBadge}
                     </div>
                 </div>
             </div>`;
@@ -1685,6 +1785,66 @@ function sbBuildSection(section, sub, sectionIdx) {
             </div>`;
         }
         bodyHtml = si;
+    } else if (type === 'rubric') {
+        const rd = section.rubric;
+        if (rd?.columns?.length && rd?.criteria?.length) {
+            const cols = rd.columns;
+            const crit = rd.criteria;
+            const saved = sub.rubric_scores || {};
+            const maxTotal = Math.max(...cols.map(c => Number(c.points) || 0)) * crit.length;
+
+            let th = `<th class="av-rubric-th av-rubric-criteria-col">Criteria</th>`;
+            cols.forEach((c, ci) => {
+                th += `<th class="av-rubric-th">${c.label || ''}<br><span class="av-rubric-pts-label">${c.points} pt${c.points !== 1 ? 's' : ''}</span></th>`;
+            });
+
+            let rows = '';
+            crit.forEach((cr, ri) => {
+                const selectedCol = saved[String(ri)] !== undefined ? parseInt(saved[String(ri)]) : -1;
+                let tds = `<td class="av-rubric-td av-rubric-criteria-name">${cr.name || ''}</td>`;
+                cols.forEach((col, ci) => {
+                    const isSelected = ci === selectedCol;
+                    tds += `<td class="av-rubric-td av-rubric-desc sb-rubric-cell${isSelected ? ' sb-rubric-selected' : ''}"
+                        onclick="sbRubricSelect(${ri},${ci})"
+                        data-ri="${ri}" data-ci="${ci}">${(cr.descriptions || [])[ci] || ''}</td>`;
+                });
+                rows += `<tr>${tds}</tr>`;
+            });
+
+            // Compute current total
+            let currentTotal = 0;
+            crit.forEach((_, ri) => {
+                const ci = saved[String(ri)] !== undefined ? parseInt(saved[String(ri)]) : -1;
+                if (ci >= 0) currentTotal += Number(cols[ci]?.points || 0);
+            });
+            const currentPct = maxTotal > 0 ? Math.round((currentTotal / maxTotal) * 100) : 0;
+
+            bodyHtml = `<div class="sb-rubric-wrap">
+                <div class="sb-rubric-hint">Click a cell to select the rating for each criterion.</div>
+                <div class="av-rubric-wrap">
+                    <table class="av-rubric-table" id="sbRubricTable">
+                        <thead><tr>${th}</tr></thead>
+                        <tbody>${rows}</tbody>
+                        <tfoot><tr>
+                            <td class="av-rubric-td av-rubric-total-label">Max Points</td>
+                            ${cols.map(c => `<td class="av-rubric-td av-rubric-total-pts">${c.points}</td>`).join('')}
+                        </tr></tfoot>
+                    </table>
+                </div>
+                <div class="sb-rubric-score-row">
+                    <span class="sb-rubric-score-label">Rubric Score:</span>
+                    <span class="sb-rubric-score-val" id="sbRubricScore">${currentTotal}</span>
+                    <span class="sb-rubric-score-denom">/ ${maxTotal}</span>
+                    <span class="sb-rubric-pct" id="sbRubricPct">= ${currentPct}/100</span>
+                    <button class="sb-rubric-apply-btn" onclick="sbRubricApplyGrade()">
+                        <i class="ph-bold ph-arrow-right"></i> Apply to Grade
+                    </button>
+                </div>
+                <button class="sb-rubric-save-btn" id="sbRubricSaveBtn" onclick="sbRubricSave(${sub.id})">
+                    <i class="ph-bold ph-floppy-disk"></i> Save Rubric Scores
+                </button>
+            </div>`;
+        }
     }
 
     if (!bodyHtml.trim()) return '';
@@ -1711,6 +1871,166 @@ function sbToggle(uid) {
     if (!body) return;
     body.classList.toggle('hidden');
     if (icon) icon.classList.toggle('open', !body.classList.contains('hidden'));
+}
+
+// ============================================================
+// RUBRIC GRADING
+// ============================================================
+let _sbRubricSelections = {};  // { ri: ci }
+let _sbRubricCols = [];
+
+function _sbRubricInit(sub) {
+    _sbRubricSelections = {};
+    if (sub.rubric_scores) {
+        Object.entries(sub.rubric_scores).forEach(([ri, ci]) => { _sbRubricSelections[parseInt(ri)] = parseInt(ci); });
+    }
+    const rd = parsedActivity?.sections?.find(s => s.type === 'rubric')?.rubric;
+    _sbRubricCols = rd?.columns || [];
+}
+
+function sbRubricSelect(ri, ci) {
+    _sbRubricSelections[ri] = ci;
+    // Update cell highlights
+    const table = document.getElementById('sbRubricTable');
+    if (!table) return;
+    table.querySelectorAll(`.sb-rubric-cell[data-ri="${ri}"]`).forEach(td => {
+        td.classList.toggle('sb-rubric-selected', parseInt(td.dataset.ci) === ci);
+    });
+    _sbRubricUpdateScore();
+}
+
+function _sbRubricUpdateScore() {
+    const rd = parsedActivity?.sections?.find(s => s.type === 'rubric')?.rubric;
+    if (!rd) return;
+    const cols = rd.columns, crit = rd.criteria;
+    const maxTotal = Math.max(...cols.map(c => Number(c.points) || 0)) * crit.length;
+    let total = 0;
+    crit.forEach((_, ri) => {
+        const ci = _sbRubricSelections[ri];
+        if (ci !== undefined) total += Number(cols[ci]?.points || 0);
+    });
+    const pct = maxTotal > 0 ? Math.round((total / maxTotal) * 100) : 0;
+    const scoreEl = document.getElementById('sbRubricScore');
+    const pctEl   = document.getElementById('sbRubricPct');
+    if (scoreEl) scoreEl.textContent = total;
+    if (pctEl)   pctEl.textContent   = `= ${pct}/100`;
+}
+
+function sbRubricApplyGrade() {
+    const rd = parsedActivity?.sections?.find(s => s.type === 'rubric')?.rubric;
+    if (!rd) return;
+    const cols = rd.columns, crit = rd.criteria;
+    const maxTotal = Math.max(...cols.map(c => Number(c.points) || 0)) * crit.length;
+    let total = 0;
+    crit.forEach((_, ri) => {
+        const ci = _sbRubricSelections[ri];
+        if (ci !== undefined) total += Number(cols[ci]?.points || 0);
+    });
+    const pct = maxTotal > 0 ? Math.round((total / maxTotal) * 100) : 0;
+    const gradeInput  = document.getElementById('gradeInput');
+    const gradeSlider = document.getElementById('gradeSlider');
+    if (gradeInput)  { gradeInput.value  = pct; gradeInput.dispatchEvent(new Event('input')); }
+    if (gradeSlider) { gradeSlider.value = pct; gradeSlider.dispatchEvent(new Event('input')); }
+}
+
+async function sbRubricSave(subId) {
+    const btn = document.getElementById('sbRubricSaveBtn');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="ph-bold ph-circle-notch" style="animation:spin 0.8s linear infinite"></i> Saving...'; }
+    try {
+        const res = await fetch(`/api/submissions/${subId}/rubric`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify({ rubric_scores: _sbRubricSelections })
+        });
+        const data = await res.json();
+        if (!res.ok) { showToast(data.message || 'Save failed!', 'error'); return; }
+        const sub = allSubmissions.find(s => s.id === subId);
+        if (sub) sub.rubric_scores = data.rubric_scores;
+        if (currentSubmission?.id === subId) currentSubmission.rubric_scores = data.rubric_scores;
+        showToast('Rubric scores saved!', 'success');
+    } catch { showToast('Cannot connect to server!', 'error'); }
+    finally { if (btn) { btn.disabled = false; btn.innerHTML = '<i class="ph-bold ph-floppy-disk"></i> Save Rubric Scores'; } }
+}
+
+// ============================================================
+// AI + PLAGIARISM ANALYSIS
+// ============================================================
+function _plagLabel(p) {
+    if (!p) return null;
+    const pct = Math.round(p.similarity * 100);
+    if (pct >= 85) return { cls: 'sb-badge-red',    icon: 'ph-copy',         text: `${pct}% match — ${p.matched_student}` };
+    if (pct >= 60) return { cls: 'sb-badge-yellow', icon: 'ph-warning',      text: `${pct}% similar — ${p.matched_student}` };
+    return               { cls: 'sb-badge-green',  icon: 'ph-check-circle', text: `${pct}% similar — clean` };
+}
+
+function _buildPlagResults(analysis) {
+    const questions = parsedActivity?.sections?.find(s => s.type === 'guide_questions');
+    const qItems    = (questions?.content || []).filter(q => q.question || q.text);
+    return `<div class="sb-analyze-results">` + Object.keys(analysis).map(k => {
+        const r      = analysis[k];
+        const qIdx   = parseInt(k);
+        const qText  = qItems[qIdx] ? (qItems[qIdx].question || qItems[qIdx].text || `Question ${qIdx + 1}`) : `Question ${qIdx + 1}`;
+        const plgLbl = _plagLabel(r.plagiarism);
+        const plgBadge = plgLbl
+            ? `<span class="sb-badge ${plgLbl.cls}"><i class="ph-bold ${plgLbl.icon}"></i> ${plgLbl.text}</span>`
+            : `<span class="sb-badge sb-badge-green"><i class="ph-bold ph-check-circle"></i> Clean</span>`;
+        return `<div class="sb-analyze-row">
+            <div class="sb-analyze-q">Q${qIdx + 1}. ${sbApplyKatex(qText).replace(/<[^>]*>/g,'').slice(0,80)}${qText.length > 80 ? '…' : ''}</div>
+            <div class="sb-analyze-badges">${plgBadge}</div>
+        </div>`;
+    }).join('') + `</div>`;
+}
+
+function buildAnalyzeSection(sub) {
+    const analyzedAt = sub.analyzed_at ? `Last checked: ${sub.analyzed_at}` : null;
+    const analysis   = sub.analysis || null;
+    return `<div class="sb-analyze-form">
+        <div class="sb-analyze-title"><i class="ph-bold ph-copy"></i> Plagiarism Check</div>
+        ${analyzedAt ? `<div class="sb-analyze-meta"><i class="ph-bold ph-clock"></i> ${analyzedAt}</div>` : '<div class="sb-analyze-meta">Not yet checked.</div>'}
+        <button class="sb-analyze-btn" id="analyzeBtnModal" onclick="analyzeSubmission(${sub.id})">
+            <i class="ph-bold ph-magnifying-glass"></i> ${analysis ? 'Re-check' : 'Check Plagiarism'}
+        </button>
+        <div id="analyzeResultsContainer">${analysis ? _buildPlagResults(analysis) : ''}</div>
+    </div>`;
+}
+
+async function analyzeSubmission(subId) {
+    const btn = document.getElementById('analyzeBtnModal');
+    if (btn) { btn.disabled = true; btn.innerHTML = '<i class="ph-bold ph-circle-notch" style="animation:spin 0.8s linear infinite"></i> Checking...'; }
+
+    try {
+        const res  = await fetch(`/api/submissions/${subId}/analyze`, {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+
+        if (!res.ok) { showToast(data.message || 'Check failed!', 'error'); return; }
+
+        // Update local cache
+        const sub = allSubmissions.find(s => s.id === subId);
+        if (sub) { sub.analysis = data.analysis; sub.analyzed_at = data.analyzed_at; }
+        if (currentSubmission?.id === subId) {
+            currentSubmission.analysis    = data.analysis;
+            currentSubmission.analyzed_at = data.analyzed_at;
+        }
+
+        document.getElementById('analyzeResultsContainer').innerHTML = _buildPlagResults(data.analysis);
+        const metaEl = document.querySelector('.sb-analyze-meta');
+        if (metaEl) metaEl.innerHTML = `<i class="ph-bold ph-clock"></i> Last checked: ${data.analyzed_at}`;
+        if (btn) btn.innerHTML = '<i class="ph-bold ph-magnifying-glass"></i> Re-check';
+        showToast(data.message, 'success');
+
+    } catch { showToast('Cannot connect to server!', 'error'); }
+    finally { if (btn) btn.disabled = false; }
+}
+
+// spin keyframe (if not already defined)
+if (!document.getElementById('_sbSpinStyle')) {
+    const s = document.createElement('style');
+    s.id = '_sbSpinStyle';
+    s.textContent = '@keyframes spin { to { transform: rotate(360deg); } }';
+    document.head.appendChild(s);
 }
 
 function buildFullSubmissionView(sub) {
@@ -1773,6 +2093,9 @@ function buildFullSubmissionView(sub) {
             </div>
         </div>`;
     }
+    // Analyze section (professor only)
+    html += buildAnalyzeSection(sub);
+
     // Grade form
     const currentGrade = sub.grade ?? '';
     const isGroup = !!sub.group_id;
@@ -1819,6 +2142,7 @@ function viewSubmission(subId) {
     const snEl = document.getElementById('modalStudentNumber');
     if (snEl) snEl.textContent = currentSubmission.student_number || '';
     document.getElementById('modalSubmitTime').textContent  = 'Submitted: ' + currentSubmission.submitted_at;
+    _sbRubricInit(currentSubmission);
     document.getElementById('modalBody').innerHTML = buildFullSubmissionView(currentSubmission);
     document.getElementById('submissionModal').classList.add('active');
     const gradeInput  = document.getElementById('gradeInput');

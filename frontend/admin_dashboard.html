@@ -308,6 +308,9 @@
         .modal-input:focus { border-color:var(--primary); }
         .modal-input::placeholder { color:var(--placeholder); }
         .modal-label { font-size:12px; color:var(--text-3); font-weight:600; display:block; margin-bottom:7px; }
+        .pw-rule { font-size:12px; color:var(--text-3); margin-bottom:4px; display:flex; align-items:center; gap:6px; transition:color 0.2s; }
+        .pw-rule:last-child { margin-bottom:0; }
+        .pw-rule.met { color:#6ee7b7; }
 
         /* ═══ SECTION VIEWS ═══ */
         .tab-view { display:none; }
@@ -495,8 +498,15 @@
         <div class="modal-icon info"><i class="ph-bold ph-key"></i></div>
         <div class="modal-title">Reset Password</div>
         <div class="modal-desc">Set a new password for <strong id="resetPwName"></strong>.</div>
-        <label class="modal-label">New Password (min. 6 characters)</label>
-        <input class="modal-input" type="password" id="resetPwInput" placeholder="Enter new password">
+        <label class="modal-label">New Password</label>
+        <input class="modal-input" type="password" id="resetPwInput" placeholder="Enter new password" oninput="checkResetPw(this.value)">
+        <div id="reset_pw_checklist" style="display:none;background:var(--input-bg);border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;margin-bottom:14px;">
+            <div class="pw-rule" id="rp-rule-len">  <i class="ph-bold ph-x-circle"></i> At least 8 characters</div>
+            <div class="pw-rule" id="rp-rule-upper"><i class="ph-bold ph-x-circle"></i> One uppercase letter</div>
+            <div class="pw-rule" id="rp-rule-lower"><i class="ph-bold ph-x-circle"></i> One lowercase letter</div>
+            <div class="pw-rule" id="rp-rule-num">  <i class="ph-bold ph-x-circle"></i> One number</div>
+            <div class="pw-rule" id="rp-rule-spec"> <i class="ph-bold ph-x-circle"></i> One special character (!@#$%)</div>
+        </div>
         <div class="modal-actions">
             <button class="btn-modal-cancel" onclick="closeResetPw()">Cancel</button>
             <button class="btn-modal-confirm info" onclick="submitResetPw()">
@@ -584,16 +594,41 @@ function closeConfirm() { document.getElementById('confirmModal').classList.remo
 function runConfirm()   { if (_confirmCb) _confirmCb(); closeConfirm(); }
 
 // ══ RESET PW MODAL ══
+function checkResetPw(pw) {
+    const cl = document.getElementById('reset_pw_checklist');
+    cl.style.display = pw ? 'block' : 'none';
+    const rules = {
+        'rp-rule-len':   pw.length >= 8,
+        'rp-rule-upper': /[A-Z]/.test(pw),
+        'rp-rule-lower': /[a-z]/.test(pw),
+        'rp-rule-num':   /[0-9]/.test(pw),
+        'rp-rule-spec':  /[!@#$%]/.test(pw),
+    };
+    Object.entries(rules).forEach(([id, met]) => {
+        const el = document.getElementById(id);
+        el.classList.toggle('met', met);
+        el.querySelector('i').className = met ? 'ph-bold ph-check-circle' : 'ph-bold ph-x-circle';
+    });
+}
 function openResetPw(userId, name) {
     _resetPwUserId = userId;
     document.getElementById('resetPwName').textContent = name;
     document.getElementById('resetPwInput').value = '';
+    document.getElementById('reset_pw_checklist').style.display = 'none';
     document.getElementById('resetPwModal').classList.add('active');
 }
-function closeResetPw() { document.getElementById('resetPwModal').classList.remove('active'); _resetPwUserId = null; }
+function closeResetPw() {
+    document.getElementById('resetPwModal').classList.remove('active');
+    document.getElementById('reset_pw_checklist').style.display = 'none';
+    _resetPwUserId = null;
+}
 async function submitResetPw() {
     const pw = document.getElementById('resetPwInput').value.trim();
-    if (!pw || pw.length < 6) { showToast('Password must be at least 6 characters!', 'warning'); return; }
+    if (!pw || pw.length < 8)       { showToast('Password must be at least 8 characters!', 'warning'); return; }
+    if (!/[A-Z]/.test(pw))          { showToast('Password must contain at least one uppercase letter!', 'warning'); return; }
+    if (!/[a-z]/.test(pw))          { showToast('Password must contain at least one lowercase letter!', 'warning'); return; }
+    if (!/[0-9]/.test(pw))          { showToast('Password must contain at least one number!', 'warning'); return; }
+    if (!/[!@#$%]/.test(pw))        { showToast('Password must contain at least one special character (!@#$%)!', 'warning'); return; }
     try {
         const res = await fetch(`${BASE}/admin/users/${_resetPwUserId}/reset-password`, {
             method:'POST', headers:HEADERS(), body:JSON.stringify({ new_password: pw })

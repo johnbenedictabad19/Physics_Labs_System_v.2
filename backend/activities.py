@@ -540,6 +540,7 @@ def build_sections_from_manual(data):
         'datasheet':       'data_sheet',
         'guide-questions': 'guide_questions',
         'references':      'references',
+        'rubric':          'rubric',
     }
 
     # ── Lab title (always first) ──────────────────────────────────────────
@@ -603,6 +604,13 @@ def build_sections_from_manual(data):
         candidates['references'] = {
             'type': 'references', 'title': 'REFERENCES',
             'content': [{'text': references}]
+        }
+
+    rubric_data = sec.get('rubric')
+    if rubric_data and isinstance(rubric_data, dict) and rubric_data.get('columns') and rubric_data.get('criteria'):
+        candidates['rubric'] = {
+            'type': 'rubric', 'title': 'RUBRIC',
+            'content': [], 'rubric': rubric_data
         }
 
     # ── Assemble body sections ────────────────────────────────────────────

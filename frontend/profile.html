@@ -254,6 +254,9 @@ input[type="file"]#avatarInput { display:none; }
 .pw-bars { display:flex; gap:3px; margin-top:7px; }
 .pw-bar  { flex:1; height:3px; border-radius:2px; background:var(--pw-bar); transition:background 0.3s; }
 .pw-hint { font-size:11px; font-weight:600; color:var(--text-3); margin-top:4px; }
+.pw-rule { font-size:12px; color:var(--text-3); margin-bottom:4px; display:flex; align-items:center; gap:6px; transition:color 0.2s; }
+.pw-rule:last-child { margin-bottom:0; }
+.pw-rule.met { color:#6ee7b7; }
 
 /* ═══ SAVE BTN ═══ */
 .pf-btn { display:inline-flex; align-items:center; gap:7px;
@@ -569,6 +572,9 @@ input[type="file"]#avatarInput { display:none; }
             background: #e5e7eb; transition: background 0.3s;
         }
         .pw-hint { font-size:11px; font-weight:600; color:#9ca3af; margin-top:4px; }
+        .pw-rule { font-size:12px; color:#9ca3af; margin-bottom:4px; display:flex; align-items:center; gap:6px; transition:color 0.2s; }
+        .pw-rule:last-child { margin-bottom:0; }
+        .pw-rule.met { color:#6ee7b7; }
 
         /* ===== SAVE BTN ===== */
         .pf-btn {
@@ -935,6 +941,13 @@ input[type="file"]#avatarInput { display:none; }
                     <div class="pw-bar" id="b4"></div>
                 </div>
                 <div class="pw-hint" id="pwHint"></div>
+                <div id="pf_pw_checklist" style="display:none;background:var(--input-bg);border:1.5px solid var(--border);border-radius:10px;padding:10px 14px;margin-top:8px;">
+                    <div class="pw-rule" id="pf-rule-len">  <i class="ph-bold ph-x-circle"></i> At least 8 characters</div>
+                    <div class="pw-rule" id="pf-rule-upper"><i class="ph-bold ph-x-circle"></i> One uppercase letter</div>
+                    <div class="pw-rule" id="pf-rule-lower"><i class="ph-bold ph-x-circle"></i> One lowercase letter</div>
+                    <div class="pw-rule" id="pf-rule-num">  <i class="ph-bold ph-x-circle"></i> One number</div>
+                    <div class="pw-rule" id="pf-rule-spec"> <i class="ph-bold ph-x-circle"></i> One special character (!@#$%)</div>
+                </div>
             </div>
             <div class="pf-field">
                 <label class="pf-lbl">Confirm New Password</label>
@@ -1301,7 +1314,11 @@ async function changePassword(btn) {
     const conf = document.getElementById('pwConfirm').value;
     if (!cur || !nw || !conf) { showToast('Please fill in all fields!', 'warning'); return; }
     if (nw !== conf)           { showToast('New passwords do not match!', 'error'); return; }
-    if (nw.length < 6)         { showToast('Password must be at least 6 characters!', 'warning'); return; }
+    if (nw.length < 8)         { showToast('Password must be at least 8 characters!', 'warning'); return; }
+    if (!/[A-Z]/.test(nw))    { showToast('Password must contain at least one uppercase letter!', 'warning'); return; }
+    if (!/[a-z]/.test(nw))    { showToast('Password must contain at least one lowercase letter!', 'warning'); return; }
+    if (!/[0-9]/.test(nw))    { showToast('Password must contain at least one number!', 'warning'); return; }
+    if (!/[!@#$%]/.test(nw))  { showToast('Password must contain at least one special character (!@#$%)!', 'warning'); return; }
 
     btn.disabled = true;
     btn.querySelector('.button_text').innerHTML = '<i class="ph-bold ph-spinner"></i> Updating...';
@@ -1317,6 +1334,7 @@ async function changePassword(btn) {
             document.getElementById('pwNew').value     = '';
             document.getElementById('pwConfirm').value = '';
             checkStrength('');
+            document.getElementById('pf_pw_checklist').style.display = 'none';
             showToast('Password updated!', 'success');
         } else { showToast(d.message || 'Cannot update password!', 'error'); }
     } catch { showToast('Cannot connect to server!', 'error'); }
@@ -1329,10 +1347,10 @@ async function changePassword(btn) {
 // ===== PW STRENGTH =====
 function checkStrength(pw) {
     let s = 0;
-    if (pw.length >= 6)  s++;
-    if (pw.length >= 10) s++;
+    if (pw.length >= 8)  s++;
+    if (pw.length >= 12) s++;
     if (/[A-Z]/.test(pw) && /[0-9]/.test(pw)) s++;
-    if (/[^A-Za-z0-9]/.test(pw)) s++;
+    if (/[!@#$%]/.test(pw)) s++;
     const clrs = ['#ef4444','#f59e0b','#3b82f6','#10b981'];
     const lbls = ['Weak','Fair','Good','Strong'];
     ['b1','b2','b3','b4'].forEach((id,i) => {
@@ -1341,6 +1359,22 @@ function checkStrength(pw) {
     const hint = document.getElementById('pwHint');
     hint.textContent = pw ? (lbls[s-1] || '') : '';
     hint.style.color = s > 0 ? clrs[s-1] : '#9ca3af';
+
+    // checklist
+    const cl = document.getElementById('pf_pw_checklist');
+    cl.style.display = pw ? 'block' : 'none';
+    const rules = {
+        'pf-rule-len':   pw.length >= 8,
+        'pf-rule-upper': /[A-Z]/.test(pw),
+        'pf-rule-lower': /[a-z]/.test(pw),
+        'pf-rule-num':   /[0-9]/.test(pw),
+        'pf-rule-spec':  /[!@#$%]/.test(pw),
+    };
+    Object.entries(rules).forEach(([id, met]) => {
+        const el = document.getElementById(id);
+        el.classList.toggle('met', met);
+        el.querySelector('i').className = met ? 'ph-bold ph-check-circle' : 'ph-bold ph-x-circle';
+    });
 }
 
 // ===== TOGGLE EYE =====
