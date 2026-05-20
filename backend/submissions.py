@@ -113,6 +113,7 @@ def submit_activity(activity_id):
     table_data        = _parse_form_json(request.form.get('table_data', '{}'), {})
     materials_checked = _parse_form_json(request.form.get('materials_checked', '[]'), [])
     student_info      = _parse_form_json(request.form.get('student_info', '{}'), {})
+    peer_assessments  = _parse_form_json(request.form.get('peer_assessments', '{}'), {})
     print(f'[submit] activity={activity_id} user={user_id}')
 
     ALLOWED_EXTENSIONS = {'pdf', 'png', 'jpg', 'jpeg', 'webp', 'gif'}
@@ -190,6 +191,9 @@ def submit_activity(activity_id):
         if _group_id: draft.group_id = _group_id
         # Always update uploaded_files: retained + new (overwrite with the full combined list)
         draft.uploaded_files = uploaded_file_list if uploaded_file_list else draft.uploaded_files
+        # Peer assessments: only update if provided (personal — not cascaded to group)
+        if peer_assessments:
+            draft.peer_assessments = peer_assessments
         db.session.commit()
         sub_id = draft.id
     else:
@@ -201,6 +205,7 @@ def submit_activity(activity_id):
             materials_checked=materials_checked,
             student_info=student_info,
             uploaded_files=uploaded_file_list if uploaded_file_list else None,
+            peer_assessments=peer_assessments if peer_assessments else None,
             status='submitted',
             submitted_at=submitted_at,
             group_id=_group_id
@@ -331,6 +336,42 @@ def unsubmit_activity(activity_id):
         'submission': format_submission(sub)
     }), 200
 
+
+
+# ===== SAVE PEER ASSESSMENT (can be called anytime, even after submission) =====
+@submissions.route('/<int:activity_id>/peer-assessment', methods=['PUT'])
+@jwt_required()
+def save_peer_assessment(activity_id):
+    user_id = int(get_jwt_identity())
+    user = User.query.get(user_id)
+
+    if user.role != 'student':
+        return jsonify({'message': 'Only students can submit peer assessments!'}), 403
+
+    data = request.get_json() or {}
+    peer_assessments = data.get('peer_assessments', {})
+    if not isinstance(peer_assessments, dict):
+        return jsonify({'message': 'Invalid peer_assessments format.'}), 400
+
+    sub = Submission.query.filter_by(
+        activity_id=activity_id,
+        student_id=user_id
+    ).filter(Submission.status.in_(['draft', 'submitted', 'graded'])).first()
+
+    if not sub:
+        # Create a minimal draft to hold peer assessments
+        sub = Submission(
+            activity_id=activity_id,
+            student_id=user_id,
+            peer_assessments=peer_assessments,
+            status='draft'
+        )
+        db.session.add(sub)
+    else:
+        sub.peer_assessments = peer_assessments
+
+    db.session.commit()
+    return jsonify({'message': 'Peer assessment saved.'}), 200
 
 
 # ===== GET MY SUBMISSION =====
@@ -735,6 +776,7 @@ def format_submission(sub):
         'analysis': sub.analysis or None,
         'analyzed_at': _ph(sub.analyzed_at) if sub.analyzed_at else None,
         'rubric_scores': sub.rubric_scores or None,
+        'peer_assessments': getattr(sub, 'peer_assessments', None) or None,
     }
 
 

@@ -1890,6 +1890,28 @@
         .av-rubric-total-pts { text-align: center; font-weight: 700; background: var(--surface-2, #f1f5f9); color: var(--primary); }
         .av-rubric-total-note { font-size: 11px; color: var(--text-3); margin-top: 6px; font-style: italic; }
 
+        /* ===== PEER ASSESSMENT SECTION ===== */
+        .av-pa-wrap { display: flex; flex-direction: column; gap: 12px; }
+        .av-pa-note { font-size: 12px; color: var(--text-3); display: flex; align-items: center; gap: 6px; margin: 0; }
+        .av-pa-info { font-size: 12px; color: var(--text-3); display: flex; align-items: center; gap: 6px; margin: 0 0 8px; }
+        .av-pa-criteria-preview { display: flex; flex-wrap: wrap; gap: 6px; }
+        .av-pa-criterion-tag { background: var(--primary-10, rgba(10,102,194,0.1)); color: var(--primary); border-radius: 20px; padding: 4px 12px; font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 5px; }
+        .av-pa-members { display: flex; flex-direction: column; gap: 10px; }
+        .av-pa-member-card { background: var(--surface-2, #f8fafc); border: 1.5px solid var(--border); border-radius: 12px; padding: 12px 14px; }
+        .av-pa-member-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+        .av-pa-member-name { font-size: 14px; font-weight: 600; color: var(--text-1); }
+        .av-pa-criteria-list { display: flex; flex-direction: column; gap: 6px; }
+        .av-pa-criterion-row { display: flex; align-items: center; gap: 10px; }
+        .av-pa-criterion-name { flex: 1; font-size: 13px; color: var(--text-2); }
+        .av-pa-score-wrap { display: flex; align-items: center; gap: 4px; }
+        .av-pa-score-input {
+            width: 64px; background: var(--input-bg); border: 1.5px solid var(--border);
+            border-radius: 8px; padding: 4px 8px; font-size: 13px; color: var(--text-1);
+            text-align: center; font-family: inherit; outline: none; transition: border-color 0.15s;
+        }
+        .av-pa-score-input:focus { border-color: var(--primary); }
+        .av-pa-pct { font-size: 12px; color: var(--text-3); font-weight: 600; }
+
         /* ===== DATA SHEET TABLES (matches create_activity ca-proc-table-wrap) ===== */
         .av-table-block {
             margin: 10px auto;
@@ -4624,6 +4646,13 @@
                 if (existingSubmission?.student_info?.contributions) {
                     _restoreContribs(existingSubmission.student_info.contributions);
                 }
+                // Restore peer assessments from server if localStorage is empty
+                if (existingSubmission?.peer_assessments) {
+                    const stored = _loadPeerRatingsFromStorage();
+                    if (!Object.keys(stored).length) {
+                        _savePeerRatingsToStorage(existingSubmission.peer_assessments);
+                    }
+                }
             }
         }
 
@@ -5426,6 +5455,57 @@
                 </div>`;
             }
 
+            if (type === 'peer_assessment') {
+                const pa = section.peer_assessment;
+                if (!pa?.criteria?.length) return '<p class="av-text-block" style="color:var(--text-3);">No criteria defined.</p>';
+                if (role !== 'student') {
+                    // Professor view: just list the criteria
+                    return `<div class="av-pa-wrap">
+                        <p class="av-pa-info"><i class="ph-bold ph-info"></i> This section is filled by students to rate their group members anonymously.</p>
+                        <div class="av-pa-criteria-preview">${pa.criteria.map(cr =>
+                            `<div class="av-pa-criterion-tag"><i class="ph-bold ph-check"></i> ${cr.label}</div>`
+                        ).join('')}</div>
+                    </div>`;
+                }
+                if (!myGroup?.members?.length) {
+                    return '<p class="av-text-block" style="color:var(--text-3);">Join a group to participate in peer assessment.</p>';
+                }
+                const myId = _getMyUserId();
+                const others = myGroup.members.filter(m => String(m.id) !== myId);
+                if (!others.length) {
+                    return '<p class="av-text-block" style="color:var(--text-3);">No other group members to rate.</p>';
+                }
+                const savedPa = _loadPeerRatingsFromStorage();
+                const membersHtml = others.map(m => {
+                    const mid = String(m.id);
+                    const avatarHtml = _makeAvatar(m.full_name, m.avatar || null, 34, '50%', 13);
+                    const criteriaHtml = pa.criteria.map((cr, ci) => {
+                        const val = savedPa[mid]?.[String(ci)] ?? '';
+                        return `<div class="av-pa-criterion-row">
+                            <span class="av-pa-criterion-name">${cr.label}</span>
+                            <div class="av-pa-score-wrap">
+                                <input type="number" class="av-pa-score-input" min="0" max="100"
+                                    data-member-id="${mid}" data-criterion-id="${ci}"
+                                    value="${val}" placeholder="—"
+                                    oninput="this.value=this.value===''?'':Math.min(100,Math.max(0,parseInt(this.value)||0)).toString();_onPeerRatingInput()">
+                                <span class="av-pa-pct">%</span>
+                            </div>
+                        </div>`;
+                    }).join('');
+                    return `<div class="av-pa-member-card">
+                        <div class="av-pa-member-header">
+                            ${avatarHtml}
+                            <span class="av-pa-member-name">${m.full_name}</span>
+                        </div>
+                        <div class="av-pa-criteria-list">${criteriaHtml}</div>
+                    </div>`;
+                }).join('');
+                return `<div class="av-pa-wrap" data-section-type="peer_assessment">
+                    <p class="av-pa-note"><i class="ph-bold ph-lock-simple"></i> Your ratings are anonymous — only the professor can see who rated whom.</p>
+                    <div class="av-pa-members">${membersHtml}</div>
+                </div>`;
+            }
+
             if (type === 'student_info') {
                 return buildStudentInfoHtml(content, section);
             }
@@ -6123,6 +6203,46 @@
                 }
             } catch { /**/ }
             return '0';
+        }
+
+        // ── Peer Assessment persistence ──────────────────────────────────
+        function _peerStorageKey() { return `pa_${activityId}_${_getMyUserId()}`; }
+        function _loadPeerRatingsFromStorage() {
+            try { return JSON.parse(localStorage.getItem(_peerStorageKey()) || '{}'); } catch { return {}; }
+        }
+        function _savePeerRatingsToStorage(ratings) {
+            try { localStorage.setItem(_peerStorageKey(), JSON.stringify(ratings)); } catch { }
+        }
+        function _clearPeerRatingsStorage() {
+            try { localStorage.removeItem(_peerStorageKey()); } catch { }
+        }
+        function _collectPeerRatings() {
+            const ratings = {};
+            document.querySelectorAll('.av-pa-score-input').forEach(inp => {
+                const mid = inp.dataset.memberId;
+                const cid = inp.dataset.criterionId;
+                if (mid && cid !== undefined && inp.value !== '') {
+                    if (!ratings[mid]) ratings[mid] = {};
+                    ratings[mid][cid] = parseInt(inp.value) || 0;
+                }
+            });
+            return ratings;
+        }
+        let _peerSaveTimer = null;
+        function _onPeerRatingInput() {
+            const ratings = _collectPeerRatings();
+            _savePeerRatingsToStorage(ratings);
+            // Debounced auto-save to backend
+            clearTimeout(_peerSaveTimer);
+            _peerSaveTimer = setTimeout(async () => {
+                try {
+                    await fetch(`/api/submissions/${activityId}/peer-assessment`, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                        body: JSON.stringify({ peer_assessments: ratings })
+                    });
+                } catch { /**/ }
+            }, 1500);
         }
 
         function _fieldKeyOf(el) {
@@ -7264,7 +7384,8 @@
                 attendance: _attendance,
                 contributions: contributions
             };
-            return { answers, table_data: tableData, materials_checked: materialsChecked, student_info: studentInfo };
+            const peerAssessments = _collectPeerRatings();
+            return { answers, table_data: tableData, materials_checked: materialsChecked, student_info: studentInfo, peer_assessments: peerAssessments };
         }
 
         function launchConfetti() {
@@ -7320,6 +7441,9 @@
                 form.append('table_data', JSON.stringify(data.table_data));
                 form.append('materials_checked', JSON.stringify(data.materials_checked));
                 form.append('student_info', JSON.stringify(data.student_info));
+                if (data.peer_assessments && Object.keys(data.peer_assessments).length) {
+                    form.append('peer_assessments', JSON.stringify(data.peer_assessments));
+                }
                 _uploadedFiles.forEach(f => form.append('file', f));
                 // Tell backend to keep previously uploaded files (pass server filenames)
                 _retainedServerFiles.forEach(f => form.append('retained_file', f.file || f));
@@ -7370,6 +7494,7 @@
 
                     showToast('Activity submitted successfully!', 'success', 4000);
                     _clearContribStorage();
+                    _clearPeerRatingsStorage();
 
                     const submitArea = document.getElementById('av-submit-area');
                     if (submitArea) {

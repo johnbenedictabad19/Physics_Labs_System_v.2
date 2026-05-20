@@ -158,6 +158,9 @@ class Submission(db.Model):
     # Rubric grading — { "0": 2, "1": 0 } criterion_index → column_index
     rubric_scores = db.Column(db.JSON, nullable=True)
 
+    # Peer assessment — { rated_student_id: { criterion_index: score (0-100) } }
+    peer_assessments = db.Column(db.JSON, nullable=True)
+
     # Status
     status = db.Column(db.String(20), default='submitted')  # submitted, graded
     submitted_at = db.Column(db.DateTime, default=datetime.utcnow)

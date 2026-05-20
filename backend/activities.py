@@ -541,6 +541,7 @@ def build_sections_from_manual(data):
         'guide-questions': 'guide_questions',
         'references':      'references',
         'rubric':          'rubric',
+        'peer-assessment': 'peer_assessment',
     }
 
     # ── Lab title (always first) ──────────────────────────────────────────
@@ -611,6 +612,13 @@ def build_sections_from_manual(data):
         candidates['rubric'] = {
             'type': 'rubric', 'title': 'RUBRIC',
             'content': [], 'rubric': rubric_data
+        }
+
+    peer_assessment_data = sec.get('peer_assessment')
+    if peer_assessment_data and isinstance(peer_assessment_data, dict) and peer_assessment_data.get('criteria'):
+        candidates['peer-assessment'] = {
+            'type': 'peer_assessment', 'title': 'PEER ASSESSMENT',
+            'content': [], 'peer_assessment': peer_assessment_data
         }
 
     # ── Assemble body sections ────────────────────────────────────────────
