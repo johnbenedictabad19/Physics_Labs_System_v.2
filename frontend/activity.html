@@ -4483,54 +4483,48 @@
                         }
                     } catch { /* non-critical */ }
 
-                    // 2. My group — try /my-group first (most reliable, works even without classId in URL)
-                    //    Fall back to /groups if classId is available
-                    if (!submissionLocked()) {
-                        // Try to get classId from URL or from parsedData
-                        const cid = classId || parsedData?.class_id;
-
-                        if (cid) {
-                            try {
-                                // /my-group returns exactly THIS student's group with all members + is_leader
-                                const mgRes = await fetch(`/api/classes/${cid}/my-group`,
-                                    { headers: { 'Authorization': `Bearer ${token}` } });
-                                if (mgRes.ok) {
-                                    const mg = await safeJson(mgRes);
-                                    if (mg && mg.id) {
-                                        myGroup = mg;
-                                        allGroups = [mg]; // keep consistent
-                                    }
+                    // 2. My group — always fetch so peer assessment renders correctly even after submission
+                    //    Try /my-group first (most reliable), fall back to /groups
+                    const cid = classId || parsedData?.class_id;
+                    if (cid) {
+                        try {
+                            const mgRes = await fetch(`/api/classes/${cid}/my-group`,
+                                { headers: { 'Authorization': `Bearer ${token}` } });
+                            if (mgRes.ok) {
+                                const mg = await safeJson(mgRes);
+                                if (mg && mg.id) {
+                                    myGroup = mg;
+                                    allGroups = [mg];
                                 }
-                            } catch { /* non-critical */ }
-
-                            // If my-group failed, try /groups as fallback (returns student's group(s) filtered)
-                            if (!myGroup) {
-                                try {
-                                    const grpRes = await fetch(`/api/classes/${cid}/groups`,
-                                        { headers: { 'Authorization': `Bearer ${token}` } });
-                                    if (grpRes.ok) {
-                                        const grps = await safeJson(grpRes);
-                                        if (Array.isArray(grps) && grps.length > 0) {
-                                            allGroups = grps;
-                                            myGroup = grps[0]; // student only sees their own group(s)
-                                        }
-                                    }
-                                } catch { /* non-critical */ }
                             }
-                        }
+                        } catch { /* non-critical */ }
 
-                        // 3. Fetch group draft for collaboration if we have a group
-                        if (myGroup) {
+                        if (!myGroup) {
                             try {
-                                const draftRes = await fetch(
-                                    `/api/submissions/${activityId}/group-draft?group_id=${myGroup.id}`,
+                                const grpRes = await fetch(`/api/classes/${cid}/groups`,
                                     { headers: { 'Authorization': `Bearer ${token}` } });
-                                if (draftRes.ok) {
-                                    const draft = await safeJson(draftRes);
-                                    if (draft && draft.id) groupDraft = draft;
+                                if (grpRes.ok) {
+                                    const grps = await safeJson(grpRes);
+                                    if (Array.isArray(grps) && grps.length > 0) {
+                                        allGroups = grps;
+                                        myGroup = grps[0];
+                                    }
                                 }
                             } catch { /* non-critical */ }
                         }
+                    }
+
+                    // 3. Fetch group draft for collaboration — only when not yet submitted
+                    if (!submissionLocked() && myGroup) {
+                        try {
+                            const draftRes = await fetch(
+                                `/api/submissions/${activityId}/group-draft?group_id=${myGroup.id}`,
+                                { headers: { 'Authorization': `Bearer ${token}` } });
+                            if (draftRes.ok) {
+                                const draft = await safeJson(draftRes);
+                                if (draft && draft.id) groupDraft = draft;
+                            }
+                        } catch { /* non-critical */ }
                     }
                 }
 
@@ -4543,6 +4537,15 @@
                     const _savedAtt = existingSubmission?.student_info?.attendance;
                     if (_savedAtt) {
                         Object.entries(_savedAtt).forEach(([k, v]) => { _attendance[k] = v; });
+                    }
+                }
+
+                // Restore peer assessments into localStorage before rendering
+                // so the inputs render with the correct saved values
+                if (role === 'student' && existingSubmission?.peer_assessments) {
+                    const stored = _loadPeerRatingsFromStorage();
+                    if (!Object.keys(stored).length) {
+                        _savePeerRatingsToStorage(existingSubmission.peer_assessments);
                     }
                 }
 
@@ -4645,13 +4648,6 @@
                 // Then fill any gaps using server-saved counts (e.g. teammates with no local data)
                 if (existingSubmission?.student_info?.contributions) {
                     _restoreContribs(existingSubmission.student_info.contributions);
-                }
-                // Restore peer assessments from server if localStorage is empty
-                if (existingSubmission?.peer_assessments) {
-                    const stored = _loadPeerRatingsFromStorage();
-                    if (!Object.keys(stored).length) {
-                        _savePeerRatingsToStorage(existingSubmission.peer_assessments);
-                    }
                 }
             }
         }
@@ -5487,6 +5483,7 @@
                                 <input type="number" class="av-pa-score-input" min="0" max="100"
                                     data-member-id="${mid}" data-criterion-id="${ci}"
                                     value="${val}" placeholder="—"
+                                    ${submissionLocked() || !isEditMode ? 'disabled' : ''}
                                     oninput="this.value=this.value===''?'':Math.min(100,Math.max(0,parseInt(this.value)||0)).toString();_onPeerRatingInput()">
                                 <span class="av-pa-pct">%</span>
                             </div>

@@ -707,6 +707,16 @@
             }
             .btn-modal-cancel:hover { background: var(--surface); border-color: var(--border-h); }
 
+            /* ─── SHUFFLE MODAL: mode toggle + leader picker ─── */
+            .shuf-mode-toggle { display:flex; gap:6px; margin-bottom:8px; }
+            .shuf-mode-btn { flex:1; padding:8px 12px; border-radius:10px; border:1.5px solid var(--border); background:var(--surface-2,#f8fafc); color:var(--text-2); font-size:13px; font-weight:600; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; transition:all 0.15s; font-family:'DM Sans',sans-serif; }
+            .shuf-mode-btn.active { background:rgba(124,58,237,0.12); border-color:#a78bfa; color:#a78bfa; }
+            .shuf-leader-list { display:flex; flex-direction:column; gap:4px; max-height:200px; overflow-y:auto; margin-bottom:14px; padding-right:2px; }
+            .shuf-leader-item { display:flex; align-items:center; justify-content:space-between; padding:8px 12px; border:1.5px solid var(--border); border-radius:10px; cursor:pointer; background:var(--surface-2,#f8fafc); transition:all 0.15s; user-select:none; }
+            .shuf-leader-item:hover { border-color:#a78bfa; background:rgba(124,58,237,0.06); }
+            .shuf-leader-item.selected { border-color:#f59e0b; background:rgba(245,158,11,0.08); }
+            .shuf-leader-name { font-size:13px; font-weight:600; color:var(--text-1); }
+
             /* ─── GROUP MODAL: card picker ─── */
             .gm-section { margin-bottom: 16px; }
             .gm-section-header {
@@ -2097,22 +2107,43 @@
 
     <!-- SHUFFLE GROUPS MODAL -->
     <div class="modal-overlay" id="shuffleModal">
-        <div class="modal-box" style="max-width:95vw;width:420px;">
+        <div class="modal-box" style="max-width:95vw;width:460px;max-height:90vh;overflow-y:auto;">
             <h3>
                 <span style="display:inline-flex;align-items:center;justify-content:center;width:32px;height:32px;border-radius:10px;background:rgba(124,58,237,0.15);flex-shrink:0;">
                     <i class="ph-bold ph-shuffle" style="color:#a78bfa;font-size:16px;"></i>
                 </span>
                 Shuffle Groups
             </h3>
-            <p class="cd-modal-subtitle">Randomly distribute all enrolled students equally across groups and assign leaders.</p>
+            <p class="cd-modal-subtitle">Distribute all enrolled students across groups.</p>
+
+            <div class="shuf-mode-toggle">
+                <button id="shufModeRandom" class="shuf-mode-btn active" onclick="_switchShuffleMode('random')">
+                    <i class="ph-bold ph-shuffle"></i> Random
+                </button>
+                <button id="shufModeBalanced" class="shuf-mode-btn" onclick="_switchShuffleMode('balanced')">
+                    <i class="ph-bold ph-scales"></i> Balanced
+                </button>
+            </div>
+            <p id="shufModeDesc" style="font-size:12px;color:var(--text-3);margin:0 0 14px;line-height:1.5;">
+                Randomly distribute all students and pick leaders at random.
+            </p>
 
             <label class="modal-label">Number of Groups</label>
             <input class="modal-input" type="number" id="shuffleNumGroups" min="1" placeholder="e.g. 5" oninput="updateShuffleHint()" style="margin-bottom:6px;">
             <p id="shuffleHint" style="font-size:12px;color:var(--text-3);min-height:18px;margin-bottom:14px;"></p>
 
-            <div style="display:flex;gap:9px;align-items:flex-start;background:rgba(239,68,68,0.08);border:1.5px solid rgba(239,68,68,0.18);border-radius:12px;padding:11px 14px;margin-bottom:4px;">
+            <div id="shufLeaderSection" style="display:none;">
+                <label class="modal-label" style="display:flex;align-items:center;justify-content:space-between;">
+                    <span>Select Group Leaders</span>
+                    <span id="shufLeaderCount" style="font-size:11px;color:var(--text-3);font-weight:500;">0 / 0 selected</span>
+                </label>
+                <p id="shufLeaderHint" style="font-size:12px;color:var(--text-3);margin:0 0 8px;"></p>
+                <div id="shufLeaderList" class="shuf-leader-list"></div>
+            </div>
+
+            <div style="display:flex;gap:9px;align-items:flex-start;background:rgba(239,68,68,0.08);border:1.5px solid rgba(239,68,68,0.18);border-radius:12px;padding:11px 14px;margin-bottom:16px;">
                 <i class="ph-bold ph-warning" style="color:#fca5a5;font-size:15px;flex-shrink:0;margin-top:1px;"></i>
-                <span style="font-size:12px;color:#fca5a5;line-height:1.5;">This will <strong>clear all current group assignments</strong> and reassign everyone. Leaders will be picked randomly.</span>
+                <span style="font-size:12px;color:#fca5a5;line-height:1.5;">This will <strong>clear all current group assignments</strong> and reassign everyone.</span>
             </div>
 
             <div class="modal-actions">
@@ -3789,25 +3820,91 @@
     // ============================================================
     // SHUFFLE GROUPS
     // ============================================================
+    let _shuffleMode    = 'random';
+    let _selectedLeaders = new Set();
+
     function openShuffleModal() {
         const currentCount = (window.allGroups || []).length;
         const studentCount = (window.allStudents || []).filter(s => s.enrollment_status === 'approved').length;
         const input = document.getElementById('shuffleNumGroups');
         input.value = currentCount > 0 ? currentCount : 1;
         input.max   = studentCount || 999;
+        _shuffleMode     = 'random';
+        _selectedLeaders = new Set();
+        _switchShuffleMode('random');
         updateShuffleHint();
         document.getElementById('shuffleModal').classList.add('active');
     }
 
     function closeShuffleModal() {
         document.getElementById('shuffleModal').classList.remove('active');
+        _selectedLeaders = new Set();
+    }
+
+    function _switchShuffleMode(mode) {
+        _shuffleMode = mode;
+        document.getElementById('shufModeRandom').classList.toggle('active', mode === 'random');
+        document.getElementById('shufModeBalanced').classList.toggle('active', mode === 'balanced');
+        document.getElementById('shufModeDesc').textContent = mode === 'random'
+            ? 'Randomly distribute all students and pick leaders at random.'
+            : 'You pick one leader per group — they will be separated, the rest are distributed randomly.';
+        document.getElementById('shufLeaderSection').style.display = mode === 'balanced' ? 'block' : 'none';
+        if (mode === 'balanced') _renderLeaderPicker();
+        _updateShuffleBtn();
+    }
+
+    function _renderLeaderPicker() {
+        const n        = parseInt(document.getElementById('shuffleNumGroups').value) || 0;
+        const students = (window.allStudents || []).filter(s => s.enrollment_status === 'approved');
+        const list     = document.getElementById('shufLeaderList');
+        const countEl  = document.getElementById('shufLeaderCount');
+        const hintEl   = document.getElementById('shufLeaderHint');
+
+        countEl.textContent = `${_selectedLeaders.size} / ${n} selected`;
+        hintEl.textContent  = n < 1
+            ? 'Set the number of groups first.'
+            : `Select exactly ${n} student${n !== 1 ? 's' : ''} as leaders — one will be placed in each group.`;
+
+        list.innerHTML = students.map(s => {
+            const sid  = String(s.id);
+            const name = s.full_name || 'Unknown';
+            const selected = _selectedLeaders.has(sid);
+            return `<div class="shuf-leader-item${selected ? ' selected' : ''}" onclick="_toggleLeader('${sid}', ${n})">
+                <span class="shuf-leader-name">${name}</span>
+                ${selected ? '<i class="ph-bold ph-crown" style="color:#f59e0b;font-size:13px;flex-shrink:0;"></i>' : ''}
+            </div>`;
+        }).join('');
+    }
+
+    function _toggleLeader(sid, n) {
+        if (_selectedLeaders.has(sid)) {
+            _selectedLeaders.delete(sid);
+        } else {
+            if (_selectedLeaders.size >= n) {
+                showToast(`You can only select ${n} leader${n !== 1 ? 's' : ''} — one per group.`, 'warning');
+                return;
+            }
+            _selectedLeaders.add(sid);
+        }
+        _renderLeaderPicker();
+        _updateShuffleBtn();
+    }
+
+    function _updateShuffleBtn() {
+        const n            = parseInt(document.getElementById('shuffleNumGroups').value) || 0;
+        const studentCount = (window.allStudents || []).filter(s => s.enrollment_status === 'approved').length;
+        const btn          = document.getElementById('shuffleConfirmBtn');
+        const valid        = n >= 1 && n <= studentCount
+            && (_shuffleMode === 'random' || _selectedLeaders.size === n);
+        btn.disabled      = !valid;
+        btn.style.opacity = valid ? '' : '0.5';
     }
 
     function updateShuffleHint() {
-        const n = parseInt(document.getElementById('shuffleNumGroups').value) || 0;
+        const n            = parseInt(document.getElementById('shuffleNumGroups').value) || 0;
         const studentCount = (window.allStudents || []).filter(s => s.enrollment_status === 'approved').length;
-        const hint = document.getElementById('shuffleHint');
-        if (!n || n < 1) { hint.textContent = ''; return; }
+        const hint         = document.getElementById('shuffleHint');
+        if (!n || n < 1) { hint.textContent = ''; _updateShuffleBtn(); return; }
         if (n > studentCount) {
             hint.textContent = `⚠ Can't have more groups than students (${studentCount}).`;
             hint.style.color = '#fca5a5';
@@ -3820,23 +3917,33 @@
             hint.textContent = `${studentCount} students → ${desc}`;
             hint.style.color = 'var(--text-3)';
         }
+        if (_shuffleMode === 'balanced') _renderLeaderPicker();
+        _updateShuffleBtn();
     }
 
     async function submitShuffle() {
-        const n = parseInt(document.getElementById('shuffleNumGroups').value);
+        const n            = parseInt(document.getElementById('shuffleNumGroups').value);
         const studentCount = (window.allStudents || []).filter(s => s.enrollment_status === 'approved').length;
-        if (!n || n < 1)           { showToast('Enter a valid number of groups!', 'warning'); return; }
-        if (n > studentCount)      { showToast(`Cannot create more groups than students (${studentCount})!`, 'warning'); return; }
+        if (!n || n < 1)      { showToast('Enter a valid number of groups!', 'warning'); return; }
+        if (n > studentCount) { showToast(`Cannot create more groups than students (${studentCount})!`, 'warning'); return; }
+        if (_shuffleMode === 'balanced' && _selectedLeaders.size !== n) {
+            showToast(`Select exactly ${n} leader${n !== 1 ? 's' : ''} first!`, 'warning'); return;
+        }
 
         const btn = document.getElementById('shuffleConfirmBtn');
         btn.disabled = true;
         btn.innerHTML = '<i class="ph-bold ph-circle-notch" style="animation:spin 0.8s linear infinite"></i> Shuffling...';
 
         try {
+            const body = { num_groups: n };
+            if (_shuffleMode === 'balanced') {
+                body.balanced    = true;
+                body.leader_ids  = [..._selectedLeaders].map(Number);
+            }
             const res = await fetch(`/api/classes/${classId}/groups/shuffle`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
-                body: JSON.stringify({ num_groups: n })
+                body: JSON.stringify(body)
             });
             const data = await res.json();
             if (res.ok) {

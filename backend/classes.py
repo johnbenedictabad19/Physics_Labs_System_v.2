@@ -670,8 +670,10 @@ def shuffle_groups(class_id):
     if not cls:
         return jsonify({'message': 'Class not found!'}), 404
 
-    data      = request.get_json() or {}
+    data       = request.get_json() or {}
     num_groups = int(data.get('num_groups', 0))
+    balanced   = bool(data.get('balanced', False))
+    leader_ids = [int(x) for x in data.get('leader_ids', [])]
 
     # Enrolled + approved students
     members = ClassMember.query.filter_by(
@@ -685,6 +687,12 @@ def shuffle_groups(class_id):
         return jsonify({'message': 'Number of groups must be at least 1!'}), 400
     if num_groups > len(student_ids):
         return jsonify({'message': f'Cannot create more groups ({num_groups}) than students ({len(student_ids)})!'}), 400
+    if balanced:
+        if len(leader_ids) != num_groups:
+            return jsonify({'message': f'Balanced mode requires exactly {num_groups} leader(s) — got {len(leader_ids)}.'}), 400
+        invalid = [lid for lid in leader_ids if lid not in student_ids]
+        if invalid:
+            return jsonify({'message': 'One or more selected leaders are not enrolled in this class.'}), 400
 
     # Existing groups ordered by creation
     existing = Group.query.filter_by(class_id=class_id).order_by(Group.created_at.asc()).all()
@@ -707,20 +715,32 @@ def shuffle_groups(class_id):
         GroupMember.query.filter_by(group_id=g.id).delete()
         g.leader_id = None
 
-    # Shuffle and split
-    random.shuffle(student_ids)
-    chunks = [student_ids[i::num_groups] for i in range(num_groups)]
-
-    for g, chunk in zip(existing, chunks):
-        for sid in chunk:
-            db.session.add(GroupMember(group_id=g.id, student_id=sid))
-        g.leader_id = random.choice(chunk)
+    if balanced:
+        # Seed each group with one leader, then distribute the rest randomly
+        rest = [sid for sid in student_ids if sid not in leader_ids]
+        random.shuffle(rest)
+        chunks = [[lid] for lid in leader_ids]
+        for i, sid in enumerate(rest):
+            chunks[i % num_groups].append(sid)
+        for g, chunk in zip(existing, chunks):
+            for sid in chunk:
+                db.session.add(GroupMember(group_id=g.id, student_id=sid))
+            g.leader_id = chunk[0]   # the chosen leader is always first
+    else:
+        # Pure random shuffle
+        random.shuffle(student_ids)
+        chunks = [student_ids[i::num_groups] for i in range(num_groups)]
+        for g, chunk in zip(existing, chunks):
+            for sid in chunk:
+                db.session.add(GroupMember(group_id=g.id, student_id=sid))
+            g.leader_id = random.choice(chunk)
 
     db.session.commit()
 
+    mode_label = 'balanced' if balanced else 'randomly'
     updated = Group.query.filter_by(class_id=class_id).order_by(Group.created_at.asc()).all()
     return jsonify({
-        'message': f'Groups shuffled! {len(student_ids)} students distributed across {num_groups} groups.',
+        'message': f'Groups shuffled ({mode_label})! {len(student_ids)} students distributed across {num_groups} groups.',
         'groups': [_serialize_group(g, group_number=idx + 1) for idx, g in enumerate(updated)]
     }), 200
 
