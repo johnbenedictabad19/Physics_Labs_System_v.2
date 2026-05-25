@@ -7566,9 +7566,10 @@ function _rubricRenderCriteria() {
 }
 
 function _rubricUpdateMaxPts() {
-    const max = _rubricColumns.reduce((a, c) => a + (parseFloat(c.points) || 0), 0) * _rubricCriteria.length;
-    const el  = document.getElementById('rubricMaxPts');
-    if (el) el.textContent = `Max score: ${max} pts (${_rubricCriteria.length} criteria × ${_rubricColumns[0]?.points || 0} max pts each)`;
+    const maxPts = Math.max(..._rubricColumns.map(c => parseFloat(c.points) || 0), 0);
+    const max    = maxPts * _rubricCriteria.length;
+    const el     = document.getElementById('rubricMaxPts');
+    if (el) el.textContent = `Max score: ${max} pts (${_rubricCriteria.length} criteria × ${maxPts} max pts each)`;
 }
 
 function rubricAddColumn() {

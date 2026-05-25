@@ -809,8 +809,8 @@ def save_rubric_scores(submission_id):
 # ANALYZE SUBMISSION — Plagiarism Detection
 # ============================================================
 
-def _plagiarism_check(text, activity_id, exclude_submission_id):
-    """Compare text against same-activity submissions. Returns best match dict or None."""
+def _plagiarism_check(text, activity_id, exclude_submission_id, answer_key):
+    """Compare text against the same answer key in same-activity submissions. Returns best match dict or None."""
     if not text or not text.strip():
         return None
 
@@ -831,15 +831,15 @@ def _plagiarism_check(text, activity_id, exclude_submission_id):
                 peer_answers = json.loads(peer_answers)
             except Exception:
                 continue
-        for val in peer_answers.values():
-            if not isinstance(val, str) or not val.strip():
-                continue
-            ratio = difflib.SequenceMatcher(None, text.lower(), val.lower()).ratio()
-            if ratio > best_ratio:
-                best_ratio   = ratio
-                peer_student = User.query.get(peer.student_id)
-                best_student = peer_student.full_name if peer_student else 'Unknown'
-                best_sid     = peer.student_id
+        val = peer_answers.get(answer_key)
+        if not isinstance(val, str) or not val.strip():
+            continue
+        ratio = difflib.SequenceMatcher(None, text.lower(), val.lower()).ratio()
+        if ratio > best_ratio:
+            best_ratio   = ratio
+            peer_student = User.query.get(peer.student_id)
+            best_student = peer_student.full_name if peer_student else 'Unknown'
+            best_sid     = peer.student_id
 
     if best_ratio < 0.30:
         return None
@@ -876,7 +876,7 @@ def analyze_submission(submission_id):
             results[key] = {'plagiarism': None}
             continue
         results[key] = {
-            'plagiarism': _plagiarism_check(text, sub.activity_id, submission_id),
+            'plagiarism': _plagiarism_check(text, sub.activity_id, submission_id, key),
         }
 
     sub.analysis    = results

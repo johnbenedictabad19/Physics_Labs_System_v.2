@@ -4414,7 +4414,7 @@
         // ── Collab (WebSocket) ──
         let collabSocket = null;
         let _collabRoom = null;   // {activity_id, group_id}
-        let _peerFields = {};     // fieldKey → user info
+        let _peerFields = {};     // fieldKey → { userId: user info }
 
         const SECTION_ORDER = ['lab_title', 'introduction', 'outcomes', 'materials', 'procedures', 'data_sheet', 'guide_questions', 'references', 'student_info'];
 
@@ -6180,8 +6180,9 @@
         // ============================================================
         // CONTRIBUTION TRACKING
         // ============================================================
-        const _contribMap = {};   // { uid_str: Set<fieldKey> }
-        let _totalFields  = 0;
+        const _contribMap  = {};   // { uid_str: Set<fieldKey> }
+        const _fieldOwner  = {};   // { fieldKey: uid_str } — who last filled this field
+        let _totalFields   = 0;
 
         function _getMyUserId() {
             const v = localStorage.getItem('user_id');
@@ -6262,16 +6263,26 @@
 
         function _trackContrib(uid, fieldType, fieldId, value) {
             if (fieldType !== 'answer' && fieldType !== 'table') return;
-            const key     = String(uid);
-            const fldKey  = `${fieldType}_${fieldId}`;
+            const key    = String(uid);
+            const fldKey = `${fieldType}_${fieldId}`;
             if (!_contribMap[key]) _contribMap[key] = new Set();
-            if (value === undefined) {
-                // Collab events — value unknown, assume non-empty
-                _contribMap[key].add(fldKey);
-            } else if (String(value).trim()) {
-                _contribMap[key].add(fldKey);
+
+            const isEmpty = value !== undefined && !String(value).trim();
+            if (isEmpty) {
+                // Field cleared — remove from whoever currently owns it
+                const prevOwner = _fieldOwner[fldKey];
+                if (prevOwner) {
+                    _contribMap[prevOwner]?.delete(fldKey);
+                    delete _fieldOwner[fldKey];
+                }
             } else {
-                _contribMap[key].delete(fldKey);
+                // Field filled — transfer ownership if it changed hands
+                const prevOwner = _fieldOwner[fldKey];
+                if (prevOwner && prevOwner !== key) {
+                    _contribMap[prevOwner]?.delete(fldKey);
+                }
+                _contribMap[key].add(fldKey);
+                _fieldOwner[fldKey] = key;
             }
             _updateContribDisplay();
             _saveContribToStorage();
@@ -6280,9 +6291,19 @@
         function _restoreContribs(contributions) {
             if (!contributions) return;
             Object.entries(contributions).forEach(([uid, data]) => {
-                const n = data.count || 0;
-                if (n > 0 && !(_contribMap[uid]?.size)) {
-                    _contribMap[uid] = new Set(Array.from({ length: n }, (_, i) => `_r${uid}_${i}`));
+                if (data.fields?.length > 0) {
+                    // Real field keys — restore ownership map too
+                    if (!_contribMap[uid]) _contribMap[uid] = new Set();
+                    data.fields.forEach(k => {
+                        _contribMap[uid].add(k);
+                        _fieldOwner[k] = uid;   // restore ownership
+                    });
+                } else {
+                    // Old data — fallback to synthetic keys
+                    const n = data.count || 0;
+                    if (n > 0 && !(_contribMap[uid]?.size)) {
+                        _contribMap[uid] = new Set(Array.from({ length: n }, (_, i) => `_r${uid}_${i}`));
+                    }
                 }
             });
             _updateContribDisplay();
@@ -7360,10 +7381,11 @@
             const contributions = {};
             if (activeGroup) {
                 activeGroup.members.forEach((m, i) => {
-                    const uid   = String(m.id);
-                    const count = _contribMap[uid]?.size || 0;
-                    const pct   = _totalFields > 0 ? Math.round((count / _totalFields) * 100) : 0;
-                    contributions[uid] = { count, pct };
+                    const uid    = String(m.id);
+                    const fields = [...(_contribMap[uid] || [])].filter(k => !k.startsWith('_r'));
+                    const count  = _contribMap[uid]?.size || 0;
+                    const pct    = _totalFields > 0 ? Math.round((count / _totalFields) * 100) : 0;
+                    contributions[uid] = { count, pct, fields };
                     if (!_attendance.hasOwnProperty(i)) {
                         _attendance[i] = count > 0 ? 'present' : 'absent';
                     }
@@ -7930,8 +7952,19 @@
         }
 
         function _collabEl(field_type, field_id) {
-            if (field_type === 'answer')
-                return document.querySelector(`.answer-textarea[data-index="${field_id}"]`);
+            if (field_type === 'answer') {
+                const id  = String(field_id);
+                const sep = id.indexOf(':');
+                if (sep >= 0) {
+                    const sType = id.slice(0, sep);
+                    const idx   = id.slice(sep + 1);
+                    const root  = sType
+                        ? (document.querySelector(`.av-section-wrapper[data-section-type="${sType}"]`) || document)
+                        : document;
+                    return root.querySelector(`.answer-textarea[data-index="${idx}"]`);
+                }
+                return document.querySelector(`.answer-textarea[data-index="${id}"]`);
+            }
             if (field_type === 'table') {
                 const id = String(field_id);
                 const sep = id.indexOf(':');
@@ -8004,7 +8037,7 @@
             el.classList.add('collab-flash');
             setTimeout(() => el.classList.remove('collab-flash'), 600);
             // Track this member's contribution
-            if (data.user?.id) _trackContrib(data.user.id, data.field_type, data.field_id);
+            if (data.user?.id) _trackContrib(data.user.id, data.field_type, data.field_id, data.value);
         }
 
         function _onDraftSync(fields) {
@@ -8020,6 +8053,8 @@
                 } else {
                     el.value = f.value;
                 }
+                // Restore contrib stats for whoever last edited this field
+                if (f.user?.id) _trackContrib(f.user.id, f.field_type, f.field_id, f.value);
             });
             _restoringDraft = false;
         }
@@ -8054,25 +8089,31 @@
             const el = _collabEl(data.field_type, data.field_id);
             if (!el) return;
             const key = `${data.field_type}_${data.field_id}`;
+            if (!_peerFields[key]) _peerFields[key] = {};
+            _peerFields[key][data.user.id] = data.user;
             el.style.setProperty('--collab-color', data.user.color);
             el.classList.add('collab-ring');
             _showCollabBadge(key, el, data.user);
-            _peerFields[key] = data.user;
         }
 
         function _onFieldBlurred(data) {
             const el = _collabEl(data.field_type, data.field_id);
             const key = `${data.field_type}_${data.field_id}`;
-            if (el) el.classList.remove('collab-ring');
-            _removeCollabBadge(key);
-            delete _peerFields[key];
+            if (_peerFields[key]) {
+                delete _peerFields[key][data.user.id];
+                if (Object.keys(_peerFields[key]).length === 0) {
+                    delete _peerFields[key];
+                    if (el) el.classList.remove('collab-ring');
+                }
+            }
+            _removeCollabBadge(key, data.user.id);
         }
 
         function _showCollabBadge(key, el, user) {
-            _removeCollabBadge(key);
+            _removeCollabBadge(key, user.id);
             const badge = document.createElement('div');
             badge.className = 'collab-name-badge';
-            badge.id = `cbadge_${CSS.escape(key)}`;
+            badge.id = `cbadge_${CSS.escape(key)}_${user.id}`;
             badge.style.background = user.color;
             badge.innerHTML = `<i class="ph-bold ph-pencil-simple" style="font-size:9px;opacity:0.8;"></i> ${(user.name || '').split(' ')[0]}`;
             const wrap = el.parentElement;
@@ -8081,8 +8122,12 @@
             wrap.appendChild(badge);
         }
 
-        function _removeCollabBadge(key) {
-            document.getElementById(`cbadge_${CSS.escape(key)}`)?.remove();
+        function _removeCollabBadge(key, userId) {
+            if (userId !== undefined) {
+                document.getElementById(`cbadge_${CSS.escape(key)}_${userId}`)?.remove();
+            } else {
+                document.querySelectorAll(`[id^="cbadge_${CSS.escape(key)}_"]`).forEach(el => el.remove());
+            }
         }
 
         function _onGroupUnsubmitted(data) {

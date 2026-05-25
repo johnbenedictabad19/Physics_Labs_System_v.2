@@ -3,7 +3,7 @@ from flask import request
 from flask_jwt_extended import decode_token
 from models import User
 
-# room_id → { users: {sid: info}, fields: {field_key: sid} }
+# room_id → { users: {sid: info}, fields: {field_key: [sid, ...]} }
 _rooms = {}
 # sid → room_id — reverse lookup so disconnect is O(1) instead of O(n_rooms)
 _sid_to_room: dict = {}
@@ -18,9 +18,14 @@ def _rid(activity_id, group_id):
 def _presence(room_id):
     r = _rooms.get(room_id, {})
     users = r.get('users', {})
+    fields_out = {}
+    for fk, sids in r.get('fields', {}).items():
+        focused_users = [users[s] for s in sids if s in users]
+        if focused_users:
+            fields_out[fk] = focused_users
     return {
         'users': list(users.values()),
-        'fields': {k: users[v] for k, v in r.get('fields', {}).items() if v in users}
+        'fields': fields_out
     }
 
 
@@ -108,7 +113,8 @@ def register_collab(socketio):
         draft[f'{field_type}_{field_id}'] = {
             'field_type': field_type,
             'field_id':   field_id,
-            'value':      value
+            'value':      value,
+            'user':       _rooms[room]['users'][request.sid]
         }
         if len(draft) > 300:
             for k in list(draft.keys())[:50]:
@@ -128,7 +134,10 @@ def register_collab(socketio):
         if room not in _rooms or request.sid not in _rooms[room]['users']:
             return
         fk = f"{d.get('field_type')}_{d.get('field_id')}"
-        _rooms[room]['fields'][fk] = request.sid
+        sids = _rooms[room]['fields'].get(fk, [])
+        if request.sid not in sids:
+            sids = sids + [request.sid]
+        _rooms[room]['fields'][fk] = sids
         emit('field_focused', {
             'field_type': d.get('field_type'),
             'field_id':   str(d.get('field_id', '')),
@@ -142,7 +151,11 @@ def register_collab(socketio):
         if room not in _rooms:
             return
         fk = f"{d.get('field_type')}_{d.get('field_id')}"
-        _rooms[room]['fields'].pop(fk, None)
+        sids = [s for s in _rooms[room]['fields'].get(fk, []) if s != request.sid]
+        if sids:
+            _rooms[room]['fields'][fk] = sids
+        else:
+            _rooms[room]['fields'].pop(fk, None)
         user = _rooms[room]['users'].get(request.sid, {})
         emit('field_blurred', {
             'field_type': d.get('field_type'),
@@ -181,7 +194,9 @@ def register_collab(socketio):
             return
         rd = _rooms[room_id]
         rd['users'].pop(request.sid, None)
-        rd['fields'] = {k: v for k, v in rd['fields'].items() if v != request.sid}
+        rd['fields'] = {k: [s for s in sids if s != request.sid]
+                        for k, sids in rd['fields'].items()}
+        rd['fields'] = {k: v for k, v in rd['fields'].items() if v}
         if not rd['users']:
             del _rooms[room_id]
         else:

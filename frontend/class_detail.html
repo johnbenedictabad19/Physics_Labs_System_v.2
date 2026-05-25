@@ -3917,7 +3917,14 @@
             hint.textContent = `${studentCount} students → ${desc}`;
             hint.style.color = 'var(--text-3)';
         }
-        if (_shuffleMode === 'balanced') _renderLeaderPicker();
+        if (_shuffleMode === 'balanced') {
+            // Trim excess selected leaders when group count decreases
+            if (_selectedLeaders.size > n) {
+                const trimmed = [..._selectedLeaders].slice(0, n);
+                _selectedLeaders = new Set(trimmed);
+            }
+            _renderLeaderPicker();
+        }
         _updateShuffleBtn();
     }
 
