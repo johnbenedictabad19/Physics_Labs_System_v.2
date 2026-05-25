@@ -110,7 +110,7 @@ def get_my_classes():
     user = User.query.get(int(user_id))
 
     if user.role == 'professor':
-        my_classes = Class.query.filter_by(professor_id=user.id, is_archived=False).all()
+        my_classes = Class.query.filter_by(professor_id=user.id).filter(Class.is_archived.isnot(True)).all()
         result = []
         for c in my_classes:
             member_count = ClassMember.query.filter_by(class_id=c.id).count()
@@ -125,7 +125,7 @@ def get_my_classes():
                 'banner_image': c.banner_image or ''
             })
     else:
-        memberships = ClassMember.query.filter_by(student_id=user.id, is_archived=False).all()
+        memberships = ClassMember.query.filter_by(student_id=user.id).filter(ClassMember.is_archived.isnot(True)).all()
         result = []
         for m in memberships:
             c = Class.query.get(m.class_id)
@@ -677,8 +677,8 @@ def shuffle_groups(class_id):
 
     # Enrolled + approved students
     members = ClassMember.query.filter_by(
-        class_id=class_id, enrollment_status='approved', is_archived=False
-    ).all()
+        class_id=class_id, enrollment_status='approved'
+    ).filter(ClassMember.is_archived.isnot(True)).all()
     student_ids = [m.student_id for m in members]
 
     if not student_ids:
